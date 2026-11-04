@@ -22,9 +22,10 @@
   auth screens and the sign-up consent. Wording lives in `apps/web/src/legal/content.ts`; the
   operator name, mailbox and origin come from `VITE_LEGAL_*` and `VITE_PUBLIC_ORIGIN`.
 - **`npm run auth:check`.** Read-only OAuth readiness check: reads the project's provider flags
-  from `/auth/v1/settings`, then probes `/auth/v1/authorize` for each app origin to prove both
-  "provider enabled" and "redirect URL allow-listed", and exits 1 with the exact console step that
-  is missing. `docs/BACKEND.md` gains a three-console walkthrough and a symptom-to-cause table.
+  from `/auth/v1/settings`, probes `/auth/v1/authorize`, then prints the callback URL and the exact
+  Site URL / Redirect URLs the project needs. It states what it cannot see: the redirect allow-list,
+  because GoTrue accepts any `redirect_to` and only falls back to Site URL at the end of the round
+  trip. `docs/BACKEND.md` gains a three-console walkthrough and a symptom-to-cause table.
 
 ### Fixed
 

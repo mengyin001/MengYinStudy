@@ -355,11 +355,13 @@ Redirect URLs:
   https://your-production-host.example/**
 ```
 
-`redirectTo` is `window.location.origin + pathname`, so a missing entry — often
-just `127.0.0.1` versus `localhost`, or a new preview host — produces
-`requested path is invalid` on the way back. Add the production origin too.
+`redirectTo` is `window.location.origin + pathname`. When that exact origin is not
+allow-listed — often just `127.0.0.1` versus `localhost`, a new preview host, or a
+Site URL still at the default `http://localhost:3000` — GoTrue quietly sends the
+`?code=…` to **Site URL** instead of failing, so the browser ends up on a port the
+app is not running on. Add the production origin too.
 
-**Verify before clicking anything** (publishable key only, read-only):
+**Verify what can be verified** (publishable key only, read-only):
 
 ```bash
 npm run auth:check
@@ -367,19 +369,29 @@ npm run auth:check -- --origin=https://your-production-host.example
 ```
 
 It reads `/auth/v1/settings` for the provider flags, then probes
-`/auth/v1/authorize` per provider and origin to prove both the provider and the
-redirect allow-list. Exit code 1 means something in the three consoles is still
-missing. `npm run backend:check` prints the same flags as one line.
+`/auth/v1/authorize` per provider — that is authoritative for "the provider is
+enabled". It **cannot** check the redirect allow-list: `/auth/v1/authorize`
+returns 302 for *any* `redirect_to`, including a bogus host, and GoTrue only
+substitutes Site URL for a non-allow-listed target at the end of the round trip.
+Only a real sign-in proves that half. Exit code 1 means a provider is still off.
+`npm run backend:check` prints the same flags as one line.
 
 **Symptom → cause**
 
 | What you see | Cause |
 | --- | --- |
 | White page with `{"error_code":"validation_failed","msg":"Unsupported provider: provider is not enabled"}` | Provider not enabled in Supabase (steps 1–3) |
+| Sign-in returns to `http://localhost:3000/?code=…` — the project's default Site URL — with nothing listening | Site URL is still the default, or the app origin is not in Redirect URLs. Set Site URL to the app origin and add `<origin>/**`. |
 | `requested path is invalid` after returning from the provider | App origin (or `/**`) missing from Redirect URLs |
+| Bounced to the Supabase domain with `redirect_to is not allowed` | Requested origin not in Redirect URLs |
 | `Error getting user email from external provider` | GitHub account hides its email: GitHub → Settings → Emails, untick *Keep my email addresses private* / verify the primary address |
 | Google `403 disallowed_useragent` | Embedded webview (Electron window): sign in from the web build |
 | Google `access_denied` / `Error 403: access_denied` | Consent screen still in Testing and the account is not a test user |
+
+A `?code=…` that lands on the wrong port is unredeemable even if something is
+serving there: PKCE keeps the code verifier in the localStorage of the origin
+that started the flow, so the callback must come back to the exact same
+origin — port included — and the code is single-use and short-lived.
 
 The app asks `/auth/v1/settings` before redirecting (`services/supabase/oauthProviders.ts`)
 and reports `provider-disabled` in the sign-in form instead of sending the tab
@@ -491,7 +503,7 @@ are only read for the matching signed-in user id.
 
 ```bash
 npm run backend:check   # publishable-key path: health, catalogue version, pack/deck counts
-npm run auth:check      # Google/GitHub provider flags + redirect allow-list probe
+npm run auth:check      # Google/GitHub provider flags + authorize probe
 npm test                # 234 unit tests, including merging and the data layer
 npm run check           # typecheck + tests + build
 npm run verify:browser  # legacy 55-step suite; needs the archived demo fixtures
@@ -503,8 +515,9 @@ npm run verify:browser  # legacy 55-step suite; needs the archived demo fixtures
 - **catalogue vN / 0 packs** — migrations applied but the seed has not run.
 - **packs and decks** — the public RLS path is working.
 
-`auth:check` exits 1 while a provider is still disabled in Supabase or an app
-origin is missing from the redirect allow-list.
+`auth:check` exits 1 while a Google/GitHub provider is still disabled in
+Supabase. It cannot see the redirect allow-list (see *Providers* above); for that
+half, sign in once and check which port the `?code=` comes back to.
 
 If you intentionally run the browser smoke test against an unprovisioned project, set
 `ALLOW_BACKEND_OFFLINE=1`; otherwise the expected Supabase 404 is reported as a page error.

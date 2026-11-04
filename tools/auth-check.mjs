@@ -5,22 +5,25 @@
  *   npm run auth:check
  *   npm run auth:check -- --origin=https://mengyinstudy.example.workers.dev
  *
- * Sign-in buttons only *build* the `/auth/v1/authorize` URL (supabase-js never
- * calls it), so a half-configured project looks like "the button is broken" and
- * the browser lands on a raw JSON page. This script asks the same endpoints the
- * browser would and reports the two things that actually break OAuth:
+ * What it can prove, and what it cannot:
  *
- *   1. the provider is not switched on in Supabase (needs client id + secret), or
- *   2. the app origin is missing from Authentication -> URL Configuration.
+ * - **Provider enabled** — authoritative. `GET /auth/v1/authorize` answers 400
+ *   `Unsupported provider: provider is not enabled` while the Google/GitHub card
+ *   is off in Supabase, and 302 to the provider once it is on.
+ * - **Redirect allow-list** — **not** verifiable from here. `/authorize` accepts
+ *   any `redirect_to` and returns 302 even for `https://bogus.example.com/`;
+ *   GoTrue only substitutes Site URL for a non-allow-listed target at the end of
+ *   the round trip. A sign-in that comes back to `http://localhost:3000` (the
+ *   project default Site URL) is the symptom of exactly that.
  *
- * It uses the publishable key only and never changes anything.
+ * Uses the publishable key only and never changes anything.
  */
 import { loadEnvFiles } from './load-env.mjs';
 
 loadEnvFiles();
 
 const args = process.argv.slice(2);
-const origins = args
+const extraOrigins = args
   .filter((arg) => arg.startsWith('--origin='))
   .map((arg) => arg.slice('--origin='.length).replace(/\/+$/, ''));
 const wanted = args.filter((arg) => arg.startsWith('--provider=')).map((arg) => arg.slice(11));
@@ -38,7 +41,7 @@ if (!url || !key) {
 }
 
 if (key.startsWith('sb_secret_')) {
-  console.error('That is a secret key. Use the publishable key; OAuth probing needs no privilege.');
+  console.error('That is a secret key. Use the publishable key; this check needs no privilege.');
   process.exit(1);
 }
 
@@ -47,7 +50,12 @@ const PROVIDERS = {
   github: { host: 'github.com', label: 'GitHub' },
 };
 const tryProviders = wanted.length > 0 ? wanted : Object.keys(PROVIDERS);
-const tryOrigins = origins.length > 0 ? origins : ['http://localhost:5173', 'http://127.0.0.1:5173'];
+const appOrigins = [
+  ...new Set([
+    ...extraOrigins,
+    ...(extraOrigins.length > 0 ? [] : ['http://localhost:5173', 'http://127.0.0.1:5173']),
+  ]),
+];
 
 const headers = { apikey: key };
 const callbackUrl = `${url}/auth/v1/callback`;
@@ -59,9 +67,9 @@ async function fetchJson(path) {
   });
   const text = await response.text();
   try {
-    return { status: response.status, body: text ? JSON.parse(text) : null, text };
+    return { status: response.status, body: text ? JSON.parse(text) : null };
   } catch {
-    return { status: response.status, body: null, text };
+    return { status: response.status, body: null };
   }
 }
 
@@ -89,36 +97,14 @@ async function probeAuthorize(provider, redirectTo) {
 
 function classify(probe, host) {
   if (probe.status >= 300 && probe.status < 400) {
-    const lowered = probe.location.toLowerCase();
-    if (lowered.includes(host)) return { verdict: 'ok' };
-    if (lowered.includes('/auth/v1/callback')) return { verdict: 'ok' };
-    return { verdict: 'unexpected', detail: probe.location };
+    return probe.location.toLowerCase().includes(host)
+      ? { verdict: 'ok' }
+      : { verdict: 'unexpected', detail: probe.location.slice(0, 120) };
   }
   if (/provider is not enabled|unsupported provider/i.test(probe.message)) {
     return { verdict: 'provider-disabled' };
   }
-  if (/redirect|not allowed|invalid.*url/i.test(probe.message)) {
-    return { verdict: 'redirect-not-allowed' };
-  }
   return { verdict: 'error', detail: probe.message || `HTTP ${probe.status}` };
-}
-
-function providerHint(provider, classifyResult, origin) {
-  const name = PROVIDERS[provider].label;
-  if (classifyResult.verdict === 'ok') return null;
-  if (classifyResult.verdict === 'provider-disabled') {
-    return (
-      `${name} is off: Dashboard -> Authentication -> Providers -> ${name} -> enable, paste ` +
-      `the OAuth client id + secret. Callback URL for the provider console: ${callbackUrl}`
-    );
-  }
-  if (classifyResult.verdict === 'redirect-not-allowed') {
-    return (
-      `Redirect ${origin}/** is not allow-listed: Dashboard -> Authentication -> URL ` +
-      `Configuration -> Redirect URLs.`
-    );
-  }
-  return `${name} probe failed: ${classifyResult.detail ?? 'unknown error'}.`;
 }
 
 async function main() {
@@ -136,7 +122,6 @@ async function main() {
     process.exit(1);
   }
 
-  const enabled = tryProviders.filter((provider) => external[provider] === true);
   console.log(
     `[auth] settings: ${tryProviders
       .map((provider) => `${provider}=${external[provider] === true}`)
@@ -150,37 +135,45 @@ async function main() {
 
   for (const provider of tryProviders) {
     if (external[provider] !== true) {
-      console.log(`[auth] ${provider}: disabled in Supabase (skipping redirect probe)`);
-      problems.push(providerHint(provider, { verdict: 'provider-disabled' }, null));
+      const name = PROVIDERS[provider].label;
+      console.log(`[auth] ${provider}: disabled in Supabase`);
+      problems.push(
+        `${name} is off: Dashboard -> Authentication -> Sign In / Providers -> ${name} -> ` +
+          `enable and paste the OAuth client id + secret. Callback for the provider console: ` +
+          callbackUrl,
+      );
       continue;
     }
-    for (const origin of tryOrigins) {
-      const probe = await probeAuthorize(provider, origin);
-      const result = classify(probe, PROVIDERS[provider].host);
-      console.log(
-        `[auth] ${provider} + ${origin}: ${result.verdict}` +
-          (result.verdict === 'ok'
-            ? ''
-            : ` (HTTP ${probe.status}${result.detail ? `: ${result.detail}` : ''})`),
-      );
-      const hint = providerHint(provider, result, origin);
-      if (hint) problems.push(hint);
+    const probe = await probeAuthorize(provider, appOrigins[0]);
+    const result = classify(probe, PROVIDERS[provider].host);
+    console.log(
+      `[auth] ${provider}: ${result.verdict === 'ok' ? 'enabled, authorize redirects to the provider' : `${result.verdict}`}` +
+        (result.verdict === 'ok' ? '' : ` (HTTP ${probe.status}${result.detail ? `: ${result.detail}` : ''})`),
+    );
+    if (result.verdict !== 'ok') {
+      problems.push(`${PROVIDERS[provider].label} authorize failed: ${result.detail ?? probe.message}`);
     }
   }
 
-  console.log(`[auth] redirect URLs to allow-list (Authentication -> URL Configuration):`);
-  for (const origin of tryOrigins) console.log(`         ${origin}/**`);
-  console.log('         https://<production-host>/**');
+  console.log('[auth] URL Configuration (Dashboard -> Authentication -> URL Configuration):');
+  console.log(`         Site URL:      ${appOrigins[0]}`);
+  for (const origin of appOrigins) console.log(`         Redirect URL:  ${origin}/**`);
+  console.log('         Redirect URL:  https://<production-host>/**');
 
-  const unique = [...new Set(problems)];
-  if (unique.length > 0) {
+  if (problems.length > 0) {
     console.error('[auth] problems:');
-    for (const problem of unique) console.error(`  - ${problem}`);
+    for (const problem of [...new Set(problems)]) console.error(`  - ${problem}`);
     console.error('[auth] see docs/BACKEND.md section 3, "Providers", for the console walkthrough.');
     process.exitCode = 1;
     return;
   }
-  console.log(`[auth] ${enabled.join(' + ')} ready for: ${tryOrigins.join(', ')}`);
+
+  console.log(
+    '[auth] providers are on. The redirect allow-list cannot be checked from here: ' +
+      'Supabase accepts any redirect_to and only falls back to Site URL at the end of the ' +
+      'round trip. If a sign-in lands on http://localhost:3000 (the project default Site URL) ' +
+      'instead of the URL above, Site URL / Redirect URLs are still wrong.',
+  );
 }
 
 main().catch((error) => {

@@ -80,16 +80,17 @@ Paste each client ID/secret into its Supabase provider page and save. Email sign
 with confirmation required. The built-in mailer is rate-limited and meant for testing; configure
 custom SMTP under **Authentication → Emails** before a real launch.
 
-Check the whole chain from the repository root — it reads the provider flags and probes
-`/auth/v1/authorize` for each origin, so it catches both a disabled provider and a missing
-redirect URL without opening a browser:
+Check the provider switch from the repository root — it reads the provider flags and probes
+`/auth/v1/authorize`, then prints the callback URL and the Site URL / Redirect URLs to set:
 
 ```bash
 npm run auth:check
 npm run auth:check -- --origin=https://<production-host>
 ```
 
-Exit code 1 means one of the three consoles is still incomplete. The full walkthrough and the
+Exit code 1 means a provider is still disabled. The redirect allow-list cannot be probed (GoTrue
+accepts any `redirect_to`); a sign-in that returns to `http://localhost:3000` — the project's default
+Site URL — means Site URL / Redirect URLs are still wrong. The full walkthrough and the
 symptom-to-cause table live in [docs/BACKEND.md](../docs/BACKEND.md#providers).
 
 ## Seed official content
