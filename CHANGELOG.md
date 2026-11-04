@@ -1,5 +1,38 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- **Account deletion, in the app.** Account → Delete account opens a confirmation sheet that
+  spells out what disappears, requires the learner to type `DELETE` (「刪除」) and then calls the
+  new `delete_account()` RPC. That function is `security definer` but deliberately narrow: it
+  deletes `auth.uid()` only, and the profile, cloud decks, library and progress rows go with it
+  through the existing `on delete cascade` constraints. A failed call leaves the learner signed in
+  so they can retry; a missing migration reports "backend not ready" instead of pretending the
+  account is gone. Satisfies Apple 5.1.1(v) and Google Play's account-deletion policy.
+- **Consent is a checkbox, and the legal links moved to the auth screens.** Creating an account
+  now requires ticking "I agree to the Terms of Service and the Privacy Policy"; the submit and
+  the OAuth buttons stay disabled until it is ticked. The sign-in, recovery and reset screens carry
+  a quiet Privacy Policy · Terms of Service row, and the always-visible sidebar links are gone.
+- **Privacy Policy and Terms of Service, written for this app and hosted here.** `/privacy/` and
+  `/terms/` are emitted at build time as self-contained HTML — no bundle, no login, readable with
+  JavaScript disabled — for the two URL fields an app store asks for. In the app, `#/privacy` and
+  `#/terms` render the same content in the reader's language, linked from Settings → About, the
+  auth screens and the sign-up consent. Wording lives in `apps/web/src/legal/content.ts`; the
+  operator name, mailbox and origin come from `VITE_LEGAL_*` and `VITE_PUBLIC_ORIGIN`.
+- **`npm run auth:check`.** Read-only OAuth readiness check: reads the project's provider flags
+  from `/auth/v1/settings`, then probes `/auth/v1/authorize` for each app origin to prove both
+  "provider enabled" and "redirect URL allow-listed", and exits 1 with the exact console step that
+  is missing. `docs/BACKEND.md` gains a three-console walkthrough and a symptom-to-cause table.
+
+### Fixed
+
+- **Google/GitHub sign-in no longer dumps GoTrue's JSON error page.** `signInWithOAuth` now checks
+  `/auth/v1/settings` first (cached ten minutes, 5 s timeout, fails open) and reports
+  `provider-disabled` inside the sign-in form. It also passes `skipBrowserRedirect: true` and
+  navigates only once the authorisation URL exists, so every other failure stays in the form too.
+
 ## 0.6.0 — 2026-11-04
 
 ### Added

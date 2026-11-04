@@ -11,6 +11,24 @@ import type {
   SignUpResult,
 } from '../types';
 import type { SupabaseClientLike } from './client';
+import { createProviderDirectory } from './oauthProviders';
+
+export interface SupabaseAuthOptions {
+  /**
+   * Project URL and publishable key. When both are present the service fetches
+   * `/auth/v1/settings` first, so an unconfigured provider is reported in the
+   * app instead of as a raw JSON error page after the browser has left.
+   */
+  url?: string;
+  key?: string;
+  fetchImpl?: typeof fetch;
+  /** Override for the redirect target; defaults to `authRedirectUrl()`. */
+  redirectTo?: () => string | null;
+  /** Override for the browser navigation; defaults to `window.location.assign`. */
+  navigate?: (url: string) => void;
+  providerTtlMs?: number;
+  now?: () => number;
+}
 
 function metaString(user: User, keys: readonly string[]): string | null {
   for (const key of keys) {
@@ -66,11 +84,33 @@ export function mapAuthEvent(event: AuthChangeEvent): AuthEvent | null {
   }
 }
 
-function redirectTo(): string | null {
-  return authRedirectUrl() || null;
+function normalizeTarget(target: string | null): string | null {
+  return target && target.trim() ? target : null;
 }
 
-export function createSupabaseAuthService(client: SupabaseClientLike): AuthService {
+function defaultNavigate(url: string): void {
+  if (typeof window === 'undefined') return;
+  window.location.assign(url);
+}
+
+export function createSupabaseAuthService(
+  client: SupabaseClientLike,
+  options: SupabaseAuthOptions = {},
+): AuthService {
+  const redirectTo = (): string | null =>
+    options.redirectTo ? normalizeTarget(options.redirectTo()) : authRedirectUrl() || null;
+  const navigate = options.navigate ?? defaultNavigate;
+  const providers =
+    options.url && options.key
+      ? createProviderDirectory({
+          url: options.url,
+          key: options.key,
+          fetchImpl: options.fetchImpl,
+          ttlMs: options.providerTtlMs,
+          now: options.now,
+        })
+      : null;
+
   const withRedirect = (): { emailRedirectTo?: string } => {
     const target = redirectTo();
     return target ? { emailRedirectTo: target } : {};
@@ -140,16 +180,38 @@ export function createSupabaseAuthService(client: SupabaseClientLike): AuthServi
           ),
         );
       }
+
+      // A disabled provider would otherwise send the whole tab to a raw JSON
+      // page from GoTrue. Ask the project first and keep the error in the UI.
+      if (providers) {
+        const enabled = await providers.isEnabled(provider);
+        if (enabled === false) {
+          return fail(
+            new BackendError(
+              'provider-disabled',
+              `${provider} sign-in is not enabled for this Supabase project.`,
+            ),
+          );
+        }
+      }
+
       try {
         const { data, error } = await client.auth.signInWithOAuth({
           provider,
           options: {
             redirectTo: target,
+            // Build the URL here so the navigation below is the single place
+            // that leaves the app: a failure stays inside the sign-in form.
+            skipBrowserRedirect: true,
             ...(provider === 'google' ? { queryParams: { prompt: 'select_account' } } : {}),
           },
         });
         if (error) throw error;
-        return ok({ url: data.url ?? null });
+        if (!data.url) {
+          throw new BackendError('unknown', 'Supabase did not return an authorisation URL.');
+        }
+        navigate(data.url);
+        return ok({ url: data.url });
       } catch (error) {
         return fail(toBackendError(error));
       }
@@ -164,6 +226,23 @@ export function createSupabaseAuthService(client: SupabaseClientLike): AuthServi
           const local = await client.auth.signOut({ scope: 'local' });
           if (local.error) throw error;
         }
+        return ok(undefined);
+      } catch (error) {
+        return fail(toBackendError(error));
+      }
+    },
+
+    async deleteAccount(): Promise<ServiceResult> {
+      try {
+        // RLS keeps `authenticated` out of auth.users; the database exposes a
+        // narrow SECURITY DEFINER function instead. It deletes `auth.uid()`
+        // only, and the profile, decks, library and progress rows cascade.
+        const { error } = await client.rpc('delete_account');
+        if (error) throw error;
+        // The auth user is gone, so the refresh token can never be redeemed
+        // again. Drop the local copy too, otherwise the app keeps showing an
+        // account that no longer exists.
+        await client.auth.signOut({ scope: 'local' });
         return ok(undefined);
       } catch (error) {
         return fail(toBackendError(error));

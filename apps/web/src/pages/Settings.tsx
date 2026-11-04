@@ -452,6 +452,14 @@ export function SettingsPage() {
               <span className="about__key">{t('settings.aboutStorage')}</span>
               <span>{storageKind}</span>
             </div>
+            <div className="about__row">
+              <span className="about__key">{t('settings.legal')}</span>
+              <span className="about__links">
+                <a href="#/privacy">{t('legal.privacy')}</a>
+                <span aria-hidden="true">·</span>
+                <a href="#/terms">{t('legal.terms')}</a>
+              </span>
+            </div>
           </div>
         </section>
       </div>

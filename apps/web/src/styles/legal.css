@@ -1,0 +1,390 @@
+/* ------------------------------------------------------------------
+   Legal documents — Privacy Policy and Terms of Service.
+
+   Rendered outside the app shell, so nothing here may depend on the
+   sidebar or page grid. The measure is the point: ~68 characters per
+   line, generous leading, one accent colour for links only.
+   ------------------------------------------------------------------ */
+
+.legal-page {
+  min-height: 100vh;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.legal-top {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s4);
+  flex-wrap: wrap;
+  padding: var(--s3) var(--s5);
+  background: var(--surface);
+  border-bottom: 1px solid var(--rule);
+}
+
+.legal-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  font-family: var(--serif);
+  font-size: var(--t-md);
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.legal-brand__mark {
+  width: 22px;
+  height: 22px;
+  color: var(--accent);
+}
+
+.legal-top__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--s4);
+}
+
+.legal-lang {
+  display: inline-flex;
+  border: 1px solid var(--rule-2);
+  border-radius: var(--r2);
+  overflow: hidden;
+}
+
+.legal-lang__btn {
+  padding: 3px 10px;
+  font-size: var(--t-xs);
+  letter-spacing: 0.04em;
+  color: var(--ink-3);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.legal-lang__btn:hover {
+  color: var(--ink);
+}
+
+.legal-lang__btn.is-active {
+  background: var(--selected-wash);
+  color: var(--ink);
+}
+
+.legal-back {
+  font-size: var(--t-sm);
+  color: var(--ink-3);
+  text-decoration: none;
+}
+
+.legal-back:hover {
+  color: var(--accent);
+}
+
+.legal-main {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: var(--s7) var(--s5) 96px;
+}
+
+.legal-doc__head {
+  padding-bottom: var(--s5);
+  border-bottom: 1px solid var(--rule);
+}
+
+.legal-eyebrow {
+  margin: 0;
+  font-size: var(--t-2xs);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.legal-doc__head h1 {
+  margin: var(--s1) 0 0;
+  font-family: var(--serif);
+  font-size: var(--t-2xl);
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+}
+
+.legal-summary {
+  margin: var(--s3) 0 0;
+  max-width: 64ch;
+  font-size: var(--t-md);
+  line-height: 1.7;
+  color: var(--ink-2);
+}
+
+.legal-meta {
+  margin: var(--s4) 0 0;
+  font-size: var(--t-xs);
+  color: var(--ink-3);
+  letter-spacing: 0.01em;
+}
+
+/* Contents ------------------------------------------------------- */
+
+.legal-toc {
+  margin: var(--s5) 0 0;
+  padding: var(--s4) 0 0;
+  border-top: 1px solid var(--rule);
+}
+
+.legal-toc__title {
+  margin: 0 0 var(--s2);
+  font-size: var(--t-2xs);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.legal-toc ol {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2px var(--s5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--t-sm);
+}
+
+.legal-toc button {
+  display: flex;
+  gap: var(--s2);
+  width: 100%;
+  padding: 3px 0;
+  font: inherit;
+  text-align: left;
+  color: var(--ink-2);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.legal-toc button:hover {
+  color: var(--accent);
+}
+
+.legal-toc__num {
+  font-family: var(--mono);
+  font-size: var(--t-2xs);
+  color: var(--ink-4);
+  padding-top: 2px;
+}
+
+/* Body ----------------------------------------------------------- */
+
+.legal-section {
+  margin-top: var(--s6);
+  scroll-margin-top: 76px;
+}
+
+.legal-section h2 {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s3);
+  margin: 0 0 var(--s2);
+  font-family: var(--serif);
+  font-size: var(--t-lg);
+  font-weight: 500;
+  letter-spacing: -0.005em;
+}
+
+.legal-section__num {
+  font-family: var(--mono);
+  font-size: var(--t-2xs);
+  letter-spacing: 0.08em;
+  color: var(--ink-4);
+}
+
+.legal-section p {
+  margin: var(--s2) 0;
+  max-width: 68ch;
+  font-size: var(--t-base);
+  line-height: 1.8;
+  color: var(--ink-2);
+}
+
+.legal-section strong {
+  color: var(--ink);
+}
+
+.legal-section ul,
+.legal-section ol {
+  margin: var(--s2) 0;
+  padding-left: var(--s5);
+  max-width: 68ch;
+}
+
+.legal-section li {
+  margin: var(--s1) 0;
+  font-size: var(--t-base);
+  line-height: 1.75;
+  color: var(--ink-2);
+}
+
+.legal-section li::marker {
+  color: var(--ink-4);
+}
+
+.legal-note {
+  border-left: 2px solid var(--rule-2);
+  padding: var(--s1) 0 var(--s1) var(--s3);
+}
+
+.legal-scroll {
+  overflow-x: auto;
+  margin: var(--s3) 0;
+}
+
+.legal-section table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--t-sm);
+}
+
+.legal-section th,
+.legal-section td {
+  text-align: left;
+  vertical-align: top;
+  padding: var(--s2) var(--s3) var(--s2) 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.legal-section th {
+  font-size: var(--t-2xs);
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  border-bottom-color: var(--rule-2);
+  white-space: nowrap;
+}
+
+.legal-section td {
+  color: var(--ink-2);
+  line-height: 1.6;
+}
+
+.legal-section td.is-key {
+  color: var(--ink);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.legal-links {
+  list-style: none;
+  padding-left: 0;
+}
+
+.legal-links li {
+  word-break: break-word;
+}
+
+.legal-doc a {
+  color: var(--accent);
+  text-underline-offset: 2px;
+}
+
+.legal-doc__foot {
+  margin-top: var(--s6);
+  padding-top: var(--s4);
+  border-top: 1px solid var(--rule);
+  font-size: var(--t-xs);
+  color: var(--ink-3);
+}
+
+.legal-doc__foot p {
+  margin: var(--s1) 0;
+  max-width: 68ch;
+  line-height: 1.7;
+}
+
+@media (max-width: 720px) {
+  .legal-main {
+    padding: var(--s5) var(--s4) 72px;
+  }
+
+  .legal-doc__head h1 {
+    font-size: var(--t-xl);
+  }
+
+  .legal-toc ol {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .legal-top {
+    padding: var(--s2) var(--s4);
+  }
+}
+
+/* The data table collapses into labelled rows. Three columns squeezed into
+   390px is unreadable, and this document is read on phones. */
+@media (max-width: 640px) {
+  .legal-scroll {
+    overflow: visible;
+  }
+
+  .legal-section table,
+  .legal-section thead,
+  .legal-section tbody,
+  .legal-section tr,
+  .legal-section th,
+  .legal-section td {
+    display: block;
+  }
+
+  .legal-section thead {
+    display: none;
+  }
+
+  .legal-section tr {
+    padding: var(--s2) 0;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .legal-section td {
+    border: 0;
+    padding: 2px 0;
+    white-space: normal;
+  }
+
+  .legal-section td::before {
+    content: attr(data-label);
+    display: block;
+    font-size: var(--t-2xs);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  .legal-section td.is-key::before {
+    content: none;
+  }
+}
+
+@media print {
+  .legal-top,
+  .legal-toc {
+    display: none;
+  }
+
+  .legal-page {
+    background: #fff;
+  }
+
+  .legal-main {
+    max-width: none;
+    padding: 0;
+  }
+
+  .legal-section {
+    break-inside: avoid;
+  }
+}

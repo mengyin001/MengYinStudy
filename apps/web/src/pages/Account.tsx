@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Icon } from '@/components/Icons';
 import { OfficialStatus } from '@/components/OfficialStatus';
-import { Note, PageHead } from '@/components/ui';
+import { Note, PageHead, Sheet } from '@/components/ui';
 import { describeBackendError } from '@/i18n/backend';
 import { formatDate } from '@/lib/format';
 import { navigate } from '@/lib/router';
@@ -29,6 +29,10 @@ export function AccountPage() {
   const [name, setName] = useState(displayName);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<BackendError | null>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteTyped, setDeleteTyped] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<BackendError | null>(null);
 
   useEffect(() => {
     setName(displayName);
@@ -59,6 +63,34 @@ export function AccountPage() {
   const provider = user?.provider ?? 'email';
   const role = profile?.role === 'admin' ? t('account.admin') : t('account.user');
   const avatar = profile?.avatarUrl ?? user?.avatarUrl ?? null;
+
+  // The learner types the word itself: a stray click on a destructive button
+  // should not end an account, and the sheet should slow the decision down.
+  const deleteWord = t('account.deleteWord');
+  const canDelete = deleteTyped.trim().toUpperCase() === deleteWord.trim().toUpperCase();
+
+  const closeDelete = () => {
+    if (deleting) return;
+    setDeleteOpen(false);
+    setDeleteTyped('');
+    setDeleteError(null);
+  };
+
+  const removeAccount = async () => {
+    if (!canDelete || deleting) return;
+    setDeleting(true);
+    setDeleteError(null);
+    const result = await actions.deleteAccount();
+    setDeleting(false);
+    if (!result.ok) {
+      setDeleteError(result.error);
+      return;
+    }
+    setDeleteOpen(false);
+    setDeleteTyped('');
+    appActions.notify('success', t('account.deleted'));
+    navigate('/', { replace: true });
+  };
 
   return (
     <div className="page">
@@ -177,6 +209,68 @@ export function AccountPage() {
       </div>
 
       <Note>{t('account.securityNote')}</Note>
+
+      <section className="panel account-danger">
+        <div className="panel__head">
+          <h2 className="panel__title">{t('account.deleteTitle')}</h2>
+        </div>
+        <p className="footnote">{t('account.deleteBody')}</p>
+        <div className="actions-row">
+          <button
+            type="button"
+            className="btn btn--danger btn--sm"
+            onClick={() => setDeleteOpen(true)}
+            disabled={busy || deleting}
+          >
+            {t('account.deleteAction')}
+          </button>
+        </div>
+      </section>
+
+      <Sheet
+        open={deleteOpen}
+        title={t('account.deleteTitle')}
+        onClose={closeDelete}
+        footer={
+          <>
+            <button type="button" className="btn btn--quiet" onClick={closeDelete} disabled={deleting}>
+              {t('common.cancel')}
+            </button>
+            <button
+              type="button"
+              className="btn btn--danger"
+              onClick={() => void removeAccount()}
+              disabled={!canDelete || deleting}
+            >
+              {deleting ? t('account.deleting') : t('account.deleteConfirm')}
+            </button>
+          </>
+        }
+      >
+        <p>{t('account.deleteSheetBody')}</p>
+        <ul className="delete-list">
+          <li>{t('account.deleteItemProfile')}</li>
+          <li>{t('account.deleteItemDecks')}</li>
+          <li>{t('account.deleteItemProgress')}</li>
+          <li>{t('account.deleteItemLibrary')}</li>
+        </ul>
+        <p className="footnote">{t('account.deleteKeep')}</p>
+        <label className="field">
+          <span className="field__label">{t('account.deleteTypeLabel', { word: deleteWord })}</span>
+          <input
+            type="text"
+            value={deleteTyped}
+            onChange={(event) => setDeleteTyped(event.target.value)}
+            autoComplete="off"
+            autoCorrect="off"
+            spellCheck={false}
+            placeholder={deleteWord}
+          />
+        </label>
+        {deleteError ? (
+          <Note tone="warn">{describeBackendError(deleteError, t)}</Note>
+        ) : null}
+      </Sheet>
     </div>
   );
 }

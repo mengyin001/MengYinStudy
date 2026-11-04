@@ -9,6 +9,7 @@ import { AccountPage } from './pages/Account';
 import { AuthPage, ResetPasswordPage } from './pages/Auth';
 import { DashboardPage } from './pages/Dashboard';
 import { GeneratePage } from './pages/Generate';
+import { LegalPage } from './pages/Legal';
 import { LibraryPage } from './pages/Library';
 import { MistakesPage } from './pages/Mistakes';
 import { PlazaPage } from './pages/Plaza';
@@ -39,6 +40,12 @@ const NAV: NavItem[] = [
 ];
 
 const AUTH_ROUTES = new Set(['/login', '/register', '/forgot-password', '/reset-password']);
+
+/** Legal documents render standalone so a store reviewer never needs the shell. */
+const LEGAL_ROUTES: Record<string, 'privacy' | 'terms'> = {
+  '/privacy': 'privacy',
+  '/terms': 'terms',
+};
 
 function isActive(routePath: string, path: string): boolean {
   if (path === '/') return routePath === '/' || routePath === '';
@@ -101,12 +108,23 @@ export default function App() {
     );
   }
 
+  const legal = LEGAL_ROUTES[route.path];
+
   // Authentication pages own the whole viewport; the app shell would distract
   // from a single decision and leaves no place for the marketing-style aside.
   if (AUTH_ROUTES.has(route.path)) {
     return (
       <>
         {page}
+        <Toast />
+      </>
+    );
+  }
+
+  if (legal) {
+    return (
+      <>
+        <LegalPage docId={legal} />
         <Toast />
       </>
     );

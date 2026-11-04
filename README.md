@@ -23,7 +23,9 @@ official content, reading another learner's data or promoting itself to admin.
 - **Official question bank** — published packs come from Supabase, are validated with the plugin
   zod schema, cached in IndexedDB for offline use and refreshed only when a catalogue version changes
 - **Accounts** — email/password, Google and GitHub OAuth, email confirmation, password recovery,
-  profile editing and role-aware access; all writes pass through Supabase RLS
+  profile editing and role-aware access; all writes pass through Supabase RLS. A learner can delete
+  their own account from Account → Delete account (the `delete_account()` RPC removes the auth user
+  and every owned row cascades), which is what the app stores require.
 - **Automatic cloud decks and live progress** — generated and imported decks upload in the
   background once signed in; progress syncs automatically and other devices update without a reload.
   There is no upload or restore button. AI keys and material files never leave the device
@@ -284,6 +286,17 @@ SQL, Java or C++. Three shapes are supported:
 
 ![Authoring skill](docs/screenshots/skill.png)
 
+## Privacy policy and terms
+
+The app publishes its own legal documents. `/privacy/` and `/terms/` are standalone HTML files
+emitted at build time — no bundle, no login, readable with JavaScript disabled — which is what an
+app store needs in those two URL fields. `#/privacy` and `#/terms` render the same text inside the
+app, linked from Settings → About and every sign-in screen; creating an account requires ticking a
+consent checkbox. Wording lives in
+[`apps/web/src/legal/content.ts`](apps/web/src/legal/content.ts), available in Traditional Chinese
+and English; see [docs/LEGAL.md](docs/LEGAL.md) for the store checklist and the environment
+variables that set the operator name and contact mailbox.
+
 ## Desktop app
 
 ```bash
@@ -305,6 +318,7 @@ mengyin-study/
 │  ├─ web/                    React 19 + Vite
 │  │  ├─ src/
 │  │  │  ├─ i18n/             messages (en + zh-Hant) and translator
+│  │  │  ├─ legal/            privacy policy and terms: bilingual content + static renderer
 │  │  │  ├─ components/       question card, code answer, verdict, results, UI primitives
 │  │  │  ├─ domain/           plugin registry, answer adapters, deck views, grading
 │  │  │  ├─ pages/            Today, Decks, Plaza, Generate, Practice, Review, Statistics, Plugins, Settings
@@ -322,7 +336,7 @@ mengyin-study/
 ├─ plugins/                   official content sources (decks + optional feature module)
 ├─ supabase/                  migrations, local config, backend README
 ├─ tools/                     sync, scaffold, backend seed/check, headless verification
-└─ docs/                      plugin guide, architecture, backend/RLS and Cloudflare guides
+└─ docs/                      plugin guide, architecture, backend/RLS, legal and Cloudflare guides
 ```
 
 ## Commands

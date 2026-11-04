@@ -37,6 +37,7 @@ function unavailableAuth(reason: string): AuthService {
     signUp: async () => error(),
     signInWithOAuth: async () => error(),
     signOut: async () => error(),
+    deleteAccount: async () => error(),
     requestPasswordReset: async () => error(),
     updatePassword: async () => error(),
     resendConfirmation: async () => error(),
@@ -132,7 +133,9 @@ export function createSupabaseBackend(
     status: config.status,
     reason: null,
     url: config.url,
-    auth: createSupabaseAuthService(client),
+    // The URL/key let the auth service check `/auth/v1/settings` before an OAuth
+    // redirect, so a disabled provider is an in-app message, not a JSON page.
+    auth: createSupabaseAuthService(client, { url: config.url, key: config.key }),
     profiles: createSupabaseProfileService(client),
     official: createSupabaseOfficialService(client),
     userDecks: createSupabaseUserDeckService(client),

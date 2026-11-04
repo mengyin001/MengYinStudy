@@ -110,6 +110,8 @@ export interface AuthActions {
   signUp(input: SignUpInput): Promise<ServiceResult<SignUpResult>>;
   signInWithOAuth(provider: OAuthProvider): Promise<ServiceResult<{ url: string | null }>>;
   signOut(): Promise<ServiceResult>;
+  /** Delete the signed-in account for good; resolves after the app is signed out. */
+  deleteAccount(): Promise<ServiceResult>;
   requestPasswordReset(email: string): Promise<ServiceResult>;
   updatePassword(password: string): Promise<ServiceResult>;
   resendConfirmation(email: string): Promise<ServiceResult>;
@@ -321,6 +323,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return result;
   }, []);
 
+  const deleteAccount = useCallback(async (): Promise<ServiceResult> => {
+    const result = await backend.auth.deleteAccount();
+    if (result.ok) {
+      // The auth user no longer exists; the service already dropped the local
+      // session. Clear the same markers signOut clears, so a later sign-in on
+      // this browser cannot resume the deleted account's flow.
+      activeUser.current = null;
+      sessionStorage.removeItem(RECOVERY_MARKER);
+      sessionStorage.removeItem(OAUTH_RETURN);
+      dispatch({ type: 'anonymous' });
+    } else {
+      dispatch({ type: 'error', error: result.error });
+    }
+    return result;
+  }, []);
+
   const requestPasswordReset = useCallback(async (email: string) => {
     markRecovery();
     const result = await backend.auth.requestPasswordReset(email);
@@ -393,6 +411,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signUp,
       signInWithOAuth,
       signOut,
+      deleteAccount,
       requestPasswordReset,
       updatePassword,
       resendConfirmation,
@@ -410,6 +429,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signUp,
       signInWithOAuth,
       signOut,
+      deleteAccount,
       requestPasswordReset,
       updatePassword,
       resendConfirmation,

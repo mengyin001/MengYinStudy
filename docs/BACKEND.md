@@ -280,7 +280,9 @@ variable.
 - **Email sign-in** with error mapping (`invalid_credentials`, `email_not_confirmed`,
   `rate_limited`, …) and a show/hide password control.
 - **Google and GitHub OAuth** through `signInWithOAuth` with PKCE and a `redirectTo` at the app's
-  bare document URL. The hash router owns `#/…`, so auth callbacks never land inside a route.
+  bare document URL. The hash router owns `#/…`, so auth callbacks never land inside a route. The
+  provider flag is checked against `/auth/v1/settings` first, so a project with the provider still
+  switched off answers in the form instead of navigating to a JSON page.
 - **Password recovery** — `resetPasswordForEmail`, a `PASSWORD_RECOVERY` event (or the stored
   recovery hint after a same-browser reload), and `updateUser({ password })`.
 - **Sign out** — server revoke first, with a local-scope fallback when offline.
@@ -315,9 +317,33 @@ manual upload or restore button. **Reset progress** and **Import backup** bump `
 push, so the replacement wins over copies on other devices; ordinary editing keeps the epoch and
 merges. The JSON export/import remains as a manual backup independent of the live row.
 
-### Redirect URLs
+### Providers
 
-Set these in **Supabase → Authentication → URL Configuration**:
+OAuth needs three consoles to agree. The one value that never changes is the
+callback Supabase exposes to the provider:
+
+```
+https://<project-ref>.supabase.co/auth/v1/callback
+```
+
+**1. Google** — Google Cloud Console → APIs & Services → Credentials →
+Create credentials → OAuth client ID → **Web application**.
+
+- *Authorized redirect URIs*: the callback above, exactly (no trailing slash).
+- *OAuth consent screen*: External. While the app is in **Testing** only the
+  accounts listed under *Test users* can sign in; publish it for real use.
+- Copy the client ID and secret.
+
+**2. GitHub** — GitHub → Settings → Developer settings → OAuth Apps → New OAuth App.
+
+- *Homepage URL*: the app origin, e.g. `http://localhost:5173`.
+- *Authorization callback URL*: the callback above.
+- Generate a client secret and copy it.
+
+**3. Supabase** — Dashboard → Authentication.
+
+- **Providers** → Google → enable, paste client id + secret, Save. Same for GitHub.
+- **URL Configuration** → Site URL plus the redirect URLs listed below.
 
 ```
 Site URL:        http://localhost:5173
@@ -329,28 +355,39 @@ Redirect URLs:
   https://your-production-host.example/**
 ```
 
-For hosted projects also add the production origin. The app computes `redirectTo` from
-`window.location.origin + pathname`; it does not hard-code a port.
+`redirectTo` is `window.location.origin + pathname`, so a missing entry — often
+just `127.0.0.1` versus `localhost`, or a new preview host — produces
+`requested path is invalid` on the way back. Add the production origin too.
 
-### Providers
+**Verify before clicking anything** (publishable key only, read-only):
 
-Configure **Google** and **GitHub** under **Authentication → Providers**. Each provider needs its
-own OAuth client, with the callback URL:
-
+```bash
+npm run auth:check
+npm run auth:check -- --origin=https://your-production-host.example
 ```
-https://<project-ref>.supabase.co/auth/v1/callback
-```
 
-- **Google:** Google Cloud Console → APIs & Services → Credentials → OAuth client ID → Web
-  application. Add the callback above as an **Authorized redirect URI**, then paste the client ID
-  and secret into Supabase.
-- **GitHub:** GitHub → Settings → Developer settings → OAuth Apps → New OAuth App. Set the
-  **Authorization callback URL** to the callback above, then paste the client ID and secret into
-  Supabase.
+It reads `/auth/v1/settings` for the provider flags, then probes
+`/auth/v1/authorize` per provider and origin to prove both the provider and the
+redirect allow-list. Exit code 1 means something in the three consoles is still
+missing. `npm run backend:check` prints the same flags as one line.
 
-If the provider is still disabled, Supabase's `/auth/v1/authorize` returns
-`{"error_code":"validation_failed","msg":"Unsupported provider: provider is not enabled"}` as a raw
-JSON page. Email confirmation should stay on; configure custom SMTP before a real launch.
+**Symptom → cause**
+
+| What you see | Cause |
+| --- | --- |
+| White page with `{"error_code":"validation_failed","msg":"Unsupported provider: provider is not enabled"}` | Provider not enabled in Supabase (steps 1–3) |
+| `requested path is invalid` after returning from the provider | App origin (or `/**`) missing from Redirect URLs |
+| `Error getting user email from external provider` | GitHub account hides its email: GitHub → Settings → Emails, untick *Keep my email addresses private* / verify the primary address |
+| Google `403 disallowed_useragent` | Embedded webview (Electron window): sign in from the web build |
+| Google `access_denied` / `Error 403: access_denied` | Consent screen still in Testing and the account is not a test user |
+
+The app asks `/auth/v1/settings` before redirecting (`services/supabase/oauthProviders.ts`)
+and reports `provider-disabled` in the sign-in form instead of sending the tab
+to that JSON page; the check is cached for ten minutes and fails open, so an
+unreachable probe never blocks a provider that is actually on. `signInWithOAuth`
+uses `skipBrowserRedirect: true` and navigates only after the URL is built, so
+every other failure also stays in the form. Email confirmation should stay on;
+configure custom SMTP before a real launch.
 
 ### Desktop shell
 
@@ -454,7 +491,8 @@ are only read for the matching signed-in user id.
 
 ```bash
 npm run backend:check   # publishable-key path: health, catalogue version, pack/deck counts
-npm test                # 225 unit tests, including merging and the data layer
+npm run auth:check      # Google/GitHub provider flags + redirect allow-list probe
+npm test                # 234 unit tests, including merging and the data layer
 npm run check           # typecheck + tests + build
 npm run verify:browser  # legacy 55-step suite; needs the archived demo fixtures
 ```
@@ -464,6 +502,9 @@ npm run verify:browser  # legacy 55-step suite; needs the archived demo fixtures
 - **auth ok / catalogue not ready** — migrations have not been applied.
 - **catalogue vN / 0 packs** — migrations applied but the seed has not run.
 - **packs and decks** — the public RLS path is working.
+
+`auth:check` exits 1 while a provider is still disabled in Supabase or an app
+origin is missing from the redirect allow-list.
 
 If you intentionally run the browser smoke test against an unprovisioned project, set
 `ALLOW_BACKEND_OFFLINE=1`; otherwise the expected Supabase 404 is reported as a page error.

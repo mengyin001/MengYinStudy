@@ -19,6 +19,15 @@ export const messages = {
   'nav.plugins': m('Plugins', '插件'),
   'nav.settings': m('Settings', '設定'),
 
+  'legal.privacy': m('Privacy Policy', '隱私權政策'),
+  'legal.terms': m('Terms of Service', '服務條款'),
+
+  'settings.legal': m('Legal', '法律條款'),
+
+  'auth.consentPrefix': m('By creating an account you agree to the ', '建立帳號即表示你同意'),
+  'auth.consentAnd': m(' and the ', '與'),
+  'auth.consentEnd': m('.', '。'),
+
   'side.streak': m('{n}-day streak', '連續 {n} 日'),
   'side.due': m('{n} due', '{n} 題到期'),
 
@@ -726,6 +735,39 @@ export const messages = {
   'account.admin': m('Administrator', '管理員'),
   'account.user': m('Learner', '學習者'),
 
+  'account.deleteTitle': m('Delete account', '刪除帳號'),
+  'account.deleteBody': m(
+    'Deleting your account removes the cloud decks, progress and notes that belong to it. It cannot be undone.',
+    '刪除帳號會一併清除雲端上的題庫、學習進度與筆記，且無法復原。',
+  ),
+  'account.deleteAction': m('Delete account…', '刪除帳號…'),
+  'account.deleteSheetBody': m(
+    'This permanently deletes your MengYin Study account and everything stored in the cloud for it:',
+    '這會永久刪除你的 MengYin Study 帳號，以及雲端上屬於它的所有資料：',
+  ),
+  'account.deleteItemProfile': m('your profile and sign-in', '你的個人資料與登入方式'),
+  'account.deleteItemDecks': m(
+    'decks you generated or imported, including their questions',
+    '你生成或匯入的題庫（含題目）',
+  ),
+  'account.deleteItemProgress': m(
+    'attempts, mistakes, notes, review schedule and exam results',
+    '作答紀錄、錯題、筆記、複習排程與測驗結果',
+  ),
+  'account.deleteItemLibrary': m('the official decks in your library', '你加入個人題庫的官方題庫'),
+  'account.deleteKeep': m(
+    'Practice you did as a guest stays on this device and is not touched.',
+    '你以訪客身分練習的資料留在這台裝置，不受影響。',
+  ),
+  'account.deleteTypeLabel': m('Type {word} to confirm', '輸入「{word}」以確認'),
+  'account.deleteWord': m('DELETE', '刪除'),
+  'account.deleteConfirm': m('Delete for good', '永久刪除'),
+  'account.deleting': m('Deleting…', '刪除中…'),
+  'account.deleted': m(
+    'Your account and its cloud data have been deleted.',
+    '帳號與雲端資料已刪除。',
+  ),
+
   'auth.eyebrow': m('MengYin Study', 'MengYin Study'),
   'auth.asideTitle': m('Your revision, kept where it belongs.', '你的溫習，放在它該在的地方。'),
   'auth.asideBody': m(
@@ -804,6 +846,10 @@ export const messages = {
   'auth.validation.displayName': m('Enter a display name.', '請輸入顯示名稱。'),
   'auth.validation.password': m('Use at least 8 characters for the password.', '密碼至少要有 8 個字元。'),
   'auth.validation.match': m('The two passwords do not match.', '兩次輸入的密碼不一致。'),
+  'auth.validation.consent': m(
+    'Tick the box to accept the Terms of Service and the Privacy Policy.',
+    '請先勾選同意服務條款與隱私權政策。',
+  ),
   'auth.resetLinkInvalidTitle': m('This link is no longer valid', '這個連結已失效'),
   'auth.resetLinkInvalidBody': m(
     'Request a new password-reset email, or sign in if you remember your password.',

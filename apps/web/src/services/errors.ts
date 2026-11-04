@@ -120,6 +120,7 @@ export function toBackendError(error: unknown): BackendError {
       }
       return new BackendError('invalid-data', message);
     case 'PGRST205':
+    case 'PGRST202':
     case '42P01':
       return new BackendError('not-ready', message, { details: details ?? undefined });
     case 'PGRST116':

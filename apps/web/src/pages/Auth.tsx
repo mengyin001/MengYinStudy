@@ -187,6 +187,11 @@ export function AuthShell({
           {children}
         </div>
         {footer ? <div className="auth-switch">{footer}</div> : null}
+        <div className="auth-legal">
+          <a href="#/terms">{t('legal.terms')}</a>
+          <span aria-hidden="true">·</span>
+          <a href="#/privacy">{t('legal.privacy')}</a>
+        </div>
       </main>
     </div>
   );
@@ -200,6 +205,7 @@ export function AuthPage({ mode }: { mode: Mode }) {
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [displayName, setDisplayName] = useState('');
+  const [agreed, setAgreed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | BackendError | null>(null);
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
@@ -235,6 +241,10 @@ export function AuthPage({ mode }: { mode: Mode }) {
 
     if (mode === 'signup' && displayName.trim().length === 0) {
       setError(t('auth.validation.displayName'));
+      return;
+    }
+    if (mode === 'signup' && !agreed) {
+      setError(t('auth.validation.consent'));
       return;
     }
     if (mode !== 'forgot') {
@@ -398,7 +408,10 @@ export function AuthPage({ mode }: { mode: Mode }) {
 
       {mode === 'signin' || mode === 'signup' ? (
         <>
-          <OAuthButtons onPick={(provider) => void oauth(provider)} disabled={!configured || busy} />
+          <OAuthButtons
+            onPick={(provider) => void oauth(provider)}
+            disabled={!configured || busy || (mode === 'signup' && !agreed)}
+          />
           <div className="auth-divider">
             <span>{t('auth.or')}</span>
           </div>
@@ -457,7 +470,11 @@ export function AuthPage({ mode }: { mode: Mode }) {
           </button>
         ) : null}
 
-        <button type="submit" className="btn btn--primary auth-submit" disabled={!configured || busy}>
+        <button
+          type="submit"
+          className="btn btn--primary auth-submit"
+          disabled={!configured || busy || (mode === 'signup' && !agreed)}
+        >
           {busy
             ? t('auth.working')
             : mode === 'signin'
@@ -467,6 +484,24 @@ export function AuthPage({ mode }: { mode: Mode }) {
                 : t('auth.sendReset')}
         </button>
       </form>
+
+      {mode === 'signup' ? (
+        <label className="auth-consent">
+          <input
+            type="checkbox"
+            className="auth-consent__box"
+            checked={agreed}
+            onChange={(event) => setAgreed(event.target.checked)}
+          />
+          <span>
+            {t('auth.consentPrefix')}
+            <a href="#/terms">{t('legal.terms')}</a>
+            {t('auth.consentAnd')}
+            <a href="#/privacy">{t('legal.privacy')}</a>
+            {t('auth.consentEnd')}
+          </span>
+        </label>
+      ) : null}
 
       <p className="auth-local-note">{t('auth.localNote')}</p>
     </AuthShell>

@@ -1,5 +1,5 @@
 /* Offline shell for MengYin Study. Registered only in production builds. */
-const VERSION = 'mengyin-study-v6';
+const VERSION = 'mengyin-study-v7';
 const SHELL = ['./', './index.html', './manifest.webmanifest'];
 
 self.addEventListener('install', (event) => {
@@ -31,8 +31,14 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          const copy = response.clone();
-          caches.open(VERSION).then((cache) => cache.put('./index.html', copy));
+          // Only the app shell belongs in the offline cache. /privacy/ and
+          // /terms/ are standalone documents; storing one as the shell would
+          // replace the offline app with a legal page.
+          const url = new URL(request.url);
+          if (url.pathname === new URL(self.registration.scope).pathname) {
+            const copy = response.clone();
+            caches.open(VERSION).then((cache) => cache.put('./index.html', copy));
+          }
           return response;
         })
         .catch(() => caches.match('./index.html').then((cached) => cached ?? caches.match('./'))),

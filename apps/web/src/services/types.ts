@@ -54,6 +54,12 @@ export interface AuthService {
   signUp(input: SignUpInput): Promise<ServiceResult<SignUpResult>>;
   signInWithOAuth(provider: OAuthProvider): Promise<ServiceResult<{ url: string | null }>>;
   signOut(): Promise<ServiceResult>;
+  /**
+   * Permanently deletes the signed-in learner's account and everything owned
+   * by it (profile, cloud decks, library, progress). The local session is
+   * dropped as part of the call.
+   */
+  deleteAccount(): Promise<ServiceResult>;
   requestPasswordReset(email: string): Promise<ServiceResult>;
   updatePassword(password: string): Promise<ServiceResult>;
   resendConfirmation(email: string): Promise<ServiceResult>;

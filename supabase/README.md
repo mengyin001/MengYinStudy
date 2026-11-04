@@ -69,13 +69,28 @@ Redirect URLs:
 `https://yukmxeieklwgnwdcqwpb.supabase.co/auth/v1/callback`.
 
 - Google: Cloud Console → APIs & Services → Credentials → OAuth client ID (Web application);
-  add that callback as an Authorized redirect URI.
+  add that callback as an Authorized redirect URI. While the consent screen is in **Testing**,
+  only the accounts under *Test users* can sign in.
 - GitHub: Settings → Developer settings → OAuth Apps → New OAuth App; set the Authorization
-  callback URL to that callback.
+  callback URL to that callback. If the GitHub account hides its email (Settings → Emails,
+  *Keep my email addresses private*), Supabase rejects the sign-in with
+  `Error getting user email from external provider`.
 
 Paste each client ID/secret into its Supabase provider page and save. Email sign-up is on by default
 with confirmation required. The built-in mailer is rate-limited and meant for testing; configure
 custom SMTP under **Authentication → Emails** before a real launch.
+
+Check the whole chain from the repository root — it reads the provider flags and probes
+`/auth/v1/authorize` for each origin, so it catches both a disabled provider and a missing
+redirect URL without opening a browser:
+
+```bash
+npm run auth:check
+npm run auth:check -- --origin=https://<production-host>
+```
+
+Exit code 1 means one of the three consoles is still incomplete. The full walkthrough and the
+symptom-to-cause table live in [docs/BACKEND.md](../docs/BACKEND.md#providers).
 
 ## Seed official content
 

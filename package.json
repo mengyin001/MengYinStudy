@@ -23,6 +23,7 @@
     "serve:dist": "node tools/serve-dist.mjs",
     "verify:browser": "node tools/browser-check.mjs",
     "backend:check": "node tools/check-backend.mjs",
+    "auth:check": "node tools/auth-check.mjs",
     "db:migrate": "node tools/apply-migrations.mjs",
     "seed:official": "node tools/seed-official.mjs",
     "icons": "python tools/make-icons.py",
