@@ -1,0 +1,17 @@
+# Cloudflare Pages headers for the static build.
+#
+# The code sandbox iframe has an opaque origin (sandbox="allow-scripts"), so
+# its requests for Pyodide / sql.js assets are cross-origin. These files are
+# versioned and immutable, which makes a wildcard CORS grant safe here.
+
+/runtimes/*
+  Access-Control-Allow-Origin: *
+  Cross-Origin-Resource-Policy: cross-origin
+  Cache-Control: public, max-age=31536000, immutable
+
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin

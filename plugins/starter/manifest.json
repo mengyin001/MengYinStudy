@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "id": "starter.study",
+  "name": "學習方法（示範題庫）",
+  "version": "1.0.0",
+  "description": "五題示範：單選、多選、是非、填空與簡答。可直接替換成你的溫習內容。",
+  "author": "MengYin Study",
+  "tags": ["學習方法", "示範"],
+  "content": ["./decks/*.json"]
+}

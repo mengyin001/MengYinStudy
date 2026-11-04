@@ -1,0 +1,70 @@
+{
+  "id": "study-basics",
+  "title": "學習方法：提取與間隔",
+  "description": "用五條題目示範內建題型；把題目換成你的內容即可。",
+  "tags": ["學習方法", "示範"],
+  "examMinutes": 8,
+  "questions": [
+    {
+      "id": "study-active-recall",
+      "type": "single",
+      "prompt": "溫習時，以下哪一種做法最能有效檢驗自己是否真正記住內容？",
+      "options": [
+        { "id": "a", "text": "反覆閱讀課本及筆記" },
+        { "id": "b", "text": "合上書本，用自己的話寫出重點" },
+        { "id": "c", "text": "把老師的簡報由頭到尾看一次" },
+        { "id": "d", "text": "用螢光筆畫滿重點" }
+      ],
+      "answer": { "kind": "single", "optionId": "b" },
+      "explanation": "合上書本回想（提取練習）會迫使大腦重建知識，比被動重讀更容易暴露記憶缺口。",
+      "tags": ["提取練習", "溫習方法"],
+      "difficulty": 1
+    },
+    {
+      "id": "study-recall-methods",
+      "type": "multi",
+      "prompt": "以下哪些屬於「主動回憶」（active recall）？可選多項。",
+      "options": [
+        { "id": "a", "text": "用單字卡自我測驗" },
+        { "id": "b", "text": "重讀同一段文字三次" },
+        { "id": "c", "text": "做練習題後對答案" },
+        { "id": "d", "text": "合上筆記默寫重點" }
+      ],
+      "answer": { "kind": "multi", "optionIds": ["a", "c", "d"] },
+      "explanation": "B 是被動重讀；其餘選項都要求你先從記憶中提取內容。",
+      "tags": ["提取練習", "學習方法"],
+      "difficulty": 2
+    },
+    {
+      "id": "study-spacing-true",
+      "type": "boolean",
+      "prompt": "把溫習分散在幾天進行，通常比在同一晚密集溫習更有利於長期記憶。",
+      "answer": { "kind": "boolean", "value": true },
+      "explanation": "這就是間隔效應（spacing effect）；分散練習讓每次提取都稍微費力，記憶更牢固。",
+      "tags": ["間隔練習", "學習方法"],
+      "difficulty": 1
+    },
+    {
+      "id": "study-spacing-fill",
+      "type": "fill",
+      "prompt": "把學習時間分散到不同日子，而不是一次過 cram，這種安排稱為 ____ 練習。",
+      "answer": { "kind": "fill", "accept": ["間隔", "分散", "spaced", "spacing"] },
+      "explanation": "間隔練習（spaced practice）利用遺忘後再提取的過程強化記憶。",
+      "tags": ["間隔練習"],
+      "difficulty": 1
+    },
+    {
+      "id": "study-recall-short",
+      "type": "short",
+      "prompt": "用自己的話簡述「提取練習」為何比反覆重讀更有效。",
+      "answer": {
+        "kind": "short",
+        "model": "提取練習要求在不看答案的情況下回想內容，能暴露記憶缺口，並透過每次成功提取強化記憶路徑；重讀則容易產生「熟悉感」，令人高估自己已掌握。",
+        "keywords": ["回想", "記憶", "缺口", "熟悉感"]
+      },
+      "explanation": "簡答由自己對照模型答案評分；關鍵詞用於提示。",
+      "tags": ["提取練習", "簡答"],
+      "difficulty": 2
+    }
+  ]
+}

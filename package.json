@@ -1,0 +1,40 @@
+{
+  "name": "mengyin-study",
+  "version": "0.6.0",
+  "private": true,
+  "type": "module",
+  "description": "MengYin Study — a plugin-driven revision and practice app (web + desktop)",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm run plugins:sync && npm run runtimes:fetch && npm run dev --workspace @mengyin/web",
+    "build": "npm run plugins:sync && npm run runtimes:fetch && npm run build --workspace @mengyin/web",
+    "preview": "npm run preview --workspace @mengyin/web",
+    "runtimes:fetch": "node tools/fetch-code-runtimes.mjs",
+    "plugins:sync": "node tools/sync-plugins.mjs",
+    "plugins:watch": "node tools/sync-plugins.mjs --watch",
+    "plugin:new": "node tools/new-plugin.mjs",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "npm run typecheck && npm run test && npm run build",
+    "serve:dist": "node tools/serve-dist.mjs",
+    "verify:browser": "node tools/browser-check.mjs",
+    "backend:check": "node tools/check-backend.mjs",
+    "db:migrate": "node tools/apply-migrations.mjs",
+    "seed:official": "node tools/seed-official.mjs",
+    "icons": "python tools/make-icons.py",
+    "desktop": "npm run build && npm run start --workspace @mengyin/desktop",
+    "desktop:dev": "npm run build && npm run dev --workspace @mengyin/desktop"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "pg": "^8.23.1",
+    "puppeteer-core": "^25.16.0",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.7",
+    "vitest": "^4.1.12"
+  }
+}

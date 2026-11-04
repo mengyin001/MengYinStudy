@@ -1,0 +1,32 @@
+{
+  "name": "@mengyin/web",
+  "version": "0.6.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview --port 4173 --strictPort",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@mengyin/core": "*",
+    "@mengyin/plugin-sdk": "*",
+    "@supabase/supabase-js": "2.118.0",
+    "pdfjs-dist": "^5.7.284",
+    "react": "^19.1.10",
+    "react-dom": "^19.1.10",
+    "sucrase": "^3.35.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@live-codes/java-wasm": "^0.1.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^5.2.0",
+    "JSCPP": "^2.0.9",
+    "pyodide": "^0.29.5",
+    "sql.js": "^1.15.2",
+    "vite": "^7.3.7"
+  }
+}
