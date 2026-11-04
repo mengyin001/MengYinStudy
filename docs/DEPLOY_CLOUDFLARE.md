@@ -34,7 +34,7 @@ or a `.env` file in the repository; AI keys are entered in the app and stay in I
 ## Deploying as a Worker with static assets
 
 `wrangler.jsonc` in the repository root configures Cloudflare Workers Builds to do the same
-thing: `name` is `mengyin-study` and `assets.directory` is `./apps/web/dist`. Wrangler uploads
+thing: `name` is `mengyinstudy` and `assets.directory` is `./apps/web/dist`. Wrangler uploads
 that folder as static assets; no Worker code runs.
 
 | Setting | Value |
@@ -55,7 +55,7 @@ Do not "fix" that by pointing the root directory at `apps/web`; the build would 
 workspace install and produce a `dist` without runtimes. Keep the root at `/` and keep
 `wrangler.jsonc`.
 
-If the Worker is named something other than `mengyin-study`, change `name` in `wrangler.jsonc`
+If the Worker is named something other than `mengyinstudy`, change `name` in `wrangler.jsonc`
 to match it, or the deploy creates a second Worker instead of updating yours. Verify the config
 without uploading anything:
 
