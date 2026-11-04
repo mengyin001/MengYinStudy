@@ -31,6 +31,38 @@ Set the same public environment variables you use locally:
 Only `VITE_*` values are exposed to the browser. Never put a Supabase secret key, an AI provider key
 or a `.env` file in the repository; AI keys are entered in the app and stay in IndexedDB.
 
+## Deploying as a Worker with static assets
+
+`wrangler.jsonc` in the repository root configures Cloudflare Workers Builds to do the same
+thing: `name` is `mengyin-study` and `assets.directory` is `./apps/web/dist`. Wrangler uploads
+that folder as static assets; no Worker code runs.
+
+| Setting | Value |
+| --- | --- |
+| Root directory | `/` (the repository root) |
+| Build command | `npm run build` |
+| Deploy command | `npx wrangler deploy` |
+
+The root directory has to stay `/`: `npm run build` installs the `packages/*` workspaces and
+runs `runtimes:fetch`. That is exactly why the deploy needs an explicit config — `wrangler
+deploy` run at an npm workspace root without one refuses to guess which project to target:
+
+> The Cloudflare application detection logic has been run in the root of a workspace instead
+> of targeting a specific project. Change your working directory to one of the applications
+> in the workspace and try again.
+
+Do not "fix" that by pointing the root directory at `apps/web`; the build would then lose the
+workspace install and produce a `dist` without runtimes. Keep the root at `/` and keep
+`wrangler.jsonc`.
+
+If the Worker is named something other than `mengyin-study`, change `name` in `wrangler.jsonc`
+to match it, or the deploy creates a second Worker instead of updating yours. Verify the config
+without uploading anything:
+
+```bash
+npx wrangler deploy --dry-run
+```
+
 ## What the build contains
 
 ```

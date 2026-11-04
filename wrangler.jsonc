@@ -1,0 +1,21 @@
+{
+  "name": "mengyin-study",
+  "compatibility_date": "2026-11-01",
+
+  // MengYin Study is a static Vite build: there is no Worker code and no API
+  // route. Wrangler only uploads apps/web/dist as static assets.
+  //
+  // This file also tells Wrangler which project to deploy. Without it,
+  // `wrangler deploy` run from the repository root refuses to guess, because
+  // the root package.json declares npm `workspaces`:
+  //   "The Cloudflare application detection logic has been run in the root of
+  //    a workspace instead of targeting a specific project."
+  "assets": {
+    "directory": "./apps/web/dist",
+
+    // The app uses hash routing (/#/library), so a missing file must stay a
+    // 404. Never add an SPA catch-all: a missing runtime would return HTML
+    // with a 200 and surface as a confusing WebAssembly error.
+    "not_found_handling": "none"
+  }
+}
