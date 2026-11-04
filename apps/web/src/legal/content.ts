@@ -24,6 +24,7 @@ export type Block =
   | { kind: 'ol'; items: Bi[] }
   | { kind: 'note'; text: Bi }
   | { kind: 'table'; head: Bi[]; rows: Bi[][] }
+  | { kind: 'links'; items: { label: Bi; href: string }[] }
   | { kind: 'contact' };
 
 export interface Section {
@@ -56,6 +57,10 @@ const table = (head: [string, string][], ...rows: [string, string][][]): Block =
   rows: rows.map((row) => row.map(([zh, en]) => ({ zh, en }))),
 });
 const contact = (): Block => ({ kind: 'contact' });
+const links = (...items: [string, string, string][]): Block => ({
+  kind: 'links',
+  items: items.map(([zh, en, href]) => ({ label: { zh, en }, href })),
+});
 
 const s = (id: string, zh: string, en: string, blocks: Block[]): Section => ({
   id,
@@ -113,6 +118,17 @@ export const privacyPolicy: LegalDoc = {
             ['雲端（Supabase）', 'Cloud (Supabase)'],
           ],
           [
+            [
+              'Google 登入',
+              'Google Sign-In',
+            ],
+            [
+              'Google 帳號識別碼、名稱、電子郵件、頭像網址（僅在你選擇 Google 登入時）',
+              'Google account ID, name, email address and avatar URL (only when you choose Google Sign-In)',
+            ],
+            ['雲端（Supabase Auth）', 'Cloud (Supabase Auth)'],
+          ],
+          [
             ['自建題庫', 'Your decks'],
             ['標題、說明、標籤、題目與答案', 'Title, description, tags, questions and answers'],
             ['雲端（只有你的帳號可讀）與本機', 'Cloud (readable only by your account) and this device'],
@@ -155,6 +171,53 @@ export const privacyPolicy: LegalDoc = {
             '我們不會要求你的電話號碼、地址、生日、付款資料或身分證件。',
             'We never ask for your phone number, address, date of birth, payment details or identity documents.',
           ],
+        ),
+      ],
+    ),
+
+    s(
+      'google',
+      'Google 登入與 Google API 資料',
+      'Google Sign-In and Google API data',
+      [
+        p(
+          'Google 登入是選用的。若你選擇以 Google 登入，我們只會向 Google 要求基本個人資料：你的 Google 帳號識別碼、電子郵件地址、顯示名稱與頭像網址（OAuth scope：openid、email、profile）。我們不會要求 Gmail、Google Drive、Google 日曆、聯絡人、相簿或其他 Google 服務的存取權。',
+          'Google Sign-In is optional. If you choose it, we request only basic profile data from Google: your Google account ID, email address, display name and profile picture URL (OAuth scopes: openid, email, profile). We do not request access to Gmail, Google Drive, Google Calendar, Contacts, Photos or any other Google service.',
+        ),
+        p(
+          '我們只會把這些資料用於建立與驗證你的帳號、顯示你的名稱與頭像，以及讓你登入。我們不會把 Google 使用者資料用於廣告、行為分析、個人輪廓、出售或出租，也不會用於訓練 AI 模型。除了提供本服務所需的基礎設施供應商（Supabase、Cloudflare），或法律要求的情況外，我們不會把 Google 使用者資料分享給其他第三方。',
+          'We use this data only to create and authenticate your account, display your name and avatar, and sign you in. We do not use Google user data for advertising, behavioural analytics, profiling, sale or rental, and we do not use it to train AI models. We do not share Google user data with third parties except the infrastructure providers needed to run the service (Supabase and Cloudflare) or where the law requires it.',
+        ),
+        p(
+          'MengYin Study 對 Google API 所取得資訊的使用與傳輸，遵守 Google API 服務使用者資料政策，包括其中的 Limited Use（有限使用）要求。Google 使用者資料不會被用於提供或改善其他應用程式、裝置或 AI 模型。',
+          "MengYin Study's use and transfer of information received from Google APIs adheres to the Google API Services User Data Policy, including the Limited Use requirements. Google user data is not used to provide or improve other apps, devices or AI models.",
+        ),
+        ul(
+          [
+            '你可以隨時在「帳號」頁面刪除帳號；與 Google 登入連結的帳號資料會一併刪除。你也可以來信要求刪除。',
+            'You can delete your account at any time from the Account page; the account data linked to your Google sign-in is deleted with it. You can also write to us to request deletion.',
+          ],
+          [
+            '如要撤銷 Google 存取權，請前往 Google 帳號的「安全性 → 第三方應用程式與服務」，移除 MengYin Study。撤銷後你將無法再以 Google 登入，但可改用電子郵件與密碼。',
+            'To revoke Google access, open your Google Account’s Security → Third-party apps & services and remove MengYin Study. After revocation you can no longer sign in with Google, but you can use email and password.',
+          ],
+          [
+            'Google 的隱私權政策與 Google API 服務使用者資料政策適用於 Google 對你資料的處理。',
+            "Google's Privacy Policy and Google API Services User Data Policy apply to Google's handling of your data.",
+          ],
+        ),
+        links(
+          [
+            'Google API 服務使用者資料政策',
+            'Google API Services User Data Policy',
+            'https://developers.google.com/terms/api-services-user-data-policy',
+          ],
+          ['Google 隱私權政策', 'Google Privacy Policy', 'https://policies.google.com/privacy'],
+          ['Google API 服務條款', 'Google APIs Terms of Service', 'https://developers.google.com/terms'],
+        ),
+        note(
+          'Google API 只用於登入，不用於 AI 出題。我們不會使用 Google API，也不允許任何人使用本應用程式或其 AI 功能，來建立、生成或散布 AI 生成的未經同意私密影像（AI NCII）、兒少性虐待內容、性化內容，或騷擾、貶抑他人的內容。',
+          'Google APIs are used only for sign-in, never for AI generation. We do not use Google APIs, and we do not permit anyone to use the app or its AI feature, to create, generate or distribute AI-generated non-consensual intimate imagery (AI NCII), child sexual abuse material, sexualised content, or content that harasses or degrades another person.',
         ),
       ],
     ),
@@ -215,6 +278,10 @@ export const privacyPolicy: LegalDoc = {
             '請不要把你不想外流的內容放進教材，或改用你信任的端點。你也要自行遵守該 AI 服務供應商的條款。',
             'Do not put content you would not want disclosed into your materials, and prefer an endpoint you trust. You are also responsible for following that AI provider’s terms.',
           ],
+        ),
+        p(
+          '本應用程式與 AI 出題功能僅供學術溫習之用。我們不會使用 Google API，也不會允許任何人使用本應用程式或 AI 出題功能，來建立、生成或散布 AI 生成的未經同意私密影像（AI NCII）、兒少性虐待內容、性化內容，或其他騷擾、貶抑他人的內容。這類內容一律禁止，違者帳號可能被停用。',
+          'The app and its AI generation feature are for academic revision only. We do not use Google APIs, and we do not permit anyone to use the app or its AI generation feature, to create, generate or distribute AI-generated non-consensual intimate imagery (AI NCII), child sexual abuse material, sexualised content, or other content that harasses or degrades a person. Such content is prohibited and may result in account suspension.',
         ),
       ],
     ),
@@ -549,6 +616,14 @@ export const termsOfService: LegalDoc = {
             '冒用他人身分，或散布惡意程式。',
             'Impersonate anyone, or distribute malware.',
           ],
+          [
+            '生成、上傳、要求或散布 AI 生成的未經同意私密影像（AI NCII）、兒少性虐待內容、涉及未成年人的性內容，或其他侵害他人隱私、同意或尊嚴的性化內容。',
+            'Generate, upload, request or distribute AI-generated non-consensual intimate imagery (AI NCII), child sexual abuse material, sexual content involving minors, or any sexualised content that violates another person’s privacy, consent or dignity.',
+          ],
+          [
+            '使用 AI 出題功能來建立上述內容，或用來冒充、誹謗或騷擾真實人物。',
+            'Use the AI generation feature to create that content, or to impersonate, defame or harass a real person.',
+          ],
         ),
       ],
     ),
@@ -570,6 +645,10 @@ export const termsOfService: LegalDoc = {
           [
             '生成品質取決於你選擇的模型與教材。你需自行負擔 API 費用，並遵守該供應商的條款。',
             'Quality depends on the model and materials you choose. You pay the API costs and must follow that provider’s terms.',
+          ],
+          [
+            'AI 出題只供學術溫習使用。你不得用它生成或散布未經同意的私密影像（AI NCII）、兒少性虐待內容、性化內容，或侵害他人隱私、名譽或智慧財產的內容；我們可移除這類內容並停用帳號。',
+            'AI generation is for academic revision only. You must not use it to create AI-generated non-consensual intimate imagery (AI NCII), child sexual abuse material, sexualised content, or content that infringes anyone’s privacy, reputation or intellectual property; we may remove such content and suspend the account.',
           ],
         ),
       ],
@@ -605,6 +684,30 @@ export const termsOfService: LegalDoc = {
         p(
           '本服務整合 Supabase、Cloudflare、Google、GitHub，以及你自行設定的 AI 端點。這些服務由其營運者負責，並適用它們自己的條款與隱私權政策。我們不為第三方的可用性、內容或行為負責。',
           'The service integrates Supabase, Cloudflare, Google, GitHub and the AI endpoint you configure. Those services are run by their own operators under their own terms and privacy policies. We are not responsible for their availability, content or conduct.',
+        ),
+      ],
+    ),
+
+    s(
+      'google',
+      'Google API 與 Google 登入',
+      'Google APIs and Google Sign-In',
+      [
+        p(
+          '若你使用 Google 登入，我們只會取得你的 Google 帳號識別碼、名稱、電子郵件地址與頭像網址，並只用於建立帳號、驗證身分與顯示個人資料。我們不會要求 Gmail、Google Drive、日曆、聯絡人或其他 Google 服務的存取權。',
+          'If you use Google Sign-In, we receive only your Google account ID, name, email address and profile picture URL, and use them only to create your account, authenticate you and display your profile. We do not request access to Gmail, Google Drive, Calendar, Contacts or any other Google service.',
+        ),
+        p(
+          'MengYin Study 對 Google API 所取得資訊的使用與傳輸，遵守 Google API 服務使用者資料政策，包括其中的 Limited Use（有限使用）要求。Google API 只用於登入，不用於 AI 出題；我們不會使用 Google API 來建立、生成或散布 AI 生成的未經同意私密影像（AI NCII）。',
+          "MengYin Study's use and transfer of information received from Google APIs adheres to the Google API Services User Data Policy, including the Limited Use requirements. Google APIs are used only for sign-in, never for AI generation; we do not use Google APIs to create, generate or distribute AI-generated non-consensual intimate imagery (AI NCII).",
+        ),
+        links(
+          [
+            'Google API 服務使用者資料政策',
+            'Google API Services User Data Policy',
+            'https://developers.google.com/terms/api-services-user-data-policy',
+          ],
+          ['Google API 服務條款', 'Google APIs Terms of Service', 'https://developers.google.com/terms'],
         ),
       ],
     ),

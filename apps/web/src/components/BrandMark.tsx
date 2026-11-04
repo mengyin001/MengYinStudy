@@ -1,38 +1,24 @@
 /**
- * The MengYin Study mark: a cream serif M stamped on a pine plate.
- * The letterform is Palatino's M, converted to a path so the favicon and
- * the in-app mark stay identical everywhere.
+ * The MengYin Study mark: a cream M whose outer strokes are stacked book
+ * spines, with a terracotta bookmark dropping into the centre. The bookmark is
+ * the part that survives at 16 px and makes the mark recognisable without the
+ * wordmark next to it.
+ *
+ * The same geometry is repeated in `public/icons/favicon.svg` and rasterised
+ * by `tools/make-icons.py`; change all three together.
  */
-const M_PATH =
-  'M53.299 15.6 L53.508 15.786 L53.508 16.924 L53.322 17.087 C51.619 17.133 50.562 17.218 50.152 17.342 ' +
-  'C49.741 17.466 49.451 17.671 49.281 17.958 C49.11 18.244 49.014 18.805 48.99 19.641 C48.967 20.478 ' +
-  '48.924 22.839 48.863 26.726 L48.863 37.433 C48.863 38.982 48.886 40.731 48.932 42.682 ' +
-  'C48.979 44.633 49.075 45.768 49.223 46.085 C49.37 46.402 49.637 46.635 50.024 46.782 ' +
-  'C50.411 46.929 51.51 47.026 53.322 47.072 L53.508 47.235 L53.508 48.373 L53.299 48.559 ' +
-  'C50.775 48.419 48.576 48.35 46.702 48.35 C45.433 48.35 43.273 48.419 40.222 48.559 ' +
-  'L40.013 48.373 L40.013 47.258 L40.199 47.072 C41.902 47.026 42.959 46.941 43.369 46.817 ' +
-  'C43.78 46.693 44.07 46.488 44.24 46.201 C44.411 45.915 44.511 45.346 44.542 44.494 ' +
-  'C44.573 43.642 44.612 41.289 44.659 37.433 L44.659 20.385 L36.645 37.154 ' +
-  'C34.632 41.351 32.875 45.299 31.373 49.0 L30.467 49.0 C29.6 47.002 28.888 45.408 28.33 44.215 ' +
-  'L17.228 21.151 L17.228 37.387 C17.228 38.904 17.247 40.65 17.286 42.624 ' +
-  'C17.325 44.599 17.421 45.74 17.576 46.05 C17.731 46.36 18.002 46.592 18.389 46.747 ' +
-  'C18.776 46.902 19.876 46.995 21.687 47.026 L21.873 47.212 L21.873 48.326 L21.664 48.535 ' +
-  'L20.178 48.466 C18.645 48.388 17.328 48.35 16.229 48.35 C15.734 48.35 13.883 48.412 10.678 48.535 ' +
-  'L10.492 48.35 L10.492 47.235 L10.678 47.026 C12.381 46.995 13.434 46.917 13.837 46.793 ' +
-  'C14.239 46.67 14.53 46.461 14.708 46.166 C14.886 45.872 14.986 45.322 15.01 44.517 ' +
-  'C15.033 43.712 15.068 41.335 15.114 37.387 L15.114 26.749 C15.114 25.34 15.095 23.625 15.056 21.604 ' +
-  'C15.017 19.583 14.924 18.414 14.777 18.097 C14.63 17.779 14.363 17.543 13.976 17.388 ' +
-  'C13.589 17.234 12.49 17.141 10.678 17.11 L10.492 16.924 L10.492 15.809 L10.701 15.6 ' +
-  'C11.77 15.677 13.21 15.716 15.021 15.716 C16.725 15.716 18.211 15.677 19.481 15.6 ' +
-  'C20.781 18.604 22.028 21.322 23.22 23.753 L32.023 41.823 L39.967 25.262 ' +
-  'C42.119 20.787 43.567 17.567 44.31 15.6 C45.797 15.677 47.26 15.716 48.7 15.716 ' +
-  'C50.001 15.716 51.534 15.677 53.299 15.6';
+const M_PATH = 'M17 46 L17 20 L32 36 L47 20 L47 46';
+const PAGE_LINES =
+  'M14 25 H20 M14 31 H20 M14 37 H20 M44 25 H50 M44 31 H50 M44 37 H50';
+const BOOKMARK_PATH = 'M30.5 14 L33.5 14 L33.5 28 L32 26.2 L30.5 28 Z';
 
 export function BrandMark({ className = '' }: { className?: string }) {
   return (
     <svg className={`brand-mark ${className}`.trim()} viewBox="0 0 64 64" aria-hidden="true" focusable="false">
-      <rect className="brand-mark__plate" width="64" height="64" rx="7" />
+      <rect className="brand-mark__plate" width="64" height="64" rx="13" />
       <path className="brand-mark__letter" d={M_PATH} />
+      <path className="brand-mark__pages" d={PAGE_LINES} />
+      <path className="brand-mark__seal" d={BOOKMARK_PATH} />
     </svg>
   );
 }

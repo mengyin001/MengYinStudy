@@ -16,20 +16,19 @@ const resolvePath = (relative: string) => fileURLToPath(new URL(relative, import
  * and not affected by the hash-routed SPA.
  */
 function legalDocuments(env: Record<string, string>): Plugin {
+  const overrides: Parameters<typeof legalContext>[0] = {
+    origin: (env.VITE_PUBLIC_ORIGIN ?? '').trim().replace(/\/+$/, ''),
+  };
+  const operator = (env.VITE_LEGAL_OPERATOR ?? '').trim();
+  if (operator) overrides.operator = operator;
+  // Empty means "use the published address in config.ts", not "hide it".
+  const contactEmail = (env.VITE_LEGAL_CONTACT_EMAIL ?? '').trim();
+  if (contactEmail) overrides.contactEmail = contactEmail;
+  const ctx = legalContext(overrides);
+
   return {
     name: 'mengyin:legal-documents',
-    apply: 'build',
     generateBundle() {
-      const overrides: Parameters<typeof legalContext>[0] = {
-        origin: (env.VITE_PUBLIC_ORIGIN ?? '').trim().replace(/\/+$/, ''),
-      };
-      const operator = (env.VITE_LEGAL_OPERATOR ?? '').trim();
-      if (operator) overrides.operator = operator;
-      // Empty means "use the published address in config.ts", not "hide it".
-      const contactEmail = (env.VITE_LEGAL_CONTACT_EMAIL ?? '').trim();
-      if (contactEmail) overrides.contactEmail = contactEmail;
-
-      const ctx = legalContext(overrides);
       for (const doc of Object.values(LEGAL_DOCS)) {
         this.emitFile({
           type: 'asset',
@@ -37,6 +36,23 @@ function legalDocuments(env: Record<string, string>): Plugin {
           source: renderLegalHtml(doc, ctx),
         });
       }
+    },
+    // The production build writes real /privacy/ and /terms/ files. Vite's
+    // dev server has no such files, so serve the same HTML from memory there;
+    // otherwise testing the homepage's legal links would land on the SPA.
+    configureServer(server) {
+      server.middlewares.use((request, response, next) => {
+        const pathname = (request.url ?? '').split('?')[0] ?? '';
+        const match = /^\/(privacy|terms)\/?$/.exec(pathname);
+        if (!match) {
+          next();
+          return;
+        }
+        const doc = LEGAL_DOCS[match[1] as keyof typeof LEGAL_DOCS];
+        response.statusCode = 200;
+        response.setHeader('Content-Type', 'text/html; charset=utf-8');
+        response.end(renderLegalHtml(doc, ctx));
+      });
     },
   };
 }

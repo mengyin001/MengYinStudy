@@ -9,6 +9,7 @@ import { AccountPage } from './pages/Account';
 import { AuthPage, ResetPasswordPage } from './pages/Auth';
 import { DashboardPage } from './pages/Dashboard';
 import { GeneratePage } from './pages/Generate';
+import { LandingPage } from './pages/Landing';
 import { LegalPage } from './pages/Legal';
 import { LibraryPage } from './pages/Library';
 import { MistakesPage } from './pages/Mistakes';
@@ -18,6 +19,7 @@ import { PracticePage } from './pages/Practice';
 import { SettingsPage } from './pages/Settings';
 import { StatsPage } from './pages/StatsPage';
 import { useApp } from './state/AppContext';
+import { useAuth } from './state/AuthContext';
 import type { MessageKey } from './i18n/messages';
 import { navigate, useRoute } from './lib/router';
 import { APP_VERSION } from './lib/version';
@@ -29,7 +31,7 @@ interface NavItem {
 }
 
 const NAV: NavItem[] = [
-  { path: '/', key: 'nav.today', icon: 'home' },
+  { path: '/today', key: 'nav.today', icon: 'home' },
   { path: '/library', key: 'nav.decks', icon: 'book' },
   { path: '/plaza', key: 'nav.plaza', icon: 'compass' },
   { path: '/generate', key: 'nav.generate', icon: 'sparkles' },
@@ -48,12 +50,15 @@ const LEGAL_ROUTES: Record<string, 'privacy' | 'terms'> = {
 };
 
 function isActive(routePath: string, path: string): boolean {
-  if (path === '/') return routePath === '/' || routePath === '';
+  // `/` is the public homepage for signed-out visitors but the dashboard for
+  // signed-in ones, so the Today item owns both paths.
+  if (path === '/today') return routePath === '/today' || routePath === '/' || routePath === '';
   return routePath === path || routePath.startsWith(`${path}/`);
 }
 
 export default function App() {
   const { state, entries, locale, t, actions } = useApp();
+  const { state: authState } = useAuth();
   const route = useRoute();
 
   const streak = useMemo(() => computeStreak(state.progress.attempts).current, [state.progress.attempts]);
@@ -63,6 +68,7 @@ export default function App() {
     switch (route.path) {
       case '/':
       case '':
+      case '/today':
         return <DashboardPage />;
       case '/library':
         return <LibraryPage />;
@@ -130,15 +136,31 @@ export default function App() {
     );
   }
 
+  // The bare `/` is the public homepage for visitors who have not signed in.
+  // Signed-in learners still get the dashboard there, and `/today` is the
+  // stable in-app route for guests who want to start practising immediately.
+  const publicHome =
+    (route.path === '/' || route.path === '') && authState.status === 'anonymous';
+  if (publicHome) {
+    return (
+      <>
+        <LandingPage />
+        <Toast />
+      </>
+    );
+  }
+
+  const appHome = authState.user ? '/' : '/today';
+
   return (
     <div className="app">
       <aside className="sidebar">
         <a
           className="brand"
-          href="#/"
+          href={`#${appHome}`}
           onClick={(event) => {
             event.preventDefault();
-            navigate('/');
+            navigate(appHome);
           }}
         >
           <BrandMark className="brand__mark" />

@@ -9,6 +9,10 @@ import { UserLibraryProvider } from './state/UserLibraryContext';
 import { runStorageMigrations } from './lib/storage';
 import './styles/base.css';
 import './styles/app.css';
+// Loaded last so its sizing hides/overrides the shared `.btn` rules. The page
+// is only rendered for signed-out visitors, but the CSS is tiny and always
+// present, which keeps the build order deterministic.
+import './styles/landing.css';
 
 const container = document.getElementById('root');
 if (!container) throw new Error('找不到 #root 容器');

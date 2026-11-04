@@ -8,7 +8,7 @@
  */
 
 /** Bumped whenever the wording of either document changes materially. */
-export const LEGAL_VERSION = '1.1';
+export const LEGAL_VERSION = '1.2';
 
 /** ISO date the current wording took effect. Shown as-is in both documents. */
 export const LEGAL_UPDATED = '2026-11-04';

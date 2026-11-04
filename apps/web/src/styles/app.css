@@ -59,7 +59,23 @@
 }
 
 .brand-mark__letter {
-  fill: var(--on-accent);
+  fill: none;
+  stroke: var(--on-accent);
+  stroke-width: 7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.brand-mark__pages {
+  fill: none;
+  stroke: var(--on-accent);
+  stroke-width: 1.1;
+  stroke-linecap: round;
+  opacity: 0.48;
+}
+
+.brand-mark__seal {
+  fill: #c46a4e;
 }
 
 .brand__mark {

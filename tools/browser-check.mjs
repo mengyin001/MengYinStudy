@@ -180,6 +180,19 @@ async function main() {
 
   try {
     await page.goto(baseUrl, { waitUntil: 'networkidle0', timeout: 30_000 });
+    await page.waitForSelector('.landing', { timeout: 10_000 });
+    const landingHeading = (await textOf(page, '.landing h1')).trim();
+    const landingText = await textOf(page, '.landing');
+    record(
+      'Public homepage',
+      landingHeading === 'MengYin Study' &&
+        landingText.includes('revision and practice app') &&
+        landingText.includes('Google Sign-In'),
+      landingHeading,
+    );
+    await shot(page, '00-home.png');
+
+    await go(page, '#/today');
     await page.waitForSelector('.page-head', { timeout: 10_000 });
     const heading = (await textOf(page, '.page-head h1')).trim();
     record('Today page', heading === 'Today', heading);
@@ -817,7 +830,7 @@ async function main() {
 
     await clickText(page, '繁體中文', '.seg__btn');
     await sleep(300);
-    await go(page, '#/');
+    await go(page, '#/today');
     await page.waitForSelector('.page-head', { timeout: 10_000 });
     const lang = await page.evaluate(() => document.documentElement.lang);
     const zhHeading = (await textOf(page, '.page-head h1')).trim();
@@ -829,7 +842,7 @@ async function main() {
     await clickText(page, 'English', '.seg__btn');
     await clickText(page, 'Light', '.seg__btn');
     await sleep(300);
-    await go(page, '#/');
+    await go(page, '#/today');
     await page.waitForSelector('.page-head', { timeout: 10_000 });
     const theme = await page.evaluate(() => document.documentElement.dataset.theme);
     record('Light theme', theme === 'light', `data-theme=${theme}`);

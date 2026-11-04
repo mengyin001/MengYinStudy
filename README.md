@@ -295,7 +295,9 @@ app, linked from Settings → About and every sign-in screen; creating an accoun
 consent checkbox. Wording lives in
 [`apps/web/src/legal/content.ts`](apps/web/src/legal/content.ts), available in Traditional Chinese
 and English; see [docs/LEGAL.md](docs/LEGAL.md) for the store checklist and the environment
-variables that set the operator name and contact mailbox.
+variables that set the operator name and contact mailbox. Google OAuth verification has its own
+Console checklist in [docs/OAUTH_VERIFICATION.md](docs/OAUTH_VERIFICATION.md): use
+`https://study.mengyin.online/privacy/`, not the `#/privacy` hash route.
 
 ## Desktop app
 

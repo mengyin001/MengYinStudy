@@ -4,6 +4,23 @@
 
 ### Added
 
+- **A public homepage for signed-out visitors.** `/` now leads with what MengYin Study is
+  for — building decks, practising, reviewing mistakes and remembering — before asking
+  anyone to sign in; the study dashboard moved to `/today` for guests (signed-in learners
+  still get it at `/`). Google sign-in is disclosed lower down in a "Sign-in and data"
+  section rather than in the hero. A pre-JavaScript shell in `index.html` carries the same
+  name, purpose and legal links for crawlers and for people whose bundle has not loaded yet.
+  See `apps/web/src/landing/copy.ts`.
+- **Google OAuth verification disclosures.** The privacy policy and terms now have a
+  Google-specific section: the exact `openid email profile` data, its use, storage, sharing,
+  retention and deletion, the Limited Use statement and links to the Google API Services
+  User Data Policy and Google APIs Terms of Service. Both documents state that Google APIs
+  are used only for sign-in, never for AI generation, and prohibit AI NCII.
+- **A new brand mark and OAuth logo.** The cream M is built from book spines with a
+  terracotta bookmark; `tools/make-icons.py` regenerates the favicon, PWA icons, the
+  120×120 OAuth logo (`apps/web/public/icons/oauth-logo-120.png`) and the social card.
+- **`docs/OAUTH_VERIFICATION.md`.** The Console fields, the exact public URLs, the Supabase
+  redirect URI and the resubmission checks for the next Google review.
 - **Account deletion, in the app.** Account → Delete account opens a confirmation sheet that
   spells out what disappears, requires the learner to type `DELETE` (「刪除」) and then calls the
   new `delete_account()` RPC. That function is `security definer` but deliberately narrow: it
@@ -29,6 +46,11 @@
 
 ### Fixed
 
+- **Privacy and terms no longer switch a dark homepage to a light page.** The standalone
+  `/privacy/` and `/terms/` pages now follow the app theme. `applyAppearance` mirrors the theme
+  mode (`light`, `dark` or `system`) to `localStorage`, and a four-line inline bootstrap applies
+  an explicit choice before first paint; `system` and no-JavaScript readers follow
+  `prefers-color-scheme`. The in-app `#/privacy` and `#/terms` routes already used the app theme.
 - **Google/GitHub sign-in no longer dumps GoTrue's JSON error page.** `signInWithOAuth` now checks
   `/auth/v1/settings` first (cached ten minutes, 5 s timeout, fails open) and reports
   `provider-disabled` inside the sign-in form. It also passes `skipBrowserRedirect: true` and

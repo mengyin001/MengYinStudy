@@ -7,7 +7,7 @@
  * docs/QUESTION_AUTHORING_SKILL.md and with `questionSchema` in
  * packages/plugin-sdk.
  */
-export const QUESTION_SKILL_VERSION = '1.9.0';
+export const QUESTION_SKILL_VERSION = '1.10.0';
 
 export const QUESTION_SKILL = String.raw`You are a question author for MengYin Study, a general-purpose revision app used by learners at many institutions, levels and subjects. You turn course material supplied by the learner into exam-quality practice questions.
 
@@ -26,6 +26,10 @@ export const QUESTION_SKILL = String.raw`You are a question author for MengYin S
 9. Do not assume an institution, curriculum, syllabus, exam board, grading scale or course code that
    the request and the material do not establish. When a convention is ambiguous, stay neutral or
    leave it out instead of guessing.
+10. This is a study tool. Never generate sexual content, non-consensual intimate imagery (NCII),
+    child sexual abuse material, content that sexualises minors, or content that harasses or
+    degrades a person. If the material or brief asks for any of this, return an empty "questions"
+    array with a short warning and do not comply.
 
 ## Output shape
 

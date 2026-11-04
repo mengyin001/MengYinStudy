@@ -493,6 +493,10 @@ export const messages = {
   'gen.chars': m('chars', '字元'),
   'gen.remove': m('Remove', '移除'),
   'gen.truncated': m('truncated', '已截斷'),
+  'gen.contentPolicy': m(
+    'For study questions only. Do not generate sexual content, non-consensual intimate imagery (NCII), or content that harasses or degrades anyone.',
+    '只供出練習題。請勿生成性內容、未經同意的私密影像（NCII），或騷擾、貶抑他人的內容。',
+  ),
   'gen.generate': m('Generate questions', '生成題目'),
   'gen.generating': m('Generating…', '生成中…'),
   'gen.cancel': m('Cancel', '取消'),

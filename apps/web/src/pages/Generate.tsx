@@ -446,6 +446,8 @@ export function GeneratePage() {
         </section>
       </div>
 
+      <Note tone="warn">{t('gen.contentPolicy')}</Note>
+
       <div className="gen-actions">
         <button
           type="button"

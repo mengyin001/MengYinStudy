@@ -99,6 +99,16 @@ export function resolveDoc(doc: LegalDoc, locale: DocLocale, ctx: LegalContext):
               rows: block.rows.map((row) => row.map((cell) => pick(cell, locale))),
             },
           ];
+        case 'links':
+          return [
+            {
+              kind: 'links',
+              items: block.items.map((item) => ({
+                label: fillText(pick(item.label, locale), ctx),
+                href: item.href,
+              })),
+            },
+          ];
         case 'contact':
           return contactBlocks(locale, ctx);
       }

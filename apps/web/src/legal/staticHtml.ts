@@ -1,3 +1,4 @@
+import { THEME_STORAGE_KEY } from '../lib/theme';
 import type { LegalContext } from './config';
 import { LEGAL_CHROME } from './content';
 import type { LegalDoc } from './content';
@@ -8,7 +9,8 @@ import { fillText, pick, resolveDoc, type DocLocale, type ResolvedDoc } from './
  * `/terms/`. App-store review opens these without the app shell, and a
  * reviewer should never need JavaScript (or a login) to read a privacy policy,
  * so the output is a single self-contained HTML file: no bundle, no fonts, no
- * external requests.
+ * external requests. The only script is the four-line theme bootstrap below;
+ * without it the document is still complete and follows the OS theme.
  */
 
 const escapeHtml = (value: string): string =>
@@ -17,6 +19,22 @@ const escapeHtml = (value: string): string =>
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
+
+/**
+ * Four lines of inline JavaScript, and the only script on the page.
+ *
+ * The app writes its theme mode (`light`, `dark` or `system`) to localStorage.
+ * Without this bootstrap, a reader who chose dark in the app would arrive at a
+ * light legal page because the static document cannot know about the app's
+ * state. `system` is left unset so the stylesheet's `prefers-color-scheme`
+ * rules keep tracking the OS; with no key at all the same fallback applies, so
+ * the page still works without JavaScript.
+ */
+function themeBootstrap(): string {
+  return `<script>(function(){try{var t=localStorage.getItem(${JSON.stringify(
+    THEME_STORAGE_KEY,
+  )});if(t==="dark"||t==="light"){document.documentElement.dataset.theme=t;}}catch(e){}})();</script>`;
+}
 
 function renderBlocks(doc: ResolvedDoc): string {
   return doc.sections
@@ -84,7 +102,7 @@ function renderArticle(doc: LegalDoc, locale: DocLocale, ctx: LegalContext, anch
 
 const STYLE = `
 :root {
-  color-scheme: light;
+  color-scheme: light dark;
   --paper: #f5f1e8;
   --surface: #fffdf7;
   --ink: #1b1a16;
@@ -94,10 +112,35 @@ const STYLE = `
   --rule-2: #c8c0ae;
   --accent: #2f5d4e;
 }
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --paper: #131210;
+  --surface: #1a1915;
+  --ink: #ede8db;
+  --ink-2: #c6c0b0;
+  --ink-3: #938c7b;
+  --rule: #302d24;
+  --rule-2: #45402f;
+  --accent: #9bc7b2;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --paper: #131210;
+    --surface: #1a1915;
+    --ink: #ede8db;
+    --ink-2: #c6c0b0;
+    --ink-3: #938c7b;
+    --rule: #302d24;
+    --rule-2: #45402f;
+    --accent: #9bc7b2;
+  }
+}
 * { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; }
+html { -webkit-text-size-adjust: 100%; background: var(--paper); }
 body {
   margin: 0;
+  min-height: 100vh;
   background: var(--paper);
   color: var(--ink);
   font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', 'Helvetica Neue', Arial,
@@ -170,7 +213,19 @@ footer.page-foot { max-width: 780px; margin: 0 auto; padding: 0 24px 60px; font-
   td.key::before { content: none; }
 }
 @media print {
-  body { background: #fff; font-size: 10.5pt; }
+  /* Printing is always ink on white, even when the reader chose dark. */
+  :root, :root[data-theme='dark'], :root:not([data-theme='light']) {
+    color-scheme: light;
+    --paper: #fff;
+    --surface: #fff;
+    --ink: #1b1a16;
+    --ink-2: #33312b;
+    --ink-3: #666156;
+    --rule: #ccc6b8;
+    --rule-2: #aaa496;
+    --accent: #2f5d4e;
+  }
+  body { background: var(--paper); color: var(--ink); font-size: 10.5pt; }
   .top { display: none; }
   main { max-width: none; padding: 0; }
   article + article { border-top: 0; }
@@ -181,36 +236,40 @@ footer.page-foot { max-width: 780px; margin: 0 auto; padding: 0 24px 60px; font-
 `;
 
 export function renderLegalHtml(doc: LegalDoc, ctx: LegalContext): string {
-  const zhTitle = `${doc.title.zh}`;
   const canonical = ctx.origin ? `<link rel="canonical" href="${escapeHtml(`${ctx.origin}/${doc.slug}/`)}" />` : '';
   const appHref = ctx.origin ? `${ctx.origin}/` : '../';
   const updated = ctx.updated;
-  const description = fillText(doc.summary.zh, ctx);
+  // English first: Google's OAuth reviewers read the public URL outside the
+  // app, and the bilingual policy should lead with the language they use.
+  const title = doc.title.en;
+  const description = fillText(doc.summary.en, ctx);
 
   return `<!doctype html>
-<html lang="zh-Hant">
+<html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>${escapeHtml(zhTitle)} · MengYin Study</title>
+<title>${escapeHtml(title)} · MengYin Study</title>
 <meta name="description" content="${escapeHtml(description)}" />
 <meta name="robots" content="index, follow" />
-<meta name="theme-color" content="#f5f1e8" />
+<meta name="theme-color" content="#f5f1e8" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#131210" media="(prefers-color-scheme: dark)" />
 ${canonical}
+${themeBootstrap()}
 <style>${STYLE}</style>
 </head>
 <body>
 <header class="top">
   <a class="brand" href="${escapeHtml(appHref)}">MengYin Study</a>
   <nav>
-    <a href="#zh">繁體中文</a>
     <a href="#en">English</a>
-    <a href="${escapeHtml(appHref)}">${escapeHtml(pick(LEGAL_CHROME.back, 'zh-Hant'))}</a>
+    <a href="#zh">繁體中文</a>
+    <a href="${escapeHtml(appHref)}">${escapeHtml(pick(LEGAL_CHROME.back, 'en'))}</a>
   </nav>
 </header>
 <main>
-${renderArticle(doc, 'zh-Hant', ctx, 'zh')}
 ${renderArticle(doc, 'en', ctx, 'en')}
+${renderArticle(doc, 'zh-Hant', ctx, 'zh')}
 </main>
 <footer class="page-foot"><p>Last updated ${escapeHtml(updated)} · MengYin Study</p></footer>
 </body>

@@ -9,7 +9,9 @@ dist/
 *.log
 .DS_Store
 apps/web/public/plugins/
-apps/web/public/icons/
+# Brand icons are source assets: the OAuth consent screen logo and the favicon
+# must exist in a Git-based Cloudflare build. The build does not run
+# tools/make-icons.py (it needs Pillow), so these generated files are tracked.
 apps/web/public/runtimes/
 apps/web/public/runtime-manifest.json
 coverage/

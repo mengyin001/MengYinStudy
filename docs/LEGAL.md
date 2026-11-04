@@ -20,14 +20,19 @@ no bundle, no fonts, no network requests — from the same content the in-app pa
 Both are emitted by the `mengyin:legal-documents` plugin in
 [`apps/web/vite.config.ts`](../apps/web/vite.config.ts), so they cannot drift apart.
 
+The static pages follow the app's colour theme. `applyAppearance` mirrors the selected theme
+mode (`light`, `dark` or `system`) to `localStorage` under `mengyin:theme`; a four-line inline
+bootstrap on the legal page applies an explicit light/dark choice before paint, while
+`system` and first-time visitors follow the OS `prefers-color-scheme`.
+
 Inside the app, `#/privacy` and `#/terms` follow the reader's language and are linked from
 the sidebar footer, Settings → About → Legal, and the sign-up consent line.
 
 ## Where the wording lives
 
 - [`apps/web/src/legal/content.ts`](../apps/web/src/legal/content.ts) — every sentence, in
-  Traditional Chinese and English, as structured blocks (`p`, `ul`, `ol`, `table`, `note`,
-  `contact`). Edit here; never edit the generated HTML.
+  Traditional Chinese and English, as structured blocks (`p`, `ul`, `ol`, `table`, `links`,
+  `note`, `contact`). Edit here; never edit the generated HTML.
 - [`apps/web/src/legal/config.ts`](../apps/web/src/legal/config.ts) — document version, the
   effective date, the repository URL used as the fallback contact, and the environment hooks.
 - [`apps/web/src/legal/render.ts`](../apps/web/src/legal/render.ts) — placeholder filling and
@@ -60,10 +65,19 @@ have to change with it:
 - AI keys, prompts and material files stay on the device; generation calls the reader's own
   endpoint from the browser and never passes through our servers.
 - There is no advertising, no behavioural analytics and no sale of personal data.
+- Google Sign-In is optional and receives only the basic profile (`openid`, `email`, `profile`).
+  The policy states the Google API Services User Data Policy and Limited Use requirements
+  explicitly, and says Google APIs are used only for sign-in, never for AI generation.
+- AI generation is for study questions only; the policy and terms prohibit NCII, child sexual
+  abuse material and sexualised content, and the authoring skill refuses those requests.
 - Account deletion happens in the app (Account → Delete account). It calls the
   `delete_account()` RPC in `supabase/migrations/20261104230000_delete_account.sql`, which
   removes `auth.uid()` and lets the existing `on delete cascade` constraints clear the profile,
   decks, library and progress. Email is the fallback for a learner who cannot sign in.
+
+The Google Cloud Console fields and the resubmission steps are in
+[docs/OAUTH_VERIFICATION.md](OAUTH_VERIFICATION.md). Submit the standalone URLs
+(`https://study.mengyin.online/privacy/`), never the `#/privacy` hash route.
 
 `apps/web/src/legal/legal.test.ts` fails if a section loses its Chinese or English version, if
 a `{{placeholder}}` is left unresolved, if the static page stops being self-contained, or if

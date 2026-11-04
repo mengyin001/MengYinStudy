@@ -1,0 +1,10 @@
+# Stable, crawler-friendly legal URLs.
+#
+# Google's OAuth verification and app-store review expect a real URL, not a
+# hash route. The build emits /privacy/index.html and /terms/index.html; these
+# rules make the no-slash form resolve there too, so either form is safe to
+# submit.
+/privacy /privacy/ 301
+/terms /terms/ 301
+/privacy.html /privacy/ 301
+/terms.html /terms/ 301

@@ -42,7 +42,13 @@ describe('legal documents', () => {
       expect(html.startsWith('<!doctype html>')).toBe(true);
       expect(html).toContain('id="zh"');
       expect(html).toContain('id="en"');
-      expect(html).not.toContain('<script');
+      // One inline script mirrors the app's explicit light/dark choice. It
+      // loads nothing and the document remains complete without it.
+      expect((html.match(/<script/g) ?? []).length).toBe(1);
+      expect(html).not.toContain('<script src');
+      expect(html).not.toContain('type="module"');
+      expect(html).toContain('mengyin:theme');
+      expect(html).toContain('@media (prefers-color-scheme: dark)');
       expect(html).not.toContain('{{');
       expect(html).toContain(`<link rel="canonical" href="https://study.example.com/${doc.slug}/"`);
       // Every heading from both languages survives into the HTML.
