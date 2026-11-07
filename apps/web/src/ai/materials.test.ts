@@ -5,7 +5,14 @@ import {
   normalizeMaterialText,
   pptxXmlToText,
 } from './extract';
-import { ingestFiles, MAX_MATERIAL_BYTES, totalMaterialBytes } from './materials';
+import {
+  API_MATERIAL_BUDGET,
+  API_MATERIAL_PART_CHARS,
+  ingestFiles,
+  MAX_MATERIAL_BYTES,
+  packMaterialsForApi,
+  totalMaterialBytes,
+} from './materials';
 import type { AiMaterial } from './types';
 
 describe('material types', () => {
@@ -94,5 +101,51 @@ describe('material ingestion', () => {
     const result = await ingestFiles([], [new File(['   '], 'empty.txt')]);
     expect(result.added).toHaveLength(0);
     expect(result.errors[0]).toContain('no usable text');
+  });
+});
+
+function textMaterial(id: string, name: string, text: string): AiMaterial {
+  return {
+    id,
+    name,
+    size: text.length,
+    kind: 'text',
+    chars: text.length,
+    truncated: false,
+    addedAt: 1,
+    text,
+  };
+}
+
+describe('API material packing', () => {
+  it('passes a small set through unchanged', () => {
+    const packed = packMaterialsForApi(
+      [textMaterial('m1', 'notes.md', 'A stack is LIFO.'), textMaterial('m2', 'empty.md', '   ')],
+      'Stacks',
+    );
+    expect(packed.materials).toEqual([{ name: 'notes.md', text: 'A stack is LIFO.' }]);
+    expect(packed.omitted).toBe(0);
+  });
+
+  it('keeps at most eight excerpts', () => {
+    const materials = Array.from({ length: 9 }, (_, index) =>
+      textMaterial(`m${index}`, `${index}.md`, `Material ${index} `.repeat(20)),
+    );
+    const packed = packMaterialsForApi(materials, 'Material');
+    expect(packed.materials.length).toBeLessThanOrEqual(8);
+    expect(packed.omitted).toBe(1);
+  });
+
+  it('splits and bounds a very large source', () => {
+    const text = 'alpha beta gamma '.repeat(40_000);
+    const packed = packMaterialsForApi([textMaterial('m1', 'big.pdf', text)], 'alpha');
+    const total = packed.materials.reduce((sum, material) => sum + material.text.length, 0);
+    expect(packed.materials.length).toBeGreaterThan(0);
+    expect(packed.materials.every((material) => material.text.length <= API_MATERIAL_PART_CHARS)).toBe(
+      true,
+    );
+    expect(total).toBeLessThanOrEqual(API_MATERIAL_BUDGET);
+    expect(packed.materials[0]?.name).toContain('part 1');
+    expect(packed.omitted).toBeGreaterThan(0);
   });
 });

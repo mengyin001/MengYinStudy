@@ -65,9 +65,9 @@ import {
   type LocalPluginRecord,
   type PluginIssue,
 } from '@/domain/pluginHost';
-import { DEFAULT_AI_CONFIG, loadAiConfig, normalizeAiConfig, saveAiConfig } from '@/ai/config';
+import { DEFAULT_AI_SETTINGS, loadAiSettings, normalizeAiSettings, saveAiSettings } from '@/ai/config';
 import { ingestFiles, loadMaterials, saveMaterials, type IngestProgress } from '@/ai/materials';
-import type { AiConfig, AiMaterial } from '@/ai/types';
+import type { AiSettings, AiMaterial } from '@/ai/types';
 import { prepareCodeAnswer, stripCodeRun } from '@/sandbox/codeRun';
 import { gradeQuestion } from '@/domain/grading';
 import { describeGiven } from '@/domain/answers';
@@ -99,6 +99,7 @@ import {
   type ProgressScope,
 } from './progressScope';
 import { backend } from '@/services';
+import { collectUserMediaPaths, hasEmbeddedMedia } from '@/services/supabase/userMedia';
 import { describeBackendError } from '@/i18n/backend';
 import { useAuth } from './AuthContext';
 
@@ -128,7 +129,7 @@ interface AppState {
   session: Session | null;
   summary: SessionSummary | null;
   toast: Toast | null;
-  aiConfig: AiConfig;
+  aiSettings: AiSettings;
   materials: AiMaterial[];
 }
 
@@ -139,7 +140,7 @@ type Action =
       bundled: LoadedPlugin[];
       local: LocalPluginRecord[];
       issues: PluginIssue[];
-      aiConfig: AiConfig;
+      aiSettings: AiSettings;
       materials: AiMaterial[];
     }
   | { type: 'progress'; progress: ProgressState }
@@ -148,7 +149,7 @@ type Action =
   | { type: 'session'; session: Session | null }
   | { type: 'summary'; summary: SessionSummary | null }
   | { type: 'toast'; toast: Toast | null }
-  | { type: 'aiConfig'; aiConfig: AiConfig }
+  | { type: 'aiSettings'; aiSettings: AiSettings }
   | { type: 'materials'; materials: AiMaterial[] };
 
 function reducer(state: AppState, action: Action): AppState {
@@ -161,7 +162,7 @@ function reducer(state: AppState, action: Action): AppState {
         bundled: action.bundled,
         local: action.local,
         issues: action.issues,
-        aiConfig: action.aiConfig,
+        aiSettings: action.aiSettings,
         materials: action.materials,
       };
     case 'progress':
@@ -176,8 +177,8 @@ function reducer(state: AppState, action: Action): AppState {
       return { ...state, summary: action.summary };
     case 'toast':
       return { ...state, toast: action.toast };
-    case 'aiConfig':
-      return { ...state, aiConfig: action.aiConfig };
+    case 'aiSettings':
+      return { ...state, aiSettings: action.aiSettings };
     case 'materials':
       return { ...state, materials: action.materials };
     default:
@@ -194,7 +195,7 @@ const initialState: AppState = {
   session: null,
   summary: null,
   toast: null,
-  aiConfig: { ...DEFAULT_AI_CONFIG },
+  aiSettings: { ...DEFAULT_AI_SETTINGS },
   materials: [],
 };
 
@@ -222,7 +223,7 @@ export interface AppActions {
   toggleQuestionFlag(key: string): void;
   setQuestionNote(key: string, note: string): void;
   updateSettings(patch: Partial<Settings>): void;
-  updateAiConfig(patch: Partial<AiConfig>): void;
+  updateAiSettings(patch: Partial<AiSettings>): void;
   addMaterials(
     files: FileList | File[],
     onProgress?: (progress: IngestProgress) => void,
@@ -329,7 +330,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const { state: officialState } = useOfficialContent();
   const { state: cloudState, sources: cloudSources, actions: cloudActions } = useUserDecks();
   const { state: libraryState, actions: libraryActions } = useUserLibrary();
-  const { state: authState } = useAuth();
+  const { state: authState, actions: authActions } = useAuth();
   const guestPlugin = useMemo(() => buildGuestPlugin(), []);
   const cloudPlugins = useMemo(
     () => (authState.user ? buildCloudPlugins(cloudState.decks) : []),
@@ -353,7 +354,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
   const progressRef = useRef(state.progress);
   const sessionRef = useRef<Session | null>(null);
-  const aiConfigRef = useRef(state.aiConfig);
+  const aiSettingsRef = useRef(state.aiSettings);
   const materialsRef = useRef(state.materials);
   const bootstrapped = useRef(false);
   const hydrated = useRef(false);
@@ -366,6 +367,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const scopeSwitch = useRef(0);
   const activatedCloudSources = useRef(new Map<string, string>());
   const autoUploaded = useRef(new Set<string>());
+  /**
+   * Deck keys this tab deleted. They are hidden from the library and never
+   * re-uploaded, so a stale list reply cannot put a deleted deck back on screen.
+   */
+  const [deletedKeys, setDeletedKeys] = useState<ReadonlySet<string>>(() => new Set());
+  const tombstone = useCallback((key: string) => {
+    setDeletedKeys((current) => (current.has(key) ? current : new Set(current).add(key)));
+  }, []);
+  const revive = useCallback((key: string) => {
+    setDeletedKeys((current) => {
+      if (!current.has(key)) return current;
+      const next = new Set(current);
+      next.delete(key);
+      return next;
+    });
+  }, []);
   const [cloudRuntimeNonce, bumpCloudRuntime] = useState(0);
 
   // Progress sync. All guards are refs because timers, Realtime callbacks and
@@ -389,8 +406,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   authUserId.current = authState.user?.id ?? null;
 
   useEffect(() => {
-    aiConfigRef.current = state.aiConfig;
-  }, [state.aiConfig]);
+    aiSettingsRef.current = state.aiSettings;
+  }, [state.aiSettings]);
 
   useEffect(() => {
     materialsRef.current = state.materials;
@@ -667,6 +684,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const userId = authState.user?.id;
     if (!userId) {
       autoUploaded.current.clear();
+      setDeletedKeys((current) => (current.size === 0 ? current : new Set<string>()));
       return;
     }
     if (!state.ready || !cloudState.ready) return;
@@ -681,8 +699,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     void (async () => {
       for (const record of pending) {
+        // A deck deleted in this tab may still be sitting in a local record; it
+        // must not be uploaded again, or the deletion undoes itself.
+        const remaining = record.decks.filter((deck) => !deletedKeys.has(deck.key));
+        if (remaining.length === 0) continue;
+        const payload =
+          remaining.length === record.decks.length ? record : { ...record, decks: remaining };
         autoUploaded.current.add(record.id);
-        const result = await cloudActions.upload(record);
+        const result = await cloudActions.upload(payload);
         if (!result.ok) {
           notify(
             'error',
@@ -700,43 +724,99 @@ export function AppProvider({ children }: { children: ReactNode }) {
     cloudState.ready,
     cloudDeckKeys,
     cloudActions,
+    deletedKeys,
     notify,
     t,
   ]);
 
-  const boot = useCallback(async (scope: ProgressScope) => {
-    const [progress, local, aiConfig, materials] = await Promise.all([
-      loadScopeProgress(appStore, scope),
-      loadPersistedLocalPlugins(),
-      loadAiConfig(),
-      loadMaterials(),
-    ]);
-    scopeRef.current = scope;
-    targetScopeRef.current = scope;
-    progressRef.current = progress;
-    hydrated.current = true;
-    persistEnabled.current = true;
+  // A stored illustration can go missing: an earlier build deleted the Storage
+  // objects of a deck whose row survived a refused delete, so the deck stayed in
+  // the library with a dead image reference. When the local copy still holds the
+  // inline image, re-save that deck — the object is written back at the same
+  // path, which is exactly what the stored marker points at.
+  const mediaRepaired = useRef(new Set<string>());
+  useEffect(() => {
+    if (!authState.user || !state.ready || !cloudState.ready) return;
+    const localDecks = new Map<string, { record: LocalPluginRecord; deck: Deck }>();
+    for (const record of state.local) {
+      for (const deck of record.decks) localDecks.set(deck.key, { record, deck });
+    }
+    const candidates = cloudState.decks
+      .map((cloud) => ({ cloud, paths: collectUserMediaPaths(cloud.questions) }))
+      .filter(
+        ({ cloud, paths }) =>
+          paths.length > 0 &&
+          !mediaRepaired.current.has(cloud.clientKey) &&
+          localDecks.has(cloud.clientKey),
+      );
+    if (candidates.length === 0) return;
 
-    const localIssues = await activateLocalPlugins(local);
-    const { plugins, issues } = await loadBundledPlugins();
-    dispatch({
-      type: 'hydrate',
-      progress,
-      bundled: plugins,
-      local,
-      issues: [...issues, ...localIssues],
-      aiConfig,
-      materials,
-    });
-  }, []);
+    void (async () => {
+      for (const { cloud, paths } of candidates) {
+        const source = localDecks.get(cloud.clientKey);
+        if (!source || !hasEmbeddedMedia(source.deck.questions)) continue;
+        let healthy = true;
+        try {
+          const signed = await backend.userMedia.signedUrls(paths);
+          healthy = signed.size === paths.length;
+        } catch {
+          healthy = true;
+        }
+        if (healthy) continue;
+        mediaRepaired.current.add(cloud.clientKey);
+        const uploaded = await cloudActions.upload({ ...source.record, decks: [source.deck] });
+        if (uploaded.ok) notify('info', t('toast.mediaRepaired'));
+      }
+    })();
+  }, [
+    authState.user,
+    state.ready,
+    state.local,
+    cloudState.ready,
+    cloudState.decks,
+    cloudActions,
+    notify,
+    t,
+  ]);
+
+  const boot = useCallback(
+    async (scope: ProgressScope, adoptGuest: boolean) => {
+      const [progress, local, aiSettings, materials] = await Promise.all([
+        loadScopeProgress(appStore, scope, { adoptGuest }),
+        loadPersistedLocalPlugins(),
+        loadAiSettings(),
+        loadMaterials(),
+      ]);
+      scopeRef.current = scope;
+      targetScopeRef.current = scope;
+      progressRef.current = progress;
+      hydrated.current = true;
+      persistEnabled.current = true;
+      if (adoptGuest) authActions.consumeNewAccount();
+
+      const localIssues = await activateLocalPlugins(local);
+      const { plugins, issues } = await loadBundledPlugins();
+      dispatch({
+        type: 'hydrate',
+        progress,
+        bundled: plugins,
+        local,
+        issues: [...issues, ...localIssues],
+        aiSettings,
+        materials,
+      });
+    },
+    [authActions],
+  );
 
   useEffect(() => {
     // Wait for auth before choosing a record: a restored session must load its
     // own progress, not the guest record.
     if (!authState.ready || bootstrapped.current) return;
     bootstrapped.current = true;
-    void boot(progressScopeFor(authState.user?.id));
-  }, [authState.ready, authState.user, boot]);
+    const adoptGuest = authState.newAccount && authState.user !== null;
+    void boot(progressScopeFor(authState.user?.id), adoptGuest);
+  }, [authState.ready, authState.user, authState.newAccount, boot]);
 
   // A closed tab must not lose the last answer to the 450 ms local debounce.
   // IndexedDB writes are asynchronous, but starting one on pagehide is the best
@@ -794,8 +874,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Signing in or out switches the visible progress record. The account that is
   // being left is written immediately, then the next identity's record is read.
-  // Stats never carry across identities; only guest practice is adopted into a
-  // new account, and only once.
+  // Stats never carry across identities; only a brand-new account created on
+  // this browser adopts guest practice, and only once.
   useEffect(() => {
     if (!authState.ready || !state.ready || !hydrated.current) return;
     const next = progressScopeFor(authState.user?.id);
@@ -803,14 +883,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     targetScopeRef.current = next;
     const token = ++scopeSwitch.current;
+    const adoptGuest = authState.newAccount && next.kind === 'account';
     void (async () => {
       persistEnabled.current = false;
       const leaving = progressRef.current;
       await persistNow(leaving);
       if (token !== scopeSwitch.current) return;
 
-      let loaded = await loadScopeProgress(appStore, next);
+      let loaded = await loadScopeProgress(appStore, next, { adoptGuest });
       if (token !== scopeSwitch.current) return;
+      if (adoptGuest) authActions.consumeNewAccount();
       // Keep the language/theme the learner was using when the guest record is
       // empty; the record itself stays at zero.
       if (next.kind === 'guest' && !hasLearningRecord(loaded)) {
@@ -825,7 +907,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
       dispatch({ type: 'summary', summary: null });
       await saveScopeProgress(appStore, next, loaded);
     })();
-  }, [authState.ready, authState.user, commitSession, persistNow, state.ready]);
+  }, [
+    authState.ready,
+    authState.user,
+    authState.newAccount,
+    authActions,
+    commitSession,
+    persistNow,
+    state.ready,
+  ]);
 
   useEffect(() => {
     applyAppearance(state.progress.settings.theme, state.progress.settings.fontScale, locale);
@@ -1085,16 +1175,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [commitProgress],
   );
 
-  const updateAiConfig = useCallback(
-    (patch: Partial<AiConfig>) => {
+  const updateAiSettings = useCallback(
+    (patch: Partial<AiSettings>) => {
       if (!authState.user) {
-        notify('info', t('settings.aiSignIn'));
+        notify('info', t('gen.engineSignIn'));
         return;
       }
-      const next = normalizeAiConfig({ ...aiConfigRef.current, ...patch });
-      aiConfigRef.current = next;
-      dispatch({ type: 'aiConfig', aiConfig: next });
-      void saveAiConfig(next);
+      const next = normalizeAiSettings({ ...aiSettingsRef.current, ...patch });
+      aiSettingsRef.current = next;
+      dispatch({ type: 'aiSettings', aiSettings: next });
+      void saveAiSettings(next);
     },
     [authState.user, notify, t],
   );
@@ -1151,10 +1241,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         return null;
       }
       const local = mergeLocalPlugins(state.local, record);
+      // Claim the record before the local write is persisted: the automatic
+      // uploader runs on the next render and would otherwise upload the same
+      // deck twice, and the loser of that race failed with a duplicate key.
+      autoUploaded.current.add(record.id);
       dispatch({ type: 'local', local });
       await persistLocalPlugins(local);
-      // Keep the automatic uploader from racing this explicit save.
-      autoUploaded.current.add(record.id);
+      // An explicit save always wins over an earlier delete of the same key.
+      revive(deck.key);
       const uploaded = await cloudActions.upload(record);
       if (!uploaded.ok) {
         notify(
@@ -1166,9 +1260,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 : describeBackendError(uploaded.error, t),
           }),
         );
-      } else {
-        notify('success', t('toast.deckGenerated', { name: deck.title }));
+        // Keep the draft on screen so a quota/MIME/network failure can be
+        // retried after the cause is fixed. The local copy stays too and is
+        // replaced when the retry succeeds.
+        return null;
       }
+      notify('success', t('toast.deckGenerated', { name: deck.title }));
       return record.id;
     },
     [authState.user, cloudActions, notify, state.local, t],
@@ -1219,6 +1316,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       dispatch({ type: 'local', local });
       await persistLocalPlugins(local);
       // Re-importing the same id after a delete must upload again.
+      for (const deck of result.record.decks) revive(deck.key);
       autoUploaded.current.delete(result.record.id);
       notify('success', t('toast.imported', { name: result.record.manifest.name }));
     },
@@ -1232,12 +1330,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const keys = new Set(record.decks.map((deck) => deck.key));
         for (const cloudDeck of cloudState.decks) {
           if (!keys.has(cloudDeck.clientKey)) continue;
-          const removed = await cloudActions.remove(cloudDeck.id);
+          const removed = await cloudActions.remove(cloudDeck.id, cloudDeck.clientKey);
           if (!removed.ok) {
             notify('error', describeBackendError(removed.error, t));
             return;
           }
         }
+        for (const key of keys) tombstone(key);
       }
       const local = state.local.filter((candidate) => candidate.id !== id);
       dispatch({ type: 'local', local });
@@ -1253,6 +1352,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   /** Drop a deck's local copy. Used after the cloud row or the deck itself is deleted. */
   const forgetLocalDeck = useCallback(
     async (key: string) => {
+      // Even if the local record cannot be found, the uploader must not bring
+      // this key back.
+      tombstone(key);
       const result = removeDeckFromLocalPlugins(state.local, key);
       if (!result.removed) return;
       dispatch({ type: 'local', local: result.records });
@@ -1380,8 +1482,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       ...officialDecks,
       ...localDecks.filter((deck) => !cloudDeckKeys.has(deck.key)),
       ...cloudDecks,
-    ];
-  }, [guestPlugin, officialDecks, visibleLocal, cloudPlugins, cloudDeckKeys]);
+      // A deck deleted in this tab stays gone even if a list reply that started
+      // before the delete arrives afterwards.
+    ].filter((deck) => !deletedKeys.has(deck.key));
+  }, [guestPlugin, officialDecks, visibleLocal, cloudPlugins, cloudDeckKeys, deletedKeys]);
 
   const pluginNames = useMemo(() => {
     const names = new Map<string, string>();
@@ -1428,11 +1532,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
       const cloudRecord = cloudState.decks.find((record) => record.clientKey === key);
       if (cloudRecord) {
-        const result = await cloudActions.remove(cloudRecord.id);
+        // Claim the key before the request: the automatic uploader must not
+        // re-create the deck while the delete is still in flight.
+        tombstone(key);
+        const result = await cloudActions.remove(cloudRecord.id, key);
         if (!result.ok) {
-          notify('error', describeBackendError(result.error, t));
+          revive(key);
+          notify(
+            'error',
+            result.error.code === 'forbidden'
+              ? t('toast.deckDeleteBlocked')
+              : describeBackendError(result.error, t),
+          );
           return;
         }
+        // The row is gone; a local copy left behind would be re-uploaded by the
+        // automatic uploader and the deck would reappear.
         await forgetLocalDeck(key);
         notify('success', t('toast.deckDeleted', { name }));
         return;
@@ -1507,7 +1622,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       toggleQuestionFlag,
       setQuestionNote,
       updateSettings,
-      updateAiConfig,
+      updateAiSettings,
       addMaterials,
       removeMaterial,
       clearMaterials,
@@ -1538,7 +1653,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       toggleQuestionFlag,
       setQuestionNote,
       updateSettings,
-      updateAiConfig,
+      updateAiSettings,
       addMaterials,
       removeMaterial,
       clearMaterials,

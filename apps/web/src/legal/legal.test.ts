@@ -115,4 +115,40 @@ describe('legal documents', () => {
     expect(configured.updated).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(configured.version).toMatch(/^\d+\.\d+$/);
   });
+
+  it('labels AI-generated content and tells learners to verify it', () => {
+    const terms = JSON.stringify(resolveDoc(LEGAL_DOCS.terms, 'en', configured));
+    for (const phrase of [
+      'AI-generated content and labelling',
+      'not individually reviewed',
+      'Keep any',
+      'Verify facts',
+      'AI-detection tools',
+    ]) {
+      expect(terms).toContain(phrase);
+    }
+
+    const privacy = JSON.stringify(resolveDoc(LEGAL_DOCS.privacy, 'en', configured));
+    expect(privacy).toContain('AI-generated results are labelled in the generation interface');
+    expect(privacy).toContain('A saved deck may still contain AI-generated content');
+  });
+
+  it('describes the paid plans that replaced the free-only service', () => {
+    const terms = JSON.stringify(resolveDoc(LEGAL_DOCS.terms, 'en', configured));
+    for (const phrase of [
+      'renew automatically',
+      'Unused plan points expire',
+      'subscription anniversary',
+      'Stripe',
+    ]) {
+      expect(terms).toContain(phrase);
+    }
+    expect(terms).not.toContain('currently free to use');
+    expect(terms).not.toContain('You pay the API costs');
+
+    const privacy = JSON.stringify(resolveDoc(LEGAL_DOCS.privacy, 'en', configured));
+    expect(privacy).toContain('Stripe');
+    expect(privacy).toContain('Billing and subscriptions');
+    expect(privacy).not.toContain('payment details or identity documents');
+  });
 });

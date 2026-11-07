@@ -23,9 +23,9 @@ import {
   readOfficialCache,
   writeOfficialCache,
   type OfficialCache,
+  type OfficialPack,
 } from '@/services/officialCache';
 import { buildOfficialPacks, type OfficialIssue } from '@/services/officialSync';
-import type { LoadedPlugin } from '@mengyin/plugin-sdk';
 
 export type OfficialStatus =
   | 'loading'
@@ -39,7 +39,7 @@ export type OfficialStatus =
 export interface OfficialContentState {
   ready: boolean;
   status: OfficialStatus;
-  packs: LoadedPlugin[];
+  packs: OfficialPack[];
   version: string | null;
   syncedAt: number | null;
   source: 'network' | 'cache' | 'none';

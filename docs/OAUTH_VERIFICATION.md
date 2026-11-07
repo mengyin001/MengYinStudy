@@ -60,6 +60,47 @@ already there. The Supabase project's **Authentication → URL Configuration →
 must also allow `https://study.mengyin.online/**`; that is a separate list and does not replace
 the Google redirect URI.
 
+A preview deployment needs its own entry in the same Supabase Redirect URLs list, for example
+`https://mengyinstudy-preview.libingzham1.workers.dev/**`. Leave the Site URL on production: an
+unlisted preview return URL otherwise falls back to the Site URL, which makes Google/GitHub
+sign-in land on the production site. The Google/GitHub callback URI itself does not change.
+
+## Known Google branding loop (Supabase callback domain)
+
+If the Google consent screen says **“Sign in to continue to
+`<project-ref>.supabase.co`”** instead of `MengYin Study`, the automated brand checker is
+comparing that displayed redirect host with the name on the homepage. This is a Google-side
+branding loop, not a defect in the homepage: Google's own documentation says that **without
+verification, only the application domain is visible** on the consent screen. The app uses
+Supabase Auth, so the visible domain is the Supabase callback host.
+
+The consent screen's privacy link is the *published* brand value. In the live screen it is
+`https://study.mengyin.online/privacy` (no trailing slash), while the homepage links
+`/privacy/`. Make the Console value exactly `https://study.mengyin.online/privacy/` and the
+homepage link the same string; a strict checker may compare them before following the 301.
+
+Checks before asking for manual review:
+
+1. **Audience → Publishing status.** If the app is still in Testing, click **Publish app** and
+   set it to In production.
+2. **Branding → Authorized domains.** Keep only `mengyin.online`. Do not add `supabase.co`;
+   the Supabase callback belongs in **Authorized redirect URIs**, not authorized domains.
+3. **Branding → Publish branding.** A saved draft is not live. After saving the name and URLs,
+   trigger verification and publish the approved brand. The live Google screen must show the
+   new privacy URL; if it still shows `/privacy` without the slash, the published brand has
+   not updated.
+4. **Branding → Last reviewed.** If the date does not change after a resubmission, Google is
+   reusing the old snapshot; another retry will not help.
+
+If the consent screen still shows the Supabase host, use the Verification Center's appeal
+path (or the Google Developer forums / `api-oauth-dev@google.com`) and ask for a manual
+review. Include the exact consent-screen text, the configured app name, the homepage and the
+privacy URL. Resubmitting the same automated check repeatedly does not break this loop.
+
+The permanent alternatives are a Supabase custom domain (`auth.mengyin.online`) so the
+redirect host is under the app's own domain, or a Google Identity Services ID-token flow that
+does not use the Supabase callback at all. Both are larger changes than the Console fields.
+
 ## Before resubmitting
 
 1. Deploy the build that contains the landing page and the new legal pages.

@@ -49,6 +49,19 @@ describe('backend errors', () => {
     );
   });
 
+  it('maps a deleted auth user to an expired session', () => {
+    const error = toBackendError({
+      code: 'user_not_found',
+      status: 403,
+      message: 'User from sub claim in JWT does not exist',
+    });
+    expect(error.code).toBe('unauthorized');
+    // Older GoTrue responses may omit the code but keep the message.
+    expect(
+      toBackendError({ status: 403, message: 'User from sub claim in JWT does not exist' }).code,
+    ).toBe('unauthorized');
+  });
+
   it('maps a disabled OAuth provider to provider-disabled', () => {
     const error = toBackendError({
       code: 'validation_failed',

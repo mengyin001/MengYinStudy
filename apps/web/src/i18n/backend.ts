@@ -19,6 +19,7 @@ const KEYS: Partial<Record<BackendErrorCode, MessageKey>> = {
   'signup-disabled': 'auth.error.signupDisabled',
   'profile-missing': 'auth.error.profileMissing',
   'invalid-data': 'auth.error.invalidData',
+  quota: 'auth.error.quota',
 };
 
 export function backendErrorKey(error: BackendError): MessageKey | null {

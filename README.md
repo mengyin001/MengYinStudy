@@ -3,11 +3,18 @@
 A plugin-driven revision app for multiple-choice study. English-first interface with a full
 Traditional Chinese version, built with React + TypeScript, shipping as a website and a desktop shell.
 
+**Since 0.6.1, AI generation runs behind a hosted API.** The browser no longer holds a provider key or the
+authoring prompt. A Cloudflare Worker calls the official GLM and DeepSeek APIs with server-held keys,
+draws exact diagrams in the browser, uses the Cloudflare Workers AI free allocation for photo-like
+scenes, and streams progress back over SSE. Signed-in learners choose a provider, model and image
+model in the Generate page's engine panel. The prompt, the keys and the provider base URLs are never
+part of the browser bundle.
+
 **0.6.0 adds six code languages.** Code questions can now be JavaScript, TypeScript, Python, SQL,
 Java or C++. JavaScript/TypeScript run on the browser engine, Python on Pyodide, SQL on sql.js and
 Java on javac + TeaVM — all local WebAssembly — while C++ uses the JSCPP interpreter. Everything runs
 inside the same isolated sandbox, with no execution server, and the static build ships the runtimes
-itself, so the app can be uploaded to Cloudflare Pages as-is.
+itself.
 
 **0.5.1 made exam length a property of the paper.** Official decks publish their own `examMinutes`
 and AI-generated decks set one from the model's per-question time estimates, so a five-question quiz
@@ -18,8 +25,12 @@ The Plaza catalogue, per-account cloud decks and row-level security from 0.4.0 r
 account can read its progress or decks, and RLS — not the UI — stops a normal account from writing
 official content, reading another learner's data or promoting itself to admin.
 
-- **Plaza** — browse every published official deck; adding one puts it in your library. Guests can
-  look, but must sign in to add
+- **Plaza** — a course-style catalogue: a crest, level and time estimate for every official pack,
+  per-pack progress, a continue/start lesson at the top, batch add, and a learning path with sample
+  questions in each pack. Guests can browse every pack, but must sign in to add a deck
+- **Collections** — group any decks in your library (AI-generated, imported, added official or
+  starter) into your own collections. A collection has its own page, progress, add/remove actions
+  and a back button, and syncs to `user_collections` on every signed-in device
 - **Official question bank** — published packs come from Supabase, are validated with the plugin
   zod schema, cached in IndexedDB for offline use and refreshed only when a catalogue version changes
 - **Accounts** — email/password, Google and GitHub OAuth, email confirmation, password recovery,
@@ -28,18 +39,29 @@ official content, reading another learner's data or promoting itself to admin.
   and every owned row cascades), which is what the app stores require.
 - **Automatic cloud decks and live progress** — generated and imported decks upload in the
   background once signed in; progress syncs automatically and other devices update without a reload.
-  There is no upload or restore button. AI keys and material files never leave the device
+  There is no upload or restore button. Provider keys never reach the browser; a bounded material
+  excerpt goes only to the AI API for that request.
 - **Data-service abstraction** — pages never import the Supabase SDK; they depend on
   `AuthService`, `ProfileService`, `OfficialContentService`, `UserDeckService`,
-  `UserLibraryService` and `UserProgressService` interfaces
+  `UserMediaService`, `UserLibraryService` and `UserProgressService` interfaces
 - **Deck-owned exam timers** — official decks publish a whole-paper length, AI generation sets one
   from per-question estimates, and other decks are estimated from question type and difficulty; there
   is no app-wide fixed test length
 - **Multiple choice first** — single-answer and multi-select questions, plus true/false, fill-in,
   short-answer (self-graded) and **code** questions — one blank, several named blanks, or a whole function body
-- **AI-generated decks** — your own API endpoint and key, material up to **1 GB** (PDF, DOCX, PPTX,
-  TXT, MD, CSV, JSON), a versioned authoring skill, batched generation and schema validation.
-  Materials are deleted automatically as soon as generation finishes
+- **AI-generated decks** — the built-in AI service (GLM and DeepSeek with server-held keys), material
+  up to **1 GB** (PDF, DOCX, PPTX, TXT, MD, CSV, JSON), batched generation, top-up and schema
+  validation. Visuals are routed by kind: **precise figures** (functions, geometry, charts, graphs,
+  maps, circuits, molecules, staves, timelines, apparatus, 3-D surfaces) are written as structured
+  data and drawn locally as SVG by one dedicated renderer per family, while **photo-like scenes** go
+  to web image search or the image model. Photo prompts are rewritten from the finished question,
+  checked by a vision model when one is configured, and cryptographically attested. The prompt and
+  keys stay on the server; materials are deleted automatically as soon as generation finishes.
+- **A shared 30 MB cloud budget** — saved photos move from deck JSON to a private Supabase Storage
+  bucket, and the database keeps only `storage:` paths. Diagrams are specs in the deck, so they add
+  no Storage objects; only photos are counted as images. Deck text (including specs) counts toward
+  the same 30 MB, enforced by database triggers; the sidebar always shows a live meter with the
+  text/image split
 - **Code questions are an official feature plugin** — JavaScript, TypeScript, Python, SQL, Java and
   C++. The learner fills one line; the app composes the program, runs its tests in an isolated
   browser sandbox and grades the output. Practice only: exams accept the answer but never execute
@@ -100,7 +122,7 @@ Requires Node.js 20.19+ (developed on 24).
 ```bash
 npm install
 cp .env.example .env   # Supabase URL + publishable key (already filled for this project)
-npm run dev            # http://127.0.0.1:5173
+npm run dev            # API on :8787 + web on http://127.0.0.1:5173
 ```
 
 ```bash
@@ -150,6 +172,7 @@ The content model splits content into two deliberately separate worlds:
 | **Generated decks** | Supabase `user_decks` (owner-only) + per-account IndexedDB cache | Sign-in required; uploads automatically; loaded from the server on sign-in/focus |
 | **Imported decks** | This browser's IndexedDB, then `user_decks` automatically | Uploaded in the background after sign-in |
 | **Private cloud decks** | Supabase `user_decks` (owner-only) | Visible on every signed-in device; signed out, generated decks are hidden |
+| **Collections** | Supabase `user_collections` (owner-only) + per-account IndexedDB cache | Group any library decks; edits sync automatically and are readable on every signed-in device |
 | **Guest starter decks** | Bundled in the app | Always available without an account |
 | **Progress, notes, flags** | Supabase `user_progress` (owner-only) + a per-account IndexedDB cache | Live sync: local changes upload automatically and other devices update through Realtime; JSON export/import remains as a manual backup |
 
@@ -164,8 +187,8 @@ Sign in from the account chip in the sidebar (or `#/login`). The complete flow i
 
 The browser only holds the **publishable** key. Official content is public-read; official writes are
 restricted by RLS to admins, and `profiles.role` is not in the authenticated update grant and is
-guarded by a trigger. Each `user_decks` row and `user_official_decks` reference is readable only by its
-owner. See the policy matrix in [docs/BACKEND.md](docs/BACKEND.md#2-permission-model).
+guarded by a trigger. Each `user_decks` row, `user_official_decks` reference and `user_collections`
+row is readable only by its owner. See the policy matrix in [docs/BACKEND.md](docs/BACKEND.md#2-permission-model).
 
 ### Backend setup
 
@@ -189,43 +212,52 @@ The seed script is also the content update path: edit `plugins/` or use Supabase
 `npm run seed:official -- --pack=<id>`; the version trigger makes every client refresh on its next
 check. Details, admin bootstrap and the full policy matrix: [docs/BACKEND.md](docs/BACKEND.md).
 
+To sell subscriptions, create the Stripe products/prices, webhook and secrets described in
+[docs/STRIPE_SETUP.md](docs/STRIPE_SETUP.md); `npm run stripe:check` verifies the six price ids
+before you open Checkout.
+
 ## AI-generated decks
 
-**Generate** turns your own material into a practice deck using your own AI provider. The official
-catalogue and accounts use Supabase, but **AI generation still has no proxy**: nothing leaves the
-device except the request to the provider you configured.
+**Generate** turns your material into a practice deck through the hosted AI API. You do not enter a
+provider key: the Worker holds the official GLM and DeepSeek keys and forwards only the request.
 
-1. **Settings → AI question generation**: API base URL (e.g. `https://api.openai.com/v1`), key and
-   model. Any OpenAI-compatible endpoint works, but the provider must allow browser CORS. The key is
-   stored only in this device's IndexedDB and is **excluded from backups**.
+1. **Generate → Generation engine** lists the providers, text models and image models the server has
+   configured. Choose Automatic, or pick a provider, model and image model, and choose whether
+   visuals are off, automatic or wanted for every question. There is no per-deck visual cap;
+   Generate more can keep adding questions and pictures. Changes save immediately and apply to the
+   next generation; no key is involved.
 2. **Generate**: add material (`.pdf`, `.docx`, `.pptx`, `.txt`, `.md`, `.csv`, `.json`) — up to
    **1 GB** in total. Only text is read; images are never decoded, which is what makes a
    picture-heavy PDF workable. Scanned PDFs without a text layer are rejected (no OCR). Extracted
    text is capped at 8 M characters per file and 32 M in total, and the material row marks truncated files.
-3. Pick a topic, 1–30 questions, difficulty, language, and **one or more question types** (multiple
+3. Pick a topic, any number of questions, difficulty, language, and **one or more question types** (multiple
    choice, multi-select, true/false, fill, short answer, code). Selecting a single type produces only
    that type; selecting several mixes them.
    **No file is required**: write a description (the first line can double as the topic) and generate
    from that. A short text file such as `1.txt` containing `C++ coding` is accepted, and a short
    heading is handled as a **topic brief**: the model uses general knowledge instead of refusing to
    invent facts.
-4. The app chunks the material, ranks chunks against the topic, sends at most six questions per
-   request, validates every reply with the same schema as a plugin deck, removes duplicates, and
-   shows the result for review. If the provider cuts a reply off at its output-token limit, the batch
-   is halved and retried automatically. Save the ones you want as a deck; saving requires sign-in.
+4. The browser sends a bounded, topic-ranked extract (up to 300k characters) to `POST /api/ai/questions`
+   and reads progress over server-sent events. The Worker chunks the material, asks for at most six
+   questions per call, validates every reply with the same schema as a plugin deck, removes duplicates,
+   and halves a batch that hit the provider's output limit. Exact diagrams arrive as `figure` specs and
+   are drawn locally; photo briefs are rewritten from the finished question, rendered with Cloudflare
+   Workers AI (free allocation), checked by a vision model when one is configured, and signed so the
+   bytes cannot be swapped later.
+5. Review the result, untick anything you do not want, and save it as a deck. Saving requires sign-in.
 
-Saving a generated deck requires an account. It is uploaded immediately to your private
-`user_decks` rows, fetched from the server when you sign in, and cached in IndexedDB per account so
-offline use still works. Imported folder/JSON decks upload in the same background pass. While signed
-out, generated decks are hidden; the bundled guest starter decks remain available. The upload
-contains the deck JSON only — not your material, AI key or progress. Uploaded materials are deleted
-as soon as generation finishes.
+Saving a generated deck uploads the deck JSON — figure specs included, photos moved to private
+Storage — to your private `user_decks` rows. It is cached in IndexedDB per account so offline use
+still works. While signed out, generated decks are hidden; the bundled guest starter decks remain
+available. Material text is deleted from the device as soon as generation finishes and is never
+stored on the server.
 
-The system prompt is a versioned [question authoring skill](docs/QUESTION_AUTHORING_SKILL.md): exact
-JSON shape, per-type rules, quality bar, prompt-injection defence and the code-question contract.
-The app never trusts the model — invalid questions are dropped and reported.
+The authoring prompt lives in `apps/api/src/generation/skill.ts`. It is bundled only into the Worker,
+never into the web app, and provider keys are Worker secrets. The app never trusts the model — invalid
+questions are dropped and reported.
 
-Limits and setup details: [docs/AI_GENERATION.md](docs/AI_GENERATION.md).
+Setup, keys and API details: [docs/AI_GENERATION.md](docs/AI_GENERATION.md) and
+[docs/AI_API.md](docs/AI_API.md).
 
 ## Code questions
 
@@ -276,15 +308,14 @@ SQL, Java or C++. Three shapes are supported:
   ≈0.7 MB, C++ ≈0.4 MB) and is then browser-cached. SQL tests put schema and rows in a SQL `input`
   string and print `SELECT` results as `a | b` rows; Java/C++ tests put their fixture in a `stdin`
   string and print to stdout.
-- **Cloudflare Pages:** `apps/web/public/_headers` grants CORS on `/runtimes/*` (the sandbox iframe
-  has an opaque origin) and caches the versioned runtime files immutably. See
-  [docs/DEPLOY_CLOUDFLARE.md](docs/DEPLOY_CLOUDFLARE.md) for the build command and output directory.
+- **Cloudflare Worker:** `apps/web/public/_headers` grants CORS on `/runtimes/*` (the sandbox iframe
+  has an opaque origin) and caches the versioned runtime files immutably. The same Worker serves
+  `/api/ai/*`. See [docs/DEPLOY_CLOUDFLARE.md](docs/DEPLOY_CLOUDFLARE.md) for the build command and
+  output directory.
 
 | Six named blanks, two nested loops | A whole `main()` body |
 | --- | --- |
 | ![Multiple blanks](docs/screenshots/code-multi.png) | ![Whole body](docs/screenshots/code-body.png) |
-
-![Authoring skill](docs/screenshots/skill.png)
 
 ## Privacy policy and terms
 
@@ -308,6 +339,10 @@ npm run desktop    # build, then open the Electron window
 The shell serves `apps/web/dist` from a loopback-only HTTP server instead of `file://`, so `fetch`,
 dynamic `import()` of plugin modules and the service worker behave exactly as in the browser.
 
+The desktop shell has no API server of its own. Set `VITE_AI_API_BASE` to the deployed Worker URL
+before `npm run desktop`; the Worker's `ALLOWED_ORIGINS=*` setting allows the loopback origin. Without
+it, practice works but AI generation reports that the service is unavailable.
+
 If npm blocks Electron's download script: `npm install-scripts approve electron`, then
 `node node_modules/electron/install.js`. Without Electron you can still install the PWA from
 `npm run preview`.
@@ -324,35 +359,40 @@ mengyin-study/
 │  │  │  ├─ components/       question card, code answer, verdict, results, UI primitives
 │  │  │  ├─ domain/           plugin registry, answer adapters, deck views, grading
 │  │  │  ├─ pages/            Today, Decks, Plaza, Generate, Practice, Review, Statistics, Plugins, Settings
-│  │  │  ├─ ai/               authoring skill, provider client, materials, chunking, generation
+│  │  │  ├─ ai/               API client, materials, chunking and request packing
 │  │  │  ├─ sandbox/          code runner (JS worker; Python/SQL/Java/C++ runtimes in a sandboxed iframe)
 │  │  │  ├─ services/         data-service contracts, Supabase impl, catalogue cache/sync
 │  │  │  ├─ state/            AppContext, AuthContext, OfficialContentContext
 │  │  │  ├─ lib/              router, IndexedDB, formatting, theme
 │  │  │  └─ styles/           design tokens (base.css) and layout (app.css)
 │  │  └─ public/              icons, manifest, service worker
+│  ├─ api/                    Cloudflare Worker: providers, generation prompt, images, auth, quotas
 │  └─ desktop/                Electron shell (main.cjs + preload.cjs)
 ├─ packages/
+│  ├─ ai-contract/            wire types shared by the web client and the Worker
 │  ├─ core/                   framework-free domain: types, grading, SM-2, sessions, stats
 │  └─ plugin-sdk/             plugin contract: zod schemas, registries, loader
 ├─ plugins/                   official content sources (decks + optional feature module)
 ├─ supabase/                  migrations, local config, backend README
-├─ tools/                     sync, scaffold, backend seed/check, headless verification
-└─ docs/                      plugin guide, architecture, backend/RLS, legal and Cloudflare guides
+├─ tools/                     sync, scaffold, backend seed/check, local API, headless verification
+└─ docs/                      plugin guide, architecture, backend/RLS, AI API, Stripe setup, legal and Cloudflare guides
 ```
 
 ## Commands
 
 | Command | What it does |
 | --- | --- |
-| `npm run dev` | sync plugins, start Vite |
-| `npm run build` | sync plugins, build to `apps/web/dist` |
+| `npm run dev` | start the AI API (8787) and Vite (5173) together |
+| `npm run dev:web` | start only Vite; it proxies `/api` to 127.0.0.1:8787 |
+| `npm run dev:api` | run the Worker API locally with Node; demo provider when no key is set |
+| `npm run build` | sync plugins, build the web app and Worker assets to `apps/web/dist` |
+| `npm run deploy` | build, then `wrangler deploy` the Worker and static assets |
 | `npm run preview` | preview the build on 127.0.0.1:4173 |
 | `npm run plugins:sync` | copy `plugins/` to `apps/web/public/plugins` + write `index.json` |
 | `npm run runtimes:fetch` | copy Pyodide + sql.js into `apps/web/public/runtimes/` (also runs before dev/build) |
 | `npm run plugins:watch` | same, on file changes |
 | `npm run plugin:new -- my-deck` | scaffold a plugin folder with sample questions |
-| `npm test` | Vitest unit tests (190) |
+| `npm test` | Vitest unit tests (424) |
 | `npm run typecheck` | TypeScript across all workspaces |
 | `npm run check` | typecheck + test + build |
 | `npm run backend:check` | publishable-key check of auth, catalogue version and counts |
@@ -443,14 +483,14 @@ in Settings remains available as a manual backup independent of the live row.
 ## Verification
 
 ```bash
-npm run check          # typecheck + 225 unit tests + build
+npm run check          # typecheck + 424 unit tests + build
 npm run backend:check  # auth + catalogue version + published counts
 npm run serve:dist     # in another terminal
 ```
 
-Latest run: typecheck clean, **225/225** tests, build OK (main JS **207.20 KB / 48.56 KB gzip**, CSS
-**48.88 KB / 8.69 KB gzip**, lazy pdf.js chunk 414.93 KB / 123.17 KB gzip + 1.2 MB worker; the
-TypeScript transpiler is a separate lazy **901.90 KB / 262.36 KB gzip** chunk, loaded only when a
+Latest run: typecheck clean, **424/424** tests, build OK (main JS **207.20 KB / 48.56 KB gzip**, CSS
+**67.83 KB / 11.70 KB gzip**, lazy pdf.js chunk 414.93 KB / 123.17 KB gzip + 1.2 MB worker; the
+TypeScript transpiler is a separate lazy **992.70 KB / 293.30 KB gzip** chunk, loaded only when a
 TypeScript question runs). A headless browser run verified guest starter decks, guest progress
 surviving sign-in, Plaza add/remove, automatic cloud upload of an imported deck, cloud deletion, and
 the sign-in gates on Generate and Settings. A targeted code-question run verified that a body-layout
@@ -459,9 +499,10 @@ and a production-build run verified JavaScript, TypeScript, Python, SQL, Java an
 end to end against `npm run serve:dist` (including the runtime CORS headers, Java stdin and the
 JSCPP interpreter). A second browser
 run verified per-identity statistics: signing out zeroes the dashboard and Recent practice, signing
-back in restores that account's 3 attempts and session, a reload keeps them, a second account adopts
-guest practice without seeing the first account's history, and the legacy `progress:v1` record is
-claimed once. A two-context live-sync run then verified that a second sign-in receives the first
+back in restores that account's 3 attempts and session, a reload keeps them, a newly created account
+adopts guest practice without seeing the first account's history, signing into an existing account
+leaves guest practice in place, and the legacy `progress:v1` record is claimed once. A two-context
+live-sync run then verified that a second sign-in receives the first
 device's attempt, that an answer on either device appears on the other without a reload, that
 **Reset progress** clears both devices through the epoch, and that signing out shows zero while
 signing back in restores the cloud record. Additional browser checks verified that a generated local
@@ -492,17 +533,22 @@ Google/GitHub still need their OAuth apps enabled in the Supabase dashboard.
 - **Progress is per identity and follows the account.** Guests have a local record; every account has
   an owner-only cloud row. Signing out shows the guest record (normally zero), signing back in restores
   that account's attempts, sessions, mistakes and notes, and another signed-in device receives changes
-  through Realtime. A new account adopts guest practice once and clears the guest record; the shared
-  `progress:v1` record from earlier versions is claimed by the first account that signs in after
-  upgrading.
+  through Realtime. Only an account created on this device adopts guest practice once and clears the
+  guest record; signing into an existing account leaves guest practice untouched and keeps that
+  account's own statistics. The shared `progress:v1` record from earlier versions is claimed by the
+  first account that signs in after upgrading.
+- **A deleted account does not linger on other devices.** Deleting the account on a phone removes the
+  auth user, but the desktop's local token would otherwise stay valid until it expired. Every device
+  now re-checks the stored session on boot, on focus and once a minute, and drops the session when
+  GoTrue says the account is gone. Offline or server failures never sign anyone out.
 - **Merging is field-aware, not last-write-wins.** Attempts and sessions union by id, cards keep the
   newest review, flags/notes use per-question timestamps, and theme/language stay device-local. Only a
   reset or backup import bumps the epoch and replaces other devices, which is intentional.
 - **Official additions are references.** Removing an official deck from your library does not delete
   it from the catalogue or from anyone else's library.
-- AI generation calls your provider directly from the browser, so the provider must allow CORS. There
-  is no proxy and no streaming; a 30-question deck can take several requests. Materials are deleted
-  after a successful generation, so re-generating from the same file means adding it again.
+- AI generation goes through the hosted Worker, so it needs a network connection and a signed-in
+  session. Progress streams over SSE, but a large deck can still take a minute. Materials are
+  deleted after a successful generation, so re-generating from the same file means adding it again.
 - The code sandbox supports JavaScript, TypeScript, Python, SQL, Java and C++. C++ is the JSCPP
   teaching interpreter, not a full Clang build: `iostream`, `cmath`, arrays, functions, pointers and
   basic classes work, but full STL containers, templates and exceptions do not. Java is javac +
@@ -513,7 +559,8 @@ Google/GitHub still need their OAuth apps enabled in the Supabase dashboard.
 - Accounts, the official catalogue, **generated and imported cloud decks** and **live progress** use
   Supabase. A cloud deck and the progress row are private to the account that owns them — do not treat
   either as a shareable link. Runtime plugin modules execute on every signed-in device, so only upload
-  code you trust. The AI key and uploaded materials are deliberately left out of the JSON backup.
+  code you trust. The AI provider key lives only on the server, and uploaded materials are deliberately
+  left out of the JSON backup.
 - The official catalogue is public-read. It is not a paid-content system; change the read policies
   and clear the local cache on sign-out if it ever needs to be private.
 - OAuth in the Electron shell needs a fixed loopback port and that URL registered in Supabase; the
@@ -534,25 +581,27 @@ Google/GitHub still need their OAuth apps enabled in the Supabase dashboard.
   衝突以合併處理（作答聯集、卡片取最新複習、標記／筆記有時間戳），只有「重設進度」或匯入備份會
   以較高 epoch 取代其他裝置
 - **0.4.0：廣場 + 自動雲端題庫**——官方題庫是公開目錄，在 **廣場** 瀏覽後按「加入我的題庫」才會進入
-  自己的題庫；未登入可瀏覽但不能加入。訪客有兩組內建入門題庫，登入後作答、錯題與統計會繼承
+  自己的題庫；未登入可瀏覽但不能加入。訪客有兩組內建入門題庫；在這部裝置新開的帳戶會繼承訪客的作答、
+  錯題與統計，登入既有帳戶則保留該帳戶自己的紀錄，不會混入訪客練習
 - **官方題庫會自動更新**：資料庫目錄版本一變，App 下次檢查（開機、回到視窗、每 15 分鐘或按「檢查更新」）
   就會下載、驗證並快取；已加入的題庫會跟隨最新題目內容
 - **生成與匯入的題庫全自動上傳**到私人帳戶，不需要按「上傳」；登入後可在其他裝置看到。未登入時生成的
   題庫會隱藏，匯入的題庫仍可本機使用
 - **插件只負責功能**：題型、匯入器與執行期 hook；題庫是內容，放在廣場或自己的題庫。程式題是官方功能插件，
   支援 JavaScript、TypeScript、Python、SQL、Java 與 C++；Python、SQL、Java 以 WebAssembly、C++ 以 JSCPP 在瀏覽器本機執行，靜態網站即可運作
-- **AI 出題**：用你自己的 OpenAI 相容 API 與教材（PDF、DOCX、PPTX、TXT、MD、CSV、JSON，最多 **1 GB**），
-  以有版本的 skill 生成並用同一套 schema 驗證；**生成完成後材料會自動刪除**
+- **AI 出題**：內建 GLM 與 DeepSeek 服務（供應商金鑰只在伺服器）。精確圖（函數、幾何、電路、圖表、標註結構）
+  由推理模型輸出規格、瀏覽器即時繪製；自然實景才交給生圖模型，並經視覺模型校檢與簽章保護；教材支援
+  PDF、DOCX、PPTX、TXT、MD、CSV、JSON，最多 **1 GB**，生成後以同一套 schema 驗證；**生成完成後材料會自動刪除**
 - 練習、限時測驗、錯題重溫、間隔重複（SM-2）、標記與筆記
-- 未登入不能使用 AI 出題、廣場加入或設定 API 金鑰；但仍可練習入門題庫
-- 進度、筆記與 AI 金鑰存在本機（IndexedDB），可離線使用、可匯出 JSON 備份；題庫自動同步，進度備份則是
-  明確的上傳／還原
+- 未登入不能使用 AI 出題或加入廣場；但仍可練習入門題庫
+- 進度、筆記與 AI 偏好存在本機（IndexedDB），可離線使用、可匯出 JSON 備份；題庫自動同步，進度備份則是
+  明確的上傳／還原；AI 供應商金鑰不會進入瀏覽器
 - 視覺是「編輯／學院風」：暖紙色、襯線標題、細線分隔、密集列表，沒有漸變與發光大卡片
 
 ```bash
 npm install
 cp .env.example .env
-npm run dev        # http://127.0.0.1:5173
+npm run dev        # API :8787 + web :5173
 npm run desktop    # 桌面視窗
 ```
 

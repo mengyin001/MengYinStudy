@@ -1,9 +1,11 @@
 import { useMemo, useState } from 'react';
 import { computeStats, computeStreak, DAY_MS, startOfDay } from '@mengyin/core';
+import { StreakFlame } from '@/components/StreakFlame';
 import { Empty, Meter, PageHead } from '@/components/ui';
 import { tagStats } from '@/domain/library';
 import type { MessageKey } from '@/i18n/messages';
 import { formatDuration, formatShortDay, pct } from '@/lib/format';
+import { streakLabel } from '@/lib/streakLabel';
 import { useApp } from '@/state/AppContext';
 
 export function StatsPage() {
@@ -56,7 +58,17 @@ export function StatsPage() {
       <PageHead
         title={t('stats.title')}
         lede={t('stats.subtitle', { n: attempts.length, time: formatDuration(stats.ms, locale) })}
-        actions={<span className="badge">{t('stats.streak', { current: streak.current, best: streak.best })}</span>}
+        actions={
+          <span className="badge">
+            <StreakFlame
+              current={streak.current}
+              best={streak.best}
+              size={13}
+              label={streakLabel(streak.current, streak.best, t)}
+            />{' '}
+            {t('stats.streak', { current: streak.current, best: streak.best })}
+          </span>
+        }
       />
 
       <section className="metrics">

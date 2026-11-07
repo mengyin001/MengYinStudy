@@ -1,0 +1,19 @@
+{
+  "name": "@mengyin/api",
+  "version": "0.8.0",
+  "private": true,
+  "type": "module",
+  "description": "MengYin AI question API on Cloudflare Workers: GLM/DeepSeek text and Workers AI images",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@mengyin/ai-contract": "*",
+    "@mengyin/core": "*",
+    "@mengyin/plugin-sdk": "*"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  }
+}

@@ -39,12 +39,14 @@ export function Seg<T extends string>({
   onChange,
   label,
   wrap = false,
+  disabled = false,
 }: {
   value: T;
   options: { value: T; label: string }[];
   onChange: (value: T) => void;
   label?: string;
   wrap?: boolean;
+  disabled?: boolean;
 }) {
   return (
     <div className={`seg ${wrap ? 'is-wrap' : ''}`} role="group" aria-label={label}>
@@ -54,6 +56,7 @@ export function Seg<T extends string>({
           type="button"
           className={`seg__btn ${option.value === value ? 'is-active' : ''}`}
           aria-pressed={option.value === value}
+          disabled={disabled}
           onClick={() => onChange(option.value)}
         >
           {option.label}
@@ -94,14 +97,17 @@ export function NumField({
   suffix,
   label,
   onChange,
+  disabled = false,
 }: {
   value: number;
   min: number;
-  max: number;
+  /** Omit for no UI ceiling; the API still decides what it can generate. */
+  max?: number;
   step?: number;
   suffix?: string;
   label: string;
   onChange: (value: number) => void;
+  disabled?: boolean;
 }) {
   return (
     <span className="numfield">
@@ -112,9 +118,10 @@ export function NumField({
         max={max}
         step={step}
         aria-label={label}
+        disabled={disabled}
         onChange={(event) => {
           const next = Number(event.target.value);
-          if (Number.isFinite(next)) onChange(Math.min(max, Math.max(min, next)));
+          if (Number.isFinite(next)) onChange(Math.min(max ?? Number.MAX_SAFE_INTEGER, Math.max(min, next)));
         }}
       />
       {suffix ? <span className="numfield__suffix">{suffix}</span> : null}

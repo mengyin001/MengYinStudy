@@ -6,7 +6,7 @@
     <title>MengYin Study</title>
     <meta
       name="description"
-      content="MengYin Study is a revision and practice app for building question decks, drilling mistakes, generating study questions with your own AI endpoint, and tracking what you have learned."
+      content="MengYin Study is a revision and practice app for building question decks, drilling mistakes, generating study questions with the built-in AI service, and tracking what you have learned."
     />
     <meta name="application-name" content="MengYin Study" />
     <meta name="apple-mobile-web-app-title" content="MengYin Study" />
@@ -19,7 +19,7 @@
     <meta property="og:title" content="MengYin Study" />
     <meta
       property="og:description"
-      content="A revision and practice app: build question decks, drill mistakes, generate study questions with your own AI endpoint, and track what you have learned."
+      content="A revision and practice app: build question decks, drill mistakes, generate study questions with the built-in AI service, and track what you have learned."
     />
     <meta property="og:url" content="https://study.mengyin.online/" />
     <meta property="og:image" content="https://study.mengyin.online/icons/og-image.png" />
@@ -45,7 +45,7 @@
         "@type": "SoftwareApplication",
         "name": "MengYin Study",
         "url": "https://study.mengyin.online/",
-        "description": "A revision and practice app for building question decks, drilling mistakes, generating study questions with your own AI endpoint, and tracking progress.",
+        "description": "A revision and practice app for building question decks, drilling mistakes, generating study questions with the built-in AI service, and tracking progress.",
         "applicationCategory": "EducationalApplication",
         "operatingSystem": "Web, Windows, macOS, Linux",
         "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
@@ -84,7 +84,9 @@
       }
       .preboot__nav {
         display: flex;
-        gap: 20px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 6px 20px;
         margin-left: auto;
         font-size: 13px;
       }
@@ -161,6 +163,7 @@
           <img src="./icons/favicon.svg" width="28" height="28" alt="" />
           <a class="preboot__brand" href="./">MengYin Study</a>
           <nav class="preboot__nav" aria-label="Homepage links">
+            <a href="./#/pricing">Pricing</a>
             <a href="./privacy/">Privacy Policy</a>
             <a href="./terms/">Terms of Service</a>
             <a href="mailto:mengyinqwq@gmail.com">Contact</a>
@@ -175,7 +178,7 @@
           </p>
           <p class="preboot__body">
             Study official decks or import your course material. Generate practice questions with
-            your own AI endpoint, practise code in six languages, and see exactly what you have
+            the built-in AI service, practise code in six languages, and see exactly what you have
             learned. No ads, no tracking, and no selling your data.
           </p>
           <p class="preboot__purpose">
@@ -187,6 +190,7 @@
           </p>
           <p class="preboot__links">
             <a href="./#/today">Open the app</a>
+            <a href="./#/pricing">Pricing</a>
             <a href="./privacy/">Privacy Policy</a>
             <a href="./terms/">Terms of Service</a>
             <a href="mailto:mengyinqwq@gmail.com">Contact</a>

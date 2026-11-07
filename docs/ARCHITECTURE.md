@@ -12,13 +12,22 @@
 │  │                  UserLibrary                              │
 │  ├─ services/       data-service contracts + Supabase impl   │
 │  ├─ domain/         registries, guest decks, deck views      │
-│  ├─ ai/             skill, provider, materials, generation   │
+│  ├─ ai/             API client, materials, chunking, packing │
 │  └─ sandbox/        code runner (worker inside sandboxed iframe)│
+├────────────────────────────────────────────────────────────┤
+│ apps/api            Cloudflare Worker                        │
+│  ├─ providers/      GLM + DeepSeek official API transport    │
+│  ├─ generation/     server-only prompt, batching, validation │
+│  ├─ images/         Cloudflare Workers AI + illustrate step  │
+│  └─ http/           auth, quotas, validation, CORS, routes   │
+├────────────────────────────────────────────────────────────┤
+│ packages/ai-contract  Shared wire types (no prompt, no key)  │
 ├────────────────────────────────────────────────────────────┤
 │ Supabase            auth (GoTrue), Postgres/RLS, Storage     │
 │  ├─ profiles        own row; role guarded server-side        │
 │  ├─ official_*      published read; admin write              │
 │  ├─ user_official_decks  owner-only Plaza references         │
+│  ├─ user_collections  owner-only deck-key groups             │
 │  ├─ user_decks      owner-only generated/imported deck copies│
 │  ├─ user_progress   owner-only live progress (Realtime)      │
 │  └─ catalog_meta    monotonic version for cache invalidation │
@@ -42,18 +51,20 @@
 └────────────────────────────────────────────────────────────┘
 ```
 
-Dependencies only point one way: `web → plugin-sdk → core`. Neither `core` nor `plugin-sdk` knows
-about React, so both can be tested in Node and reused by a CLI or a different shell. The UI depends
-on the interfaces in `apps/web/src/services/types.ts`; only `services/supabase/` imports the
-Supabase SDK.
+Dependencies only point one way: `web → ai-contract`, `api → ai-contract`, and both → `plugin-sdk → core`.
+Neither `core` nor `plugin-sdk` knows about React or Cloudflare, so both can be tested in Node and reused
+by a CLI or a different shell. The UI depends on the interfaces in `apps/web/src/services/types.ts`;
+only `services/supabase/` imports the Supabase SDK. Provider keys exist only in the Worker environment.
 
 ## Startup
 
 1. `main.tsx` mounts `AuthProvider` → `UserDecksProvider` → `UserLibraryProvider` →
    `OfficialContentProvider` → `AppProvider`; built-in question types are registered first
    (`builtin` owner).
-2. Auth restores the Supabase session (PKCE, local storage). The official provider reads the last
-   catalogue snapshot from IndexedDB and then checks `official_catalog_meta.version`.
+2. Auth restores the Supabase session (PKCE, local storage) and revalidates it against GoTrue in the
+   background, so a session deleted on another device is dropped without blocking the first paint.
+   The official provider reads the last catalogue snapshot from IndexedDB and then checks
+   `official_catalog_meta.version`.
 3. Once auth has restored its session, `AppProvider` reads the identity's own progress record
    (`progress:v2:guest` or `progress:v2:user:<id>`) and `local-plugins:v1` from IndexedDB and
    normalises them. `UserDecksProvider` and `UserLibraryProvider` list the signed-in user's cloud
@@ -71,8 +82,12 @@ Supabase SDK.
 8. Decks are flattened into `entries` (question + deck + global key); every page reads that.
 9. Progress writes are debounced 450 ms into the active identity's record. Signing in or out flushes
    the record being left and loads the next one, so a guest never sees an account's attempts or
-   sessions. A new account adopts guest practice once and the guest record is cleared; the old shared
-   `progress:v1` blob is claimed by the first account that signs in after 0.4.1.
+   sessions. Only an account created on this browser adopts guest practice once, and the guest record
+   is cleared; signing into an existing account never touches it. The old shared `progress:v1` blob is
+   claimed by the first account that signs in after 0.4.1.
+   `AuthProvider` also re-checks the stored session with GoTrue on boot, on focus and once a minute;
+   a `user_not_found`/expired session is dropped so an account deleted on another device cannot stay
+   visible. Network failures keep the session and offline study working.
 10. For a signed-in account, `AppContext` starts a sync controller. It GETs `user_progress`, merges
     the cloud copy into the local record with `mergeProgress`, commits any difference, and pushes a
     conditional update when the cloud is behind. A local learning change is pushed after 800 ms.
@@ -142,36 +157,62 @@ which the session counts as skipped.
 ## AI question generation
 
 ```
-materials (IndexedDB) or a written description ──chunk + rank──▶ batches ──system skill + excerpts──▶ provider
-                                                                               │
-preview ◀── dedupe/validate ◀── normalize ◀── JSON parse ◀── reply ◀──────────┘
+materials (IndexedDB) ──bounded, topic-ranked excerpts──▶ POST /api/ai/questions  (Worker)
+                                                                │
+                                          provider registry ────┤ GLM / DeepSeek (official APIs)
+                                          batched prompt ───────┤
+                                          zod validation        │
+                                          dedupe + visuals ──────┤ Cloudflare Workers AI (photos only)
+                                                                │
+preview ◀── SSE progress + final deck ◀── runGeneration ◀───────┘
    │
    ├─ clear materials (successful generation)
    └─ save ▶ per-account cache ▶ user_decks (owner-only) ▶ Decks
 ```
 
-- `ai/skill.ts` is the versioned system prompt; it is the contract, not a suggestion. The exact text
-  is also in `docs/QUESTION_AUTHORING_SKILL.md`, and a test keeps the two in sync.
-- `ai/materials.ts` enforces the 1 GB upload budget and a 32 M character storage cap. A one-line text
-  file is accepted; only whitespace is rejected. `ai/extract.ts` handles text and Office XML;
-  `ai/pdf.ts` lazy-loads pdf.js (the worker is a separate 1.2 MB asset) so PDF support costs nothing
-  until a PDF is added. Images are ignored, never decoded.
-- Generation does not require a file: the description field, or a file that is only a short heading,
-  becomes a **topic brief**; its first line can serve as the topic. The model uses well-established
-  general knowledge for a short brief such as "C++ coding" instead of refusing because no substantive
-  source document exists.
-- `ai/chunks.ts` splits on paragraph boundaries and scores chunks against the topic; each batch gets a
-  different window so a large document is covered rather than truncated. Requests are capped at six
-  questions even when the material is a single chunk.
-- `ai/client.ts` is a small OpenAI-compatible chat client with timeout, one transient retry, a
-  `response_format` fallback, and defensive JSON extraction. A reply cut off at the provider's token
-  limit is marked `truncated`; `ai/generate.ts` halves the batch and retries it.
-- `ai/generate.ts` asks for at most six questions per call, validates each with the plugin zod schema,
-  asks once for a repair when the reply cannot be parsed, removes duplicates, and reports shortfalls.
-- The API key lives in `ai-config:v1` and is deliberately excluded from the backup export. Material
-  text lives in `ai-materials:v1` only while a generation is being prepared; it is cleared after a
-  successful generation. Generated decks are saved to the owner-only cloud table and cached locally
-  per account; they are hidden while signed out.
+- `packages/ai-contract` defines the wire types. `apps/web/src/ai/api.ts` is the browser transport:
+  it attaches the Supabase bearer token, packs a bounded material excerpt, and parses SSE progress.
+- `apps/api/src/providers/registry.ts` is the provider catalogue. GLM and DeepSeek use their official
+  OpenAI-compatible endpoints; keys are Worker secrets. Adding a provider is a local spec plus a key
+  variable, not a web-app change.
+- `apps/api/src/generation/skill.ts` is the versioned system prompt. It is bundled only into the
+  Worker; the web bundle contains no prompt text, no provider base URL and no key. The prompt covers
+  the JSON shape, per-type rules, prompt-injection defence, the code-question contract and the
+  visual object (diagram spec or photo brief).
+- `apps/api/src/generation/generate.ts` asks for at most six questions per call, validates every
+  reply with the plugin zod schema, asks once for a repair when the reply cannot be parsed, and
+  removes duplicates. A reply cut off at the provider's token limit keeps its complete question
+  objects; only the missing count is requested again, and a batch with nothing complete is split in
+  half. Malformed JSON with literal control characters is repaired before parsing.
+- `apps/web/src/ai/materials.ts` enforces the 1 GB upload budget and a 32 M character storage cap, then
+  packs at most 300k characters (eight excerpts, 180k parts) for one API request. `extract.ts` handles
+  text and Office XML; `pdf.ts` lazy-loads pdf.js. Images are ignored, never decoded.
+- A topic with no material is a **topic brief**: the API treats the topic as the source and uses
+  general knowledge instead of refusing. A short heading file does the same.
+- Visuals are routed by kind. A `diagram` is a declarative figure spec validated by
+  `packages/core/src/figure.ts` and drawn by `packages/web/src/components/FigureView.tsx` as inline
+  SVG. A `photo` goes through `visual-plan.ts`, which rewrites the author's hint from the finished
+  question, and `images/illustrate.ts`, which renders it with Workers AI and attaches it as an
+  attested data URL. Only a clue question may use Wikimedia search, and a hit must overlap the query
+  in its title or description; an ordinary scene goes straight to the image model. A failed planning
+  call or photo is a warning, never a failed deck.
+- `images/verify.ts` optionally sends each finished photo to the provider's vision model; an explicit
+  mismatch drops the picture. `images/attest.ts` signs the SHA-256 of the bytes with ECDSA P-256, and
+  the browser verifies them before upload and before display.
+- Deduplication uses word/character bigrams rather than bag-of-words, so Chinese questions that share
+  a formulaic stem are not deleted. If a reply still yields fewer valid questions than requested, the
+  generator asks for only the missing ones (up to three top-up calls) before reporting a shortfall.
+- `POST /api/ai/questions` defaults to JSON; `Accept: text/event-stream` returns progress and the final
+  result as SSE. Auth, quota and request validation happen before the stream starts.
+- The Generate page owns the engine controls: provider, text model, image model and visual mode.
+  There is no per-deck visual count; one per question is the natural ceiling. The Settings page has
+  no AI section. The chosen values are read from `/api/ai/config` and saved immediately.
+- Material text lives in `ai-materials:v1` only while a generation is being prepared; it is cleared
+  after a successful generation.
+- Generated decks are saved to the owner-only cloud table and cached locally per account; they are
+  hidden while signed out. The Generate draft keeps the full illustrated result in module memory and
+  IndexedDB (tab keyed by sessionStorage), with the 5 MB tab copy as a first-paint fallback. AI
+  settings (`ai-config:v1`) hold only a provider/model/image-model/visual preference — never a key.
 
 ## Accounts, RLS and the official catalogue
 
@@ -198,6 +239,11 @@ UserLibraryProvider ──▶ UserLibraryService ──▶ user_official_decks (
      │
      ├─ per-account IndexedDB cache ──▶ AppContext
      └─ add / remove ──▶ Plaza and Decks (references only; questions stay in official_decks)
+
+CollectionsProvider ──▶ UserCollectionsService ──▶ user_collections (auth.uid() = user_id)
+     │
+     ├─ per-account IndexedDB cache ──▶ Library and CollectionPage
+     └─ create / rename / add or remove decks / delete ──▶ automatic cloud sync
 ```
 
 - **The Plaza is a catalogue, not a second copy.** `selectOfficialDecks()` filters the current
@@ -219,7 +265,8 @@ UserLibraryProvider ──▶ UserLibraryService ──▶ user_official_decks (
   list is cached per account in IndexedDB, refreshed on focus, and hidden on sign-out. Upload is
   automatic; imported decks are not left only on this device. Relative images and plugin-specific
   question types are rejected before upload, because another device may not have the plugin. Progress
-  stays local unless the learner explicitly backs it up; AI keys never reach the network.
+  stays local unless the learner explicitly backs it up; AI requests go through the Worker, and
+  provider keys never reach the browser.
 - **Auth is PKCE + hash routing.** `redirectTo` is the bare document URL, so supabase-js consumes
   `?code=` before the router reads `#/…`. Recovery links navigate to `#/reset-password` on the
   `PASSWORD_RECOVERY` event (with a same-browser marker for reloads).
@@ -272,15 +319,19 @@ changing a question id creates a new question.
 | --- | --- | --- |
 | Progress, cards, notes, flags | IndexedDB `mengyin-study` / store `kv` | Falls back to memory if unavailable; the Settings page shows which is in use. The pre-rename `cityu-review` database is copied in once on first boot (`lib/storage.ts`) and its `cityu.demo.*` keys are remapped (`lib/legacy.ts`). |
 | Imported plugins | Same store, key `local-plugins:v1` | Decks are stored already adapted; visible signed out; upload automatically after sign-in |
-| AI-generated decks | Same store, key `local-plugins:v1` | Owner-tagged cache of `user_decks`; hidden signed out; uploads on save |
+| AI-generated decks | Same store, key `local-plugins:v1` | Owner-tagged cache of `user_decks`; hidden signed out; images stay inline locally and are uploaded to `user-media` on save |
 | Guest starter decks | Built into `domain/guest.ts` | Always available; not stored in `local-plugins` and cannot be deleted |
 | Cloud deck list cache | Same store, key `user-decks-cache:v1:<userId>` | Per account; used while offline, replaced when a row's `updated_at`/identity changes |
 | Official library cache | Same store, key `user-library-cache:v1:<userId>` | Per account; `packId::deckId` references used by the Plaza and Decks |
-| AI provider config | Same store, key `ai-config:v1` | API key stays on the device; excluded from backups; sign-in required to edit |
+| Collection list cache | Same store, key `user-collections-cache:v1:<userId>` | Per account; `user_collections` rows for offline shelves and collection pages |
+| Cloud collections | Supabase `public.user_collections` | Owner-only RLS; ordered `pluginId::deckId` references, not deck copies |
+| AI settings | Same store, key `ai-config:v1` | Provider/model/image-model/illustration preference only; no key; excluded from backups; edited on Generate, sign-in required |
 | AI material text | Same store, key `ai-materials:v1` | 1 GB file budget, 32 M character storage cap; cleared after successful generation |
 | Plugin private data | Same store, key `plugin-kv:<id>:<key>` | Via `PluginContext.kv` |
 | Official catalogue snapshot | Same store, key `official-content:v1` | Versioned, zod-revalidated on read; excluded from backups |
-| Cloud deck copies | Supabase `public.user_decks` | `user_id = auth.uid()`, owner-only RLS; questions revalidated on read; inline images/optional module |
+| Cloud deck copies | Supabase `public.user_decks` | `user_id = auth.uid()`, owner-only RLS; questions revalidated on read; images are `storage:` references, optional module |
+| Learner images | Supabase Storage `user-media` (private) | One folder per user, owner-only RLS; signed URL at render time |
+| Cloud budget | `user_decks` + `user-media` | Shared 30 MB per account; both write paths check it under one advisory lock |
 | Official library references | Supabase `public.user_official_decks` | `user_id = auth.uid()`, owner-only RLS; composite FK to `official_decks` |
 | Live progress | Supabase `public.user_progress` + local `progress:v2:*` cache | Owner-only RLS, conditional writes and Realtime; merged by attempts/sessions/cards/stamps, epoch replaces |
 | Auth session | `localStorage` key `mengyin-study.auth` | Managed by supabase-js; refresh token, never exported |
@@ -288,19 +339,21 @@ changing a question id creates a new question.
 
 ## Routing
 
-A hand-written hash router (`#/library`, `#/plaza`, `#/practice`, …). No server rewrite rules are needed for
-`file://`-style hosting, the desktop shell or static hosts; `navigate()` uses `history.pushState`
-plus a custom event so the back button behaves.
+A hand-written hash router (`#/library`, `#/plaza`, `#/collections/:id`, `#/practice`, …). No server
+rewrite rules are needed for `file://`-style hosting, the desktop shell or static hosts; `navigate()`
+uses `history.pushState` plus a custom event so the back button behaves.
 
 ## Performance
 
 - `useMemo` caches `decks → entries → deckViews` and the statistics derived from attempts.
 - Answering only recomputes the current session and the progress snapshot.
-- Build: 868.84 KB JS (253.85 KB gzip), 48.46 KB CSS (8.64 KB gzip). pdf.js is a separate lazy chunk
+- Build: about 950 KB JS (280 KB gzip), 65 KB CSS (11 KB gzip). pdf.js is a separate lazy chunk
   (415 KB / 123 KB gzip) plus a 1.2 MB worker that only loads when a PDF is added. Supabase adds
   roughly 281 KB raw to the main chunk; it is loaded once and shared by auth and the catalogue.
-- Generation runs at most six questions per request and at most six requests; the material window per
-  request is capped at 14,000 characters.
+- The Worker bundle is about 890 KiB raw (155 KiB gzip) and includes the server-side prompt; the web
+  bundle contains neither the prompt nor any provider key or base URL.
+- Generation runs at most six questions per model call and at most six batches; the material window per
+  batch is capped at 14,000 characters, and the browser sends at most 300,000 characters per request.
 
 ## Trade-offs
 

@@ -1,92 +1,109 @@
-# Deploying to Cloudflare Pages
+# Deploying to Cloudflare
 
-MengYin Study is a static Vite build. Cloudflare Pages serves the files; there is no execution
-server, no Cloudflare Worker and no API route. Code questions run in the learner's browser:
+MengYin Study is a Vite build plus a Cloudflare Worker. The Worker serves `apps/web/dist` as static
+assets and handles `/api/ai/*` for question generation, so the app and the API share one origin and
+the browser needs no CORS configuration. Code questions still run entirely in the learner's browser:
 JavaScript/TypeScript on the browser engine, Python on Pyodide and SQL on sql.js, both WebAssembly.
 
-## One-time Pages setup
+The Worker is required for AI generation. A static-only Pages deployment still serves practice,
+exams, code questions and sync, but `/api/ai/*` will 404.
+
+## One-time Workers setup
 
 | Setting | Value |
 | --- | --- |
 | Git repository | this repository |
 | Production branch | your main branch |
-| Framework preset | Vite (or None) |
 | Root directory | `/` (the repository root) |
 | Build command | `npm run build` |
-| Build output directory | `apps/web/dist` |
+| Deploy command | `npx wrangler deploy` |
 | Node version | 20.19 or newer (24 recommended) |
 
-The build command runs `plugins:sync`, `runtimes:fetch` and the Vite build in that order. No extra
-step is needed. Keep devDependencies installed during the build (Cloudflare does by default):
-`pyodide` and `sql.js` are build-time sources for the runtime files, and `vite` is the builder.
+The build command runs `plugins:sync`, `runtimes:fetch` and the Vite build in that order. Keep
+devDependencies installed during the build (Cloudflare does by default): `pyodide` and `sql.js` are
+build-time sources for the runtime files, `vite` is the builder, and `wrangler` deploys the Worker.
 
-Set the same public environment variables you use locally:
+Set the public browser variables in the build environment:
 
 | Variable | Purpose |
 | --- | --- |
 | `VITE_SUPABASE_URL` | Supabase project URL |
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | Supabase publishable/anon key |
 | `VITE_OFFICIAL_SYNC_MINUTES` | Optional catalogue refresh interval |
+| `VITE_AI_API_BASE` | Leave empty for the same-origin Worker; set an absolute URL only for the desktop or a separate API host |
 
-Only `VITE_*` values are exposed to the browser. Never put a Supabase secret key, an AI provider key
-or a `.env` file in the repository; AI keys are entered in the app and stay in IndexedDB.
+Only `VITE_*` values are exposed to the browser. AI provider keys are **Worker secrets**, never build
+variables and never `VITE_*`. See [AI_API.md](./AI_API.md) for the complete list.
 
-## Deploying as a Worker with static assets
+## Worker configuration
 
-`wrangler.jsonc` in the repository root configures Cloudflare Workers Builds to do the same
-thing: `name` is `mengyinstudy` and `assets.directory` is `./apps/web/dist`. Wrangler uploads
-that folder as static assets; no Worker code runs.
+`wrangler.jsonc` in the repository root declares:
 
-| Setting | Value |
-| --- | --- |
-| Root directory | `/` (the repository root) |
-| Build command | `npm run build` |
-| Deploy command | `npx wrangler deploy` |
+- `main: ./apps/api/src/index.ts` — the API Worker.
+- `assets.directory: ./apps/web/dist` with an `ASSETS` binding — the static site.
+- `ai.binding: AI` — the Workers AI free allocation used for photo-like illustrations.
+- `vars` — `AUTH_REQUIRED`, the Supabase URL/publishable key, CORS and the default/allowlisted image
+  models.
 
-The root directory has to stay `/`: `npm run build` installs the `packages/*` workspaces and
-runs `runtimes:fetch`. That is exactly why the deploy needs an explicit config — `wrangler
-deploy` run at an npm workspace root without one refuses to guess which project to target:
-
-> The Cloudflare application detection logic has been run in the root of a workspace instead
-> of targeting a specific project. Change your working directory to one of the applications
-> in the workspace and try again.
-
-Do not "fix" that by pointing the root directory at `apps/web`; the build would then lose the
-workspace install and produce a `dist` without runtimes. Keep the root at `/` and keep
-`wrangler.jsonc`.
-
-If the Worker is named something other than `mengyinstudy`, change `name` in `wrangler.jsonc`
-to match it, or the deploy creates a second Worker instead of updating yours. Verify the config
-without uploading anything:
+Do not put `GLM_API_KEY`, `DEEPSEEK_API_KEY` or a Supabase secret key in `vars`. Add them once:
 
 ```bash
-npx wrangler deploy --dry-run
+npx wrangler secret put GLM_API_KEY
+npx wrangler secret put DEEPSEEK_API_KEY
 ```
+
+Subscriptions additionally need `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, the six
+`STRIPE_PRICE_*` ids and `SUPABASE_SERVICE_KEY`; the full test-to-live walkthrough is
+[docs/STRIPE_SETUP.md](./STRIPE_SETUP.md). `npm run stripe:check` validates the price ids.
+
+Photo attestation is optional but recommended. Generate a keypair with `npm run image:keys`, then
+store both halves as secrets (the verification key is public but still read from the environment):
+
+```bash
+npx wrangler secret put IMAGE_SIGNING_KEY
+npx wrangler secret put IMAGE_VERIFY_KEY
+```
+
+To enable the multimodal photo check, add `GLM_VISION_MODEL` (for example `glm-4v-flash`) or
+`DEEPSEEK_VISION_MODEL` as a secret/variable. Without both an attestation pair and a vision model,
+the service still works: photos are stored unsigned and are not checked.
+
+`npx wrangler deploy --dry-run` shows what would be uploaded without publishing. If the Worker is
+named something other than `mengyinstudy`, change `name` in `wrangler.jsonc` to match it, or the
+deploy creates a second Worker instead of updating yours.
+
+Keep the root directory at `/`: `npm run build` installs the `packages/*` workspaces and runs
+`runtimes:fetch`. Pointing it at `apps/web` would produce a `dist` without runtimes.
 
 ## What the build contains
 
 ```
 apps/web/dist/
 ├─ index.html
-├─ assets/…                      hashed JS/CSS chunks
-├─ plugins/…                     official decks from plugins/
+├─ assets/                       hashed JS/CSS chunks
+├─ plugins/                      official decks from plugins/
 ├─ runtime-manifest.json         which runtime version is installed
 ├─ runtimes/
-│  ├─ pyodide/0.29.5/…           Pyodide JS + WASM + stdlib (≈12 MB)
-│  ├─ sqljs/1.15.2/…             sql.js JS + WASM (≈0.7 MB)
-│  ├─ java/0.1.0/…               javac + TeaVM WASM toolchain (≈8 MB)
-│  └─ cpp/2.0.9/JSCPP.bundle.js  C++ interpreter (≈0.4 MB)
+│  ├─ pyodide/0.29.5/            Pyodide JS + WASM + stdlib (~12 MB)
+│  ├─ sqljs/1.15.2/              sql.js JS + WASM (~1.7 MB)
+│  ├─ java/0.1.0/                javac + TeaVM WASM toolchain (~8 MB)
+│  └─ cpp/2.0.9/JSCPP.bundle.js  C++ interpreter (~0.4 MB)
 ├─ _headers                      Cloudflare Pages header rules
+├─ sitemap.xml                   generated from src/seo/site.ts
+├─ robots.txt                    generated; points at the sitemap
 ├─ sw.js
 └─ manifest.webmanifest
 ```
+
+Search discovery, sitemap submission and the manual Search Console steps are
+covered in [`SEO.md`](./SEO.md).
 
 `runtimes/` and `runtime-manifest.json` are generated by `npm run runtimes:fetch` and are
 gitignored. They are copied from the installed `pyodide`, `sql.js`, `@live-codes/java-wasm` and
 `JSCPP` dev dependencies, so the build is reproducible and does not depend on a runtime CDN. The
 manifest stays outside `/runtimes/` on purpose: that folder is cached immutably, and an immutable
 manifest would point at a deleted runtime version after the next release. Every file is well under
-Cloudflare Pages' 25 MiB per-file limit; the Java toolchain is about 8 MB and C++ about 0.4 MB.
+Cloudflare's 25 MiB per-file limit; the Java toolchain is about 8 MB and C++ about 0.4 MB.
 
 ### Why `_headers` matters
 
@@ -113,23 +130,27 @@ a catch-all `/* /index.html 200` rule: a missing runtime file would then return 
 produce a confusing WebAssembly error. Static files are served as-is.
 
 `vite.config.ts` uses `base: './'`, so the build also works under a subpath or in the Electron shell.
-Cloudflare Pages normally serves a project at the domain root, where `/runtimes/*` matches. If you
+The Worker serves the app at the domain root, where `/runtimes/*` matches. If you
 mount the app under a subpath, change the `_headers` rule to `/<subpath>/runtimes/*` as well; the app
 resolves runtime URLs from `document.baseURI`, so the files themselves follow the subpath.
 
 ## Direct upload (optional)
 
-If you do not connect Git, build locally and upload the folder:
+If you do not connect Git, build locally and deploy the Worker:
 
 ```bash
 npm ci
 npm run build
-npx wrangler@latest pages deploy apps/web/dist --project-name mengyin-study
+npx wrangler deploy
 ```
 
-`npm run build` must be run on the same machine (or CI) that has the runtime packages installed. Do
-not upload a stale `dist` without running `runtimes:fetch`; the app will otherwise show a clear
-"runtime is not installed" message for Python/SQL and JavaScript/TypeScript will still work.
+Set the provider secrets first with `npx wrangler secret put`. `npm run build` must run on the same
+machine (or CI) that has the runtime packages installed. Do not upload a stale `dist` without running
+`runtimes:fetch`; the app will otherwise show a clear "runtime is not installed" message for
+Python/SQL and JavaScript/TypeScript will still work.
+
+A static-only Pages deployment (`npx wrangler pages deploy apps/web/dist`) is still possible, but it
+has no `/api/ai/*`; AI generation will report that the service is unavailable.
 
 ## Caching and updates
 
@@ -159,14 +180,23 @@ not upload a stale `dist` without running `runtimes:fetch`; the app will otherwi
    and `content-type: application/wasm`.
 7. Check the browser console for CSP or CORS errors. The sandbox iframe's CSP allows only the app
    origin for `script-src`/`connect-src`, plus `blob:` workers.
+8. Open `/api/ai/health`. It should return `ok: true` and a non-zero `providersConfigured` once a
+   provider secret is set. In the app, **Generate → Generation engine** should list the provider, text
+   model and image model. Generate a two-question deck about a graphable topic; the preview should
+   show a locally drawn diagram (no Storage cost), and a photo-like topic should show a signed image.
 
 ## Troubleshooting
 
 | Symptom | Fix |
 | --- | --- |
 | `The python runtime is not installed` | Run `npm run runtimes:fetch` before `npm run build`; confirm `apps/web/dist/runtime-manifest.json` exists. |
-| `importScripts … failed to load` | The runtime path is wrong or the file is missing; check the version in `runtime-manifest.json` and the Network tab. |
+| `importScripts failed to load` | The runtime path is wrong or the file is missing; check the version in `runtime-manifest.json` and the Network tab. |
 | CORS error on `/runtimes/...` | `_headers` was not uploaded or was overridden. Put it in `apps/web/public/` and rebuild. |
 | `WebAssembly.instantiateStreaming` MIME error | Serve `.wasm` as `application/wasm`. Cloudflare does this automatically; a custom host may not. |
 | Python/SQL works in dev but not after deploy | The build ran without runtime assets (for example a cached `dist`). Rebuild with `npm run build`. |
 | Blank page after a deploy | Check the build output directory is `apps/web/dist`, not the repository root. The app is hash-routed, so no redirect rule is needed. |
+| `/api/ai/*` returns 404 | The deployment is static-only or `main` is missing from `wrangler.jsonc`; deploy the Worker. |
+| `/api/ai/config` returns 503 `ai_unconfigured` | No provider secret is set. Run `npx wrangler secret put GLM_API_KEY` (or `DEEPSEEK_API_KEY`) and redeploy. |
+| Images report "not configured" | The `ai` binding is missing from `wrangler.jsonc` (or `IMAGE_PROVIDER=none`). |
+| `provider_auth` (502) | The provider key is wrong or has no access to the chosen model; test it with `POST /api/ai/test` and check `GLM_MODEL` / `DEEPSEEK_MODEL`. |
+| CORS error from the desktop shell | Set `ALLOWED_ORIGINS=*` in `wrangler.jsonc` (the default) or list the loopback origin. |

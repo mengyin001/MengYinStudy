@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": [],
+    "baseUrl": ".",
+    "paths": {
+      "@mengyin/ai-contract": ["../../packages/ai-contract/src/index.ts"],
+      "@mengyin/core": ["../../packages/core/src/index.ts"],
+      "@mengyin/plugin-sdk": ["../../packages/plugin-sdk/src/index.ts"]
+    }
+  },
+  "include": ["src"]
+}

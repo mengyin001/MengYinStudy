@@ -28,3 +28,12 @@ export function isMissingColumn(error: unknown, column: string): boolean {
   if (!text.toLowerCase().includes(column.toLowerCase())) return false;
   return /does not exist|could not find|schema cache|undefined column|42703|PGRST204/i.test(text);
 }
+
+/**
+ * True when a row with the same unique key already exists (SQLSTATE 23505).
+ * The upload path races the automatic uploader and other tabs, so an insert can
+ * lose to a writer that committed a moment earlier.
+ */
+export function isUniqueViolation(error: unknown): boolean {
+  return /23505|duplicate key value|unique constraint/i.test(errorText(error));
+}

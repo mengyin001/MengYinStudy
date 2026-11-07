@@ -3,6 +3,7 @@ import { currentItem, isAnswered, type Answer, type SelfGrade } from '@mengyin/c
 import { AnswerInput } from '@/components/AnswerInput';
 import { FeedbackPanel } from '@/components/FeedbackPanel';
 import { Icon } from '@/components/Icons';
+import { QuestionImage } from '@/components/QuestionImage';
 import { SessionResults } from '@/components/SessionResults';
 import { Sheet } from '@/components/ui';
 import { createEmptyAnswer } from '@/domain/answers';
@@ -296,8 +297,8 @@ export function PracticePage() {
 
         {question.media?.length ? (
           <div className="qcard__media">
-            {question.media.map((media) => (
-              <img key={media.src} src={media.src} alt={media.alt ?? ''} />
+            {question.media.map((media, index) => (
+              <QuestionImage key={`${media.type}-${index}`} media={media} loading="eager" />
             ))}
           </div>
         ) : null}

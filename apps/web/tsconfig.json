@@ -5,6 +5,7 @@
     "baseUrl": ".",
     "types": ["vite/client"],
     "paths": {
+      "@mengyin/ai-contract": ["../../packages/ai-contract/src/index.ts"],
       "@mengyin/core": ["../../packages/core/src/index.ts"],
       "@mengyin/plugin-sdk": ["../../packages/plugin-sdk/src/index.ts"],
       "@/*": ["./src/*"]

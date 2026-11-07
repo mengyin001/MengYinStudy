@@ -5,8 +5,10 @@ import {
   MAX_CODE_BLANKS,
   codeLanguageInfo,
   codeTemplateInfo,
+  parseFigureSpec,
   type AnswerKey,
   type Deck,
+  type FigureSpec,
   type Question,
 } from '@mengyin/core';
 
@@ -16,11 +18,41 @@ export const PLUGIN_SCHEMA_VERSION = 1;
 export const rendererKindSchema = z.enum(['text', 'number', 'choice', 'multichoice']);
 export type RendererKind = z.infer<typeof rendererKindSchema>;
 
-const mediaSchema = z.object({
+const imageMediaSchema = z.object({
   type: z.literal('image'),
   src: z.string().min(1),
   alt: z.string().optional(),
+  /** Present when the AI service signed the bytes; verified before display. */
+  digest: z.string().optional(),
+  signature: z.string().optional(),
+  /** Attribution for a web-search photo. */
+  credit: z.string().optional(),
+  sourceUrl: z.string().optional(),
+  license: z.string().optional(),
 });
+
+const figureMediaSchema = z
+  .object({
+    type: z.literal('figure'),
+    figure: z.unknown(),
+    alt: z.string().optional(),
+  })
+  .superRefine((value, ctx) => {
+    if (!parseFigureSpec(value.figure)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['figure'],
+        message: '圖表規格無效：需要 v=1 與至少一個有效的 elements 項目',
+      });
+    }
+  })
+  .transform((value) => ({
+    type: 'figure' as const,
+    figure: parseFigureSpec(value.figure) as FigureSpec,
+    ...(value.alt ? { alt: value.alt } : {}),
+  }));
+
+const mediaSchema = z.union([imageMediaSchema, figureMediaSchema]);
 
 const optionSchema = z.object({
   id: z.string().min(1),
@@ -190,9 +222,7 @@ export const questionSchema = z
     difficulty: z.number().int().min(1).max(5).default(2),
     points: z.number().positive().optional(),
     source: z.string().optional(),
-    media: z
-      .array(z.object({ type: z.literal('image'), src: z.string().min(1), alt: z.string().optional() }))
-      .optional(),
+    media: z.array(mediaSchema).optional(),
     /** Plugin specific payload, e.g. numeric tolerance. */
     meta: z.record(z.string(), z.unknown()).optional(),
   })
@@ -331,11 +361,24 @@ function resolveSrc(src: string, assetBase?: string): string {
   }
 }
 
-type RawMedia = { type: 'image'; src: string; alt?: string };
+type RawMedia =
+  | {
+      type: 'image';
+      src: string;
+      alt?: string;
+      digest?: string;
+      signature?: string;
+      credit?: string;
+      sourceUrl?: string;
+      license?: string;
+    }
+  | { type: 'figure'; figure: FigureSpec; alt?: string };
 
-function resolveMedia(media: readonly RawMedia[] | undefined, assetBase?: string) {
+function resolveMedia(media: readonly RawMedia[] | undefined, assetBase?: string): Question['media'] {
   if (!media) return undefined;
-  return media.map((item) => ({ ...item, src: resolveSrc(item.src, assetBase) }));
+  return media.map((item) =>
+    item.type === 'figure' ? item : { ...item, src: resolveSrc(item.src, assetBase) },
+  );
 }
 
 export function adaptQuestion(raw: QuestionFile, assetBase?: string): Question {

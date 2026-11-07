@@ -127,6 +127,33 @@ export function createSupabaseAuthService(
       }
     },
 
+    async getAccessToken() {
+      try {
+        const { data, error } = await client.auth.getSession();
+        if (error) throw error;
+        return data.session?.access_token ?? null;
+      } catch (error) {
+        throw toBackendError(error);
+      }
+    },
+
+    async validateSession(): Promise<ServiceResult<AuthUser | null>> {
+      try {
+        const { data, error } = await client.auth.getUser();
+        if (error) {
+          // The client dropped an already-missing session itself; that is a
+          // signed-out state, not a failure worth showing the learner.
+          if ((error as { name?: string }).name === 'AuthSessionMissingError') {
+            return ok(null);
+          }
+          throw error;
+        }
+        return ok(data.user ? mapAuthUser(data.user) : null);
+      } catch (error) {
+        return fail(toBackendError(error));
+      }
+    },
+
     onAuthStateChange(listener) {
       const { data } = client.auth.onAuthStateChange((event, session) => {
         const mapped = mapAuthEvent(event);
@@ -163,6 +190,7 @@ export function createSupabaseAuthService(
         if (error) throw error;
         return ok({
           session: data.session ? mapAuthSession(data.session) : null,
+          user: data.user ? mapAuthUser(data.user) : null,
           needsConfirmation: !data.session,
         });
       } catch (error) {

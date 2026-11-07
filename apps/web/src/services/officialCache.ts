@@ -21,6 +21,15 @@ export interface CachedOfficialPack {
   updatedAt: string;
 }
 
+/**
+ * A loaded official pack. `updatedAt` comes from the catalogue row and is kept
+ * on the loaded object so the Plaza can show when a pack last changed without
+ * another request.
+ */
+export interface OfficialPack extends LoadedPlugin {
+  updatedAt: string;
+}
+
 export interface OfficialCache {
   schemaVersion: 1;
   /** Project the cache came from, so switching Supabase projects cannot reuse it. */
@@ -86,7 +95,7 @@ export function parseOfficialCache(raw: unknown): OfficialCache | null {
   };
 }
 
-export function cacheToLoadedPlugins(cache: OfficialCache): LoadedPlugin[] {
+export function cacheToLoadedPlugins(cache: OfficialCache): OfficialPack[] {
   return cache.packs.map((pack) => ({
     dir: `official:${pack.manifest.id}`,
     manifest: pack.manifest,
@@ -94,6 +103,7 @@ export function cacheToLoadedPlugins(cache: OfficialCache): LoadedPlugin[] {
     module: null,
     entryUrl: null,
     issues: [],
+    updatedAt: pack.updatedAt,
   }));
 }
 

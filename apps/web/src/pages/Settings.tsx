@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { isAiConfigured } from '@/ai/config';
-import { testConnection } from '@/ai/client';
 import { Icon } from '@/components/Icons';
-import { Note, NumField, PageHead, Seg, Sheet, Switch } from '@/components/ui';
+import { Meter, NumField, PageHead, Seg, Sheet, Switch } from '@/components/ui';
+import { formatBytes } from '@/lib/format';
 import { appStore } from '@/lib/storage';
-import { navigate } from '@/lib/router';
 import { APP_NAME, APP_VERSION } from '@/lib/version';
+import { backend } from '@/services';
+import type { UserMediaUsage } from '@/services/types';
+import { USER_MEDIA_LIMIT_BYTES } from '@/services/supabase/userMedia';
 import { useApp } from '@/state/AppContext';
 import { useAuth } from '@/state/AuthContext';
 
@@ -15,48 +16,28 @@ export function SettingsPage() {
   const settings = state.progress.settings;
   const importInput = useRef<HTMLInputElement>(null);
   const [resetOpen, setResetOpen] = useState(false);
-  const [aiDraft, setAiDraft] = useState(state.aiConfig);
-  const [testing, setTesting] = useState(false);
-  const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
+  const [mediaUsage, setMediaUsage] = useState<UserMediaUsage | null>(null);
 
   useEffect(() => {
-    setAiDraft(state.aiConfig);
-  }, [state.aiConfig]);
-
-  const testAi = async () => {
+    let active = true;
     if (!auth.user) {
-      actions.notify('info', t('settings.aiSignIn'));
-      return;
+      setMediaUsage(null);
+      return () => {
+        active = false;
+      };
     }
-    if (!isAiConfigured(aiDraft)) {
-      actions.notify('info', t('settings.aiNotConfigured'));
-      return;
-    }
-    setTesting(true);
-    setTestResult(null);
-    try {
-      const { model } = await testConnection(aiDraft);
-      setTestResult({ ok: true, message: t('settings.aiOk', { model }) });
-    } catch (error) {
-      setTestResult({
-        ok: false,
-        message: t('settings.aiFail', {
-          message: error instanceof Error ? error.message : String(error),
-        }),
+    backend.userMedia
+      .usage()
+      .then((usage) => {
+        if (active) setMediaUsage(usage);
+      })
+      .catch(() => {
+        if (active) setMediaUsage(null);
       });
-    } finally {
-      setTesting(false);
-    }
-  };
-
-  const saveAi = () => {
-    if (!auth.user) {
-      actions.notify('info', t('settings.aiSignIn'));
-      return;
-    }
-    actions.updateAiConfig(aiDraft);
-    actions.notify('success', t('settings.aiSaved'));
-  };
+    return () => {
+      active = false;
+    };
+  }, [auth.user]);
 
   const storageKind =
     appStore.kind === 'indexeddb' ? t('settings.storageIndexedDb') : t('settings.storageMemory');
@@ -218,123 +199,6 @@ export function SettingsPage() {
 
       <section className="panel">
         <div className="panel__head">
-          <h2 className="panel__title">{t('settings.ai')}</h2>
-          <span className="panel__more">v{APP_VERSION}</span>
-        </div>
-        <p className="footnote">{t('settings.aiHint')}</p>
-
-        {!auth.user ? (
-          <>
-            <Note tone="warn">{t('settings.aiSignInBody')}</Note>
-            <div className="actions-row">
-              <button type="button" className="btn btn--primary btn--sm" onClick={() => navigate('/login?next=/settings')}>
-                {t('auth.signIn')}
-              </button>
-            </div>
-          </>
-        ) : (
-          <>
-        <div className="ai-form">
-          <label className="field">
-            <span className="field__label">{t('settings.aiBaseUrl')}</span>
-            <input
-              type="text"
-              value={aiDraft.baseUrl}
-              placeholder="https://api.openai.com/v1"
-              spellCheck={false}
-              autoComplete="off"
-              onChange={(event) => setAiDraft({ ...aiDraft, baseUrl: event.target.value })}
-            />
-            <span className="field__hint">{t('settings.aiBaseUrlHint')}</span>
-          </label>
-
-          <label className="field">
-            <span className="field__label">{t('settings.aiKey')}</span>
-            <input
-              type="password"
-              value={aiDraft.apiKey}
-              placeholder="sk-…"
-              spellCheck={false}
-              autoComplete="off"
-              onChange={(event) => setAiDraft({ ...aiDraft, apiKey: event.target.value })}
-            />
-            <span className="field__hint">{t('settings.aiKeyHint')}</span>
-          </label>
-
-          <label className="field">
-            <span className="field__label">{t('settings.aiModel')}</span>
-            <input
-              type="text"
-              value={aiDraft.model}
-              placeholder="gpt-4o-mini"
-              spellCheck={false}
-              autoComplete="off"
-              onChange={(event) => setAiDraft({ ...aiDraft, model: event.target.value })}
-            />
-          </label>
-
-          <div className="setting">
-            <div className="setting__text">
-              <span className="setting__label">{t('settings.aiTemperature')}</span>
-            </div>
-            <NumField
-              label={t('settings.aiTemperature')}
-              value={aiDraft.temperature}
-              min={0}
-              max={2}
-              step={0.1}
-              onChange={(temperature) => setAiDraft({ ...aiDraft, temperature })}
-            />
-          </div>
-
-          <div className="setting">
-            <div className="setting__text">
-              <span className="setting__label">{t('settings.aiMaxTokens')}</span>
-              <span className="setting__hint">{t('settings.aiMaxTokensHint')}</span>
-            </div>
-            <NumField
-              label={t('settings.aiMaxTokens')}
-              value={aiDraft.maxTokens}
-              min={256}
-              max={16_000}
-              step={256}
-              onChange={(maxTokens) => setAiDraft({ ...aiDraft, maxTokens })}
-            />
-          </div>
-
-          <div className="setting">
-            <div className="setting__text">
-              <span className="setting__label">{t('settings.aiJsonMode')}</span>
-              <span className="setting__hint">{t('settings.aiJsonModeHint')}</span>
-            </div>
-            <Switch
-              checked={aiDraft.jsonMode}
-              onChange={(jsonMode) => setAiDraft({ ...aiDraft, jsonMode })}
-              label={t('settings.aiJsonMode')}
-            />
-          </div>
-        </div>
-
-        <Note>{t('settings.aiCodeNote')}</Note>
-
-        <div className="actions-row">
-          <button type="button" className="btn btn--primary btn--sm" onClick={saveAi}>
-            {t('settings.aiSave')}
-          </button>
-          <button type="button" className="btn btn--sm" onClick={() => void testAi()} disabled={testing}>
-            <Icon name="rotate" size={13} strokeWidth={1.6} />
-            {testing ? t('settings.aiTesting') : t('settings.aiTest')}
-          </button>
-          {testResult ? (
-            <span className={`badge ${testResult.ok ? 'badge--ok' : 'badge--bad'}`}>{testResult.message}</span>
-          ) : null}
-        </div>
-          </>
-        )}
-      </section>
-
-      <section className="panel">
-        <div className="panel__head">
           <h2 className="panel__title">{t('settings.data')}</h2>
           <span className="panel__more">{t('settings.storage', { kind: appStore.kind })}</span>
         </div>
@@ -397,6 +261,35 @@ export function SettingsPage() {
         ) : (
           <p className="footnote">{t('settings.guestProgressHint')}</p>
         )}
+
+        {auth.user ? (
+          <div className="setting" style={{ marginTop: 'var(--s3)' }}>
+            <div className="setting__text">
+              <span className="setting__label">{t('settings.cloudMedia')}</span>
+              <span className="setting__hint">
+                {t('settings.cloudMediaHint', {
+                  used: formatBytes(mediaUsage?.bytes ?? 0),
+                  limit: formatBytes(mediaUsage?.limit ?? USER_MEDIA_LIMIT_BYTES),
+                })}
+              </span>
+            </div>
+            <span className="setting__value">
+              {formatBytes(mediaUsage?.bytes ?? 0)} /{' '}
+              {formatBytes(mediaUsage?.limit ?? USER_MEDIA_LIMIT_BYTES)}
+            </span>
+          </div>
+        ) : null}
+        {auth.user && mediaUsage ? (
+          <>
+            <Meter value={mediaUsage.limit > 0 ? mediaUsage.bytes / mediaUsage.limit : 0} accent />
+            <p className="footnote">
+              {t('settings.cloudMediaBreakdown', {
+                text: formatBytes(mediaUsage.deckBytes),
+                images: formatBytes(mediaUsage.storageBytes),
+              })}
+            </p>
+          </>
+        ) : null}
       </section>
 
       <div className="split">

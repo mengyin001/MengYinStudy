@@ -44,11 +44,29 @@ export interface SignUpInput {
 
 export interface SignUpResult {
   session: AuthSession | null;
+  /** The created account, present even when a confirmation email is required. */
+  user: AuthUser | null;
   needsConfirmation: boolean;
 }
 
 export interface AuthService {
   getSession(): Promise<AuthSession | null>;
+  /**
+   * The bearer token for the current session, or null when signed out.
+   * Used by the hosted AI API; it is never persisted by the AI client.
+   */
+  getAccessToken(): Promise<string | null>;
+  /**
+   * Re-check the stored session against the auth server.
+   *
+   * `getSession()` only reads local storage, so a session whose account was
+   * deleted on another device still looks valid until its token expires. This
+   * call asks GoTrue's `/user` endpoint instead. A missing session resolves to
+   * `null`; an `unauthorized` error means the stored session must be dropped
+   * (for example because the account no longer exists). Network and server
+   * errors leave the local session alone so offline study keeps working.
+   */
+  validateSession(): Promise<ServiceResult<AuthUser | null>>;
   onAuthStateChange(listener: (event: AuthEvent, session: AuthSession | null) => void): () => void;
   signInWithPassword(email: string, password: string): Promise<ServiceResult<AuthSession>>;
   signUp(input: SignUpInput): Promise<ServiceResult<SignUpResult>>;
@@ -160,7 +178,61 @@ export interface UserDeckInput {
 export interface UserDeckService {
   list(): Promise<UserDeck[]>;
   upsert(input: UserDeckInput): Promise<UserDeck>;
+  /**
+   * Delete by row id. `clientKey` is the stable `plugin::deck` key: when the id
+   * is stale (the row was re-created elsewhere), the delete is retried by key
+   * instead of silently matching nothing.
+   */
+  remove(id: string, clientKey?: string): Promise<void>;
+}
+
+/**
+ * A learner-created group of decks. It stores deck keys (`pluginId::deckId`)
+ * rather than copies, so a deck keeps its own progress and may belong to more
+ * than one collection. `id` is generated on the device and stable across the
+ * local cache and the cloud row.
+ */
+export interface UserCollection {
+  id: string;
+  name: string;
+  description: string | null;
+  deckKeys: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UserCollectionInput {
+  id: string;
+  name: string;
+  description?: string | null;
+  deckKeys: string[];
+}
+
+export interface UserCollectionsService {
+  list(): Promise<UserCollection[]>;
+  upsert(input: UserCollectionInput): Promise<UserCollection>;
   remove(id: string): Promise<void>;
+}
+
+/** Private image storage for the signed-in account. */
+export interface UserMediaUsage {
+  /** Deck JSON plus stored images. */
+  bytes: number;
+  /** Bytes occupied by user_decks rows (text, questions JSON, module code). */
+  deckBytes: number;
+  /** Bytes occupied by the private image bucket. */
+  storageBytes: number;
+  limit: number;
+}
+
+export interface UserMediaService {
+  usage(): Promise<UserMediaUsage>;
+  /** A short-lived, authenticated URL for one object path. */
+  signedUrl(path: string): Promise<string | null>;
+  signedUrls(paths: readonly string[]): Promise<ReadonlyMap<string, string>>;
+  remove(paths: readonly string[]): Promise<void>;
+  /** Best-effort cleanup before an account is deleted. */
+  removeAll(): Promise<void>;
 }
 
 /** A reference to an official deck the learner added to their own library. */
@@ -211,6 +283,8 @@ export interface Backend {
   readonly profiles: ProfileService;
   readonly official: OfficialContentService;
   readonly userDecks: UserDeckService;
+  readonly userCollections: UserCollectionsService;
+  readonly userMedia: UserMediaService;
   readonly userLibrary: UserLibraryService;
   readonly userProgress: UserProgressService;
 }

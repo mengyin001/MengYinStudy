@@ -34,7 +34,7 @@ the sidebar footer, Settings → About → Legal, and the sign-up consent line.
   Traditional Chinese and English, as structured blocks (`p`, `ul`, `ol`, `table`, `links`,
   `note`, `contact`). Edit here; never edit the generated HTML.
 - [`apps/web/src/legal/config.ts`](../apps/web/src/legal/config.ts) — document version, the
-  effective date, the repository URL used as the fallback contact, and the environment hooks.
+  effective date, the support mailbox used as the fallback contact, and the environment hooks.
 - [`apps/web/src/legal/render.ts`](../apps/web/src/legal/render.ts) — placeholder filling and
   the resolved shape both front ends consume.
 - [`apps/web/src/pages/Legal.tsx`](../apps/web/src/pages/Legal.tsx) — the in-app page.
@@ -62,18 +62,31 @@ have to change with it:
 - Accounts are Supabase Auth (email/password, Google, GitHub); passwords are hashed there.
 - Synced data (decks, attempts, mistakes, notes, scheduling) lives in Supabase PostgreSQL in
   Seoul, isolated per account by row level security; static files are served by Cloudflare.
-- AI keys, prompts and material files stay on the device; generation calls the reader's own
-  endpoint from the browser and never passes through our servers.
+- AI generation goes through the hosted Cloudflare Worker, which forwards a bounded excerpt to the
+  official GLM or DeepSeek API and uses Cloudflare Workers AI for illustrations. Provider keys stay
+  on the server; prompts, materials and generated decks are not stored there.
+- AI-generated questions, answers, explanations and images are labelled in the generation view. A
+  saved deck may not carry that label in its description, so the Terms require learners to verify
+  the output, keep any label when sharing or exporting, disclose AI-generated content when
+  publishing, and not pass it off as human-written, human-reviewed or official answers.
 - There is no advertising, no behavioural analytics and no sale of personal data.
+- Paid plans are sold through Stripe Checkout. Supabase stores the plan, status and Stripe
+  customer/subscription identifiers; Stripe holds the payment method and invoices. The Terms
+  cover automatic renewal, cancellation, the monthly plan-point allowance (including annual
+  plans), upgrades/downgrades, refunds, taxes and failed payments; the Privacy Policy adds the
+  billing row, Stripe as a processor, and the tax/accounting retention exception.
 - Google Sign-In is optional and receives only the basic profile (`openid`, `email`, `profile`).
   The policy states the Google API Services User Data Policy and Limited Use requirements
   explicitly, and says Google APIs are used only for sign-in, never for AI generation.
 - AI generation is for study questions only; the policy and terms prohibit NCII, child sexual
-  abuse material and sexualised content, and the authoring skill refuses those requests.
-- Account deletion happens in the app (Account → Delete account). It calls the
-  `delete_account()` RPC in `supabase/migrations/20261104230000_delete_account.sql`, which
+  abuse material and sexualised content, and the server-side authoring prompt refuses those requests.
+- Account deletion happens in the app (Account → Delete account). For a paid or past-due
+  account it first calls `POST /api/billing/cancel`, which sets Stripe's
+  `cancel_at_period_end=true` while the customer and subscription IDs still exist. It then calls
+  the `delete_account()` RPC in `supabase/migrations/20261104230000_delete_account.sql`, which
   removes `auth.uid()` and lets the existing `on delete cascade` constraints clear the profile,
-  decks, library and progress. Email is the fallback for a learner who cannot sign in.
+  decks, library, progress and billing rows. Email is the fallback for a learner who cannot sign
+  in; the current paid period is not refunded.
 
 The Google Cloud Console fields and the resubmission steps are in
 [docs/OAUTH_VERIFICATION.md](OAUTH_VERIFICATION.md). Submit the standalone URLs

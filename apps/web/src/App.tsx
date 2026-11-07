@@ -1,12 +1,17 @@
 import { useMemo } from 'react';
 import { computeStreak, dueCount } from '@mengyin/core';
 import { AccountChip, MobileAccountButton } from './components/AccountChip';
+import { BillingExternalDialog } from './components/BillingExternalDialog';
 import { BrandMark } from './components/BrandMark';
 import { Icon, type IconName } from './components/Icons';
 import { RequireAuth } from './components/RequireAuth';
+import { StorageMeter } from './components/StorageMeter';
+import { StreakFlame } from './components/StreakFlame';
 import { Toast } from './components/Toast';
 import { AccountPage } from './pages/Account';
 import { AuthPage, ResetPasswordPage } from './pages/Auth';
+import { BillingDocsPage } from './pages/BillingDocs';
+import { CollectionPage } from './pages/CollectionPage';
 import { DashboardPage } from './pages/Dashboard';
 import { GeneratePage } from './pages/Generate';
 import { LandingPage } from './pages/Landing';
@@ -16,11 +21,14 @@ import { MistakesPage } from './pages/Mistakes';
 import { PlazaPage } from './pages/Plaza';
 import { PluginsPage } from './pages/Plugins';
 import { PracticePage } from './pages/Practice';
+import { PricingPage } from './pages/Pricing';
 import { SettingsPage } from './pages/Settings';
 import { StatsPage } from './pages/StatsPage';
 import { useApp } from './state/AppContext';
 import { useAuth } from './state/AuthContext';
+import { useBilling } from './state/BillingContext';
 import type { MessageKey } from './i18n/messages';
+import { streakLabel } from './lib/streakLabel';
 import { navigate, useRoute } from './lib/router';
 import { APP_VERSION } from './lib/version';
 
@@ -53,18 +61,31 @@ function isActive(routePath: string, path: string): boolean {
   // `/` is the public homepage for signed-out visitors but the dashboard for
   // signed-in ones, so the Today item owns both paths.
   if (path === '/today') return routePath === '/today' || routePath === '/' || routePath === '';
+  if (path === '/library') return routePath === '/library' || routePath.startsWith('/collections/');
   return routePath === path || routePath.startsWith(`${path}/`);
 }
 
 export default function App() {
   const { state, entries, locale, t, actions } = useApp();
   const { state: authState } = useAuth();
+  const { plan, points, questionsRemaining } = useBilling();
   const route = useRoute();
 
-  const streak = useMemo(() => computeStreak(state.progress.attempts).current, [state.progress.attempts]);
+  const streakStats = useMemo(() => computeStreak(state.progress.attempts), [state.progress.attempts]);
+  const streak = streakStats.current;
   const due = useMemo(() => dueCount(state.progress.cards), [state.progress.cards]);
 
   const page = useMemo(() => {
+    if (route.path.startsWith('/collections/')) {
+      const raw = route.path.slice('/collections/'.length);
+      let id = raw;
+      try {
+        id = decodeURIComponent(raw);
+      } catch {
+        // A malformed escape in the hash falls through to the not-found page.
+      }
+      return <CollectionPage collectionId={id} />;
+    }
     switch (route.path) {
       case '/':
       case '':
@@ -84,6 +105,10 @@ export default function App() {
         return <StatsPage />;
       case '/plugins':
         return <PluginsPage />;
+      case '/pricing':
+        return <PricingPage />;
+      case '/docs/billing':
+        return <BillingDocsPage />;
       case '/settings':
         return <SettingsPage />;
       case '/login':
@@ -185,10 +210,28 @@ export default function App() {
         </nav>
 
         <div className="sidebar__foot">
+          <StorageMeter />
           <AccountChip />
           <p className="streak">
-            {t('side.streak', { n: streak })} · {t('side.due', { n: due })}
+            <StreakFlame
+              current={streak}
+              best={streakStats.best}
+              label={streakLabel(streak, streakStats.best, t)}
+            />
+            <span>
+              {t('side.streak', { n: streak })} · {t('side.due', { n: due })}
+            </span>
           </p>
+          {authState.user ? (
+            <button type="button" className="plan-chip" onClick={() => navigate('/pricing')}>
+              <span className="plan-chip__plan">{t(`plan.${plan.id}`)}</span>
+              <span className="plan-chip__points">
+                {plan.id === 'free'
+                  ? t('billing.questionsShort', { n: questionsRemaining ?? 0 })
+                  : t('billing.pointsShort', { n: points })}
+              </span>
+            </button>
+          ) : null}
           <div className="lang-row">
             <button
               type="button"
@@ -238,6 +281,7 @@ export default function App() {
         ))}
       </nav>
 
+      <BillingExternalDialog />
       <Toast />
     </div>
   );

@@ -238,6 +238,8 @@ export const STORAGE_KEYS = {
   userDecksCache: 'user-decks-cache:v1',
   /** Last official-library list per account, keyed with `:${userId}`. */
   userLibraryCache: 'user-library-cache:v1',
+  /** Last collection list per account, keyed with `:${userId}`. */
+  userCollectionsCache: 'user-collections-cache:v1',
   /** One-time cleanup marker for the official-only catalogue. */
   storageMigrations: 'storage-migrations:v1',
 } as const;

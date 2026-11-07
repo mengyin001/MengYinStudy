@@ -12,15 +12,19 @@ import { createSupabaseClient, type SupabaseClientLike } from './supabase/client
 import { createSupabaseOfficialService } from './supabase/official';
 import { createSupabaseProfileService } from './supabase/profiles';
 import { createSupabaseUserDeckService } from './supabase/userDecks';
+import { createSupabaseUserCollectionService } from './supabase/userCollections';
 import { createSupabaseUserLibraryService } from './supabase/userLibrary';
+import { createSupabaseUserMediaService } from './supabase/userMedia';
 import { createSupabaseUserProgressService } from './supabase/userProgress';
 import type {
   AuthService,
   Backend,
   OfficialContentService,
   ProfileService,
+  UserCollectionsService,
   UserDeckService,
   UserLibraryService,
+  UserMediaService,
   UserProgressService,
 } from './types';
 
@@ -29,6 +33,12 @@ function unavailableAuth(reason: string): AuthService {
   return {
     async getSession() {
       return null;
+    },
+    async getAccessToken() {
+      return null;
+    },
+    async validateSession() {
+      return fail(new BackendError('unconfigured', reason));
     },
     onAuthStateChange() {
       return () => undefined;
@@ -80,6 +90,40 @@ function unavailableUserDecks(reason: string): UserDeckService {
   };
 }
 
+function unavailableUserCollections(reason: string): UserCollectionsService {
+  return {
+    async list() {
+      throw new BackendError('unconfigured', reason);
+    },
+    async upsert() {
+      throw new BackendError('unconfigured', reason);
+    },
+    async remove() {
+      throw new BackendError('unconfigured', reason);
+    },
+  };
+}
+
+function unavailableUserMedia(reason: string): UserMediaService {
+  return {
+    async usage() {
+      throw new BackendError('unconfigured', reason);
+    },
+    async signedUrl() {
+      throw new BackendError('unconfigured', reason);
+    },
+    async signedUrls() {
+      throw new BackendError('unconfigured', reason);
+    },
+    async remove() {
+      throw new BackendError('unconfigured', reason);
+    },
+    async removeAll() {
+      throw new BackendError('unconfigured', reason);
+    },
+  };
+}
+
 function unavailableUserLibrary(reason: string): UserLibraryService {
   return {
     async list() {
@@ -119,6 +163,8 @@ export function createUnavailableBackend(config: BackendConfig): Backend {
     profiles: unavailableProfiles(reason),
     official: unavailableOfficial(reason),
     userDecks: unavailableUserDecks(reason),
+    userCollections: unavailableUserCollections(reason),
+    userMedia: unavailableUserMedia(reason),
     userLibrary: unavailableUserLibrary(reason),
     userProgress: unavailableUserProgress(reason),
   };
@@ -139,6 +185,8 @@ export function createSupabaseBackend(
     profiles: createSupabaseProfileService(client),
     official: createSupabaseOfficialService(client),
     userDecks: createSupabaseUserDeckService(client),
+    userCollections: createSupabaseUserCollectionService(client),
+    userMedia: createSupabaseUserMediaService(client),
     userLibrary: createSupabaseUserLibraryService(client),
     userProgress: createSupabaseUserProgressService(client),
   };

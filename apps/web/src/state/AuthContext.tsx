@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from 'react';
 import { backend } from '@/services';
+import { clearDraft } from '@/ai/draft';
 import { BackendError, toBackendError, type ServiceResult } from '@/services/errors';
 import type {
   AuthEvent,
@@ -21,10 +22,18 @@ import type {
   SignUpResult,
 } from '@/services/types';
 import { navigate } from '@/lib/router';
+import {
+  forgetNewAccount,
+  isFreshAccount,
+  rememberedNewAccount,
+  rememberNewAccount,
+} from './newAccount';
 
 const RECOVERY_MARKER = 'mengyin:recovery';
 const RECOVERY_TTL_MS = 30 * 60_000;
 const OAUTH_RETURN = 'mengyin:oauth-return';
+/** How often a visible, signed-in tab re-checks that its account still exists. */
+const SESSION_CHECK_MS = 60_000;
 const AUTH_QUERY_KEYS = ['code', 'error', 'error_code', 'error_description', 'state', 'type', 'token_hash'];
 
 function hasFreshRecoveryMarker(): boolean {
@@ -44,16 +53,22 @@ interface AuthState {
   user: AuthUser | null;
   profile: Profile | null;
   recovery: boolean;
+  /**
+   * The account was created on this browser (sign-up or first OAuth sign-in),
+   * so its one-time guest-practice adoption has not been claimed yet.
+   */
+  newAccount: boolean;
   error: BackendError | null;
   profileError: BackendError | null;
 }
 
 type AuthAction =
-  | { type: 'session'; session: AuthSession }
+  | { type: 'session'; session: AuthSession; newAccount: boolean }
   | { type: 'anonymous'; error?: BackendError }
   | { type: 'profile'; profile: Profile | null; error: BackendError | null }
   | { type: 'recovery' }
   | { type: 'end-recovery' }
+  | { type: 'consume-new-account' }
   | { type: 'error'; error: BackendError | null }
   | { type: 'clear-error' };
 
@@ -63,22 +78,28 @@ const initialState: AuthState = {
   user: null,
   profile: null,
   recovery: false,
+  newAccount: false,
   error: null,
   profileError: null,
 };
 
 function reducer(state: AuthState, action: AuthAction): AuthState {
   switch (action.type) {
-    case 'session':
+    case 'session': {
+      const sameUser = state.user?.id === action.session.user.id;
       return {
         ...state,
         ready: true,
         status: 'authenticated',
         user: action.session.user,
-        profile: state.user?.id === action.session.user.id ? state.profile : null,
-        profileError: state.user?.id === action.session.user.id ? state.profileError : null,
+        profile: sameUser ? state.profile : null,
+        profileError: sameUser ? state.profileError : null,
+        // A token refresh for the same user must not re-open adoption after it
+        // has been consumed; a different user gets a fresh decision.
+        newAccount: sameUser ? state.newAccount : action.newAccount,
         error: null,
       };
+    }
     case 'anonymous':
       return {
         ...state,
@@ -87,6 +108,7 @@ function reducer(state: AuthState, action: AuthAction): AuthState {
         user: null,
         profile: null,
         recovery: false,
+        newAccount: false,
         profileError: null,
         error: action.error ?? null,
       };
@@ -96,6 +118,8 @@ function reducer(state: AuthState, action: AuthAction): AuthState {
       return { ...state, recovery: true, ready: true };
     case 'end-recovery':
       return { ...state, recovery: false };
+    case 'consume-new-account':
+      return { ...state, newAccount: false };
     case 'error':
       return { ...state, error: action.error, ready: true };
     case 'clear-error':
@@ -117,6 +141,8 @@ export interface AuthActions {
   resendConfirmation(email: string): Promise<ServiceResult>;
   updateProfile(patch: ProfilePatch): Promise<ServiceResult<Profile>>;
   refreshProfile(): Promise<void>;
+  /** Mark the new account's one-time guest-practice adoption as spent. */
+  consumeNewAccount(): void;
   clearError(): void;
   endRecovery(): void;
   reportError(error: BackendError): void;
@@ -180,6 +206,7 @@ function fallbackProfile(user: AuthUser): Profile {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialState);
   const activeUser = useRef<string | null>(null);
+  const sessionCheckBusy = useRef(false);
 
   const applySession = useCallback(async (session: AuthSession | null, event: AuthEvent) => {
     if (event === 'password-recovery') {
@@ -197,15 +224,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     activeUser.current = session.user.id;
-    dispatch({ type: 'session', session });
 
+    let newAccount = false;
     if (event === 'signed-in' || event === 'initial') {
       const target = sessionStorage.getItem(OAUTH_RETURN);
       if (target) {
         sessionStorage.removeItem(OAUTH_RETURN);
+        // OAuth has no local sign-up call to observe: a return into an account
+        // created moments ago is that account's first sign-in.
+        if (isFreshAccount(session.user)) rememberNewAccount(session.user.id);
         if (target.startsWith('/')) navigate(target, { replace: true });
       }
+      // The marker survives email confirmation; OAuth was marked just above.
+      newAccount = rememberedNewAccount(session.user.id);
     }
+    dispatch({ type: 'session', session, newAccount });
 
     try {
       const profile = await backend.profiles.getProfile(session.user.id);
@@ -222,6 +255,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         profile: fallbackProfile(session.user),
         error: toBackendError(error),
       });
+    }
+  }, []);
+
+  /**
+   * Re-check the stored session with the auth server. Local storage can still
+   * hold a token for an account that was deleted on another device, and
+   * `getSession()` never asks the server, so a refresh alone would keep showing
+   * that account. Only a server-rejected session is dropped; network and server
+   * failures leave the learner signed in and able to study offline.
+   */
+  const verifySession = useCallback(async () => {
+    const userId = activeUser.current;
+    if (!userId || !backend.configured || sessionCheckBusy.current) return;
+    sessionCheckBusy.current = true;
+    try {
+      const result = await backend.auth.validateSession();
+      if (activeUser.current !== userId) return;
+      const invalid = result.ok ? result.value === null : result.error.code === 'unauthorized';
+      if (!invalid) return;
+
+      // The auth user is gone (or the refresh token is dead): drop the local copy
+      // too, otherwise the next refresh restores the same ghost account.
+      await backend.auth.signOut();
+      if (activeUser.current !== null && activeUser.current !== userId) return;
+      activeUser.current = null;
+      dispatch({ type: 'anonymous', error: result.ok ? undefined : result.error });
+    } finally {
+      sessionCheckBusy.current = false;
     }
   }, []);
 
@@ -260,6 +321,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // The code has been exchanged (or rejected); do not leave it in the
         // address bar where a refresh would try to redeem it again.
         cleanAuthQuery();
+        // Do not block the first paint on a network round trip: offline study
+        // must still boot. A deleted account is signed out a moment later.
+        if (session) void verifySession();
       } catch (error) {
         if (!active) return;
         dispatch({ type: 'anonymous', error: toBackendError(error) });
@@ -274,7 +338,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       active = false;
       unsubscribe();
     };
-  }, [applySession]);
+  }, [applySession, verifySession]);
+
+  // A deleted account has no server-side session to push an event to this
+  // device, so a visible tab re-checks periodically and whenever it regains
+  // focus. The request is throttled: focus fires often, a check costs one GET.
+  const sessionUserId = state.user?.id ?? null;
+  useEffect(() => {
+    if (state.status !== 'authenticated' || !sessionUserId) return;
+    let checkedAt = Date.now();
+    const check = () => {
+      if (document.visibilityState === 'hidden') return;
+      if (Date.now() - checkedAt < SESSION_CHECK_MS) return;
+      checkedAt = Date.now();
+      void verifySession();
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') check();
+    };
+    window.addEventListener('focus', check);
+    window.addEventListener('online', check);
+    document.addEventListener('visibilitychange', onVisibility);
+    const timer = window.setInterval(check, SESSION_CHECK_MS);
+    return () => {
+      window.removeEventListener('focus', check);
+      window.removeEventListener('online', check);
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.clearInterval(timer);
+    };
+  }, [state.status, sessionUserId, verifySession]);
 
   const signIn = useCallback(async (email: string, password: string) => {
     sessionStorage.removeItem(RECOVERY_MARKER);
@@ -296,6 +388,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       dispatch({ type: 'error', error: result.error });
       return result;
     }
+    // Remember the new account even when a confirmation email is required: the
+    // marker is what lets it adopt this browser's guest practice on first sign-in.
+    if (result.value.user) rememberNewAccount(result.value.user.id);
     if (result.value.session) await applySession(result.value.session, 'signed-in');
     return result;
   }, [applySession]);
@@ -314,6 +409,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const result = await backend.auth.signOut();
     if (result.ok) {
       activeUser.current = null;
+      clearDraft();
       sessionStorage.removeItem(RECOVERY_MARKER);
       sessionStorage.removeItem(OAUTH_RETURN);
       dispatch({ type: 'anonymous' });
@@ -324,12 +420,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const deleteAccount = useCallback(async (): Promise<ServiceResult> => {
+    const userId = state.user?.id;
+    // Storage objects are not covered by the database cascade; remove them while
+    // the session can still authorize the private bucket.
+    if (backend.configured) await backend.userMedia.removeAll().catch(() => undefined);
     const result = await backend.auth.deleteAccount();
     if (result.ok) {
       // The auth user no longer exists; the service already dropped the local
       // session. Clear the same markers signOut clears, so a later sign-in on
       // this browser cannot resume the deleted account's flow.
+      if (userId) forgetNewAccount(userId);
       activeUser.current = null;
+      clearDraft();
       sessionStorage.removeItem(RECOVERY_MARKER);
       sessionStorage.removeItem(OAUTH_RETURN);
       dispatch({ type: 'anonymous' });
@@ -337,7 +439,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       dispatch({ type: 'error', error: result.error });
     }
     return result;
-  }, []);
+  }, [state.user]);
 
   const requestPasswordReset = useCallback(async (email: string) => {
     markRecovery();
@@ -405,6 +507,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [state.user],
   );
 
+  const consumeNewAccount = useCallback(() => {
+    const userId = state.user?.id;
+    if (userId) forgetNewAccount(userId);
+    dispatch({ type: 'consume-new-account' });
+  }, [state.user]);
+
   const actions = useMemo<AuthActions>(
     () => ({
       signIn,
@@ -417,6 +525,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       resendConfirmation,
       updateProfile,
       refreshProfile,
+      consumeNewAccount,
       clearError: () => dispatch({ type: 'clear-error' }),
       endRecovery: () => {
         sessionStorage.removeItem(RECOVERY_MARKER);
@@ -435,6 +544,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       resendConfirmation,
       updateProfile,
       refreshProfile,
+      consumeNewAccount,
     ],
   );
 

@@ -25,9 +25,21 @@ Paste these files, in order, into **Supabase → SQL Editor**:
 7. `migrations/20261104020000_user_official_library.sql`
 8. `migrations/20261104030000_user_progress_realtime.sql`
 9. `migrations/20261104040000_exam_minutes.sql`
+10. `migrations/20261104230000_delete_account.sql`
+11. `migrations/20261106213000_user_media_storage.sql`
+12. `migrations/20261106230000_storage_quota_includes_decks.sql`
+13. `migrations/20261106233000_user_media_svg.sql`
+14. `migrations/20261107090000_subscription_points.sql`
+15. `migrations/20261108090000_question_quota.sql`
+16. `migrations/20261109090000_monthly_point_reset.sql`
 
-All nine are safe to re-run: they use `if not exists`, `drop policy if exists`,
-`create or replace` and guarded `add column`/constraint changes.
+All sixteen are safe to re-run: they use `if not exists`, `drop policy if exists`,
+`create or replace` and guarded `add column`/constraint changes. Files 11–13 create the private
+`user-media` bucket, its owner-only policies, the shared 30 MB text+image quota (triggers on both
+`user_decks` and `storage.objects`), `public.user_media_usage()` and the SVG MIME allowance. They
+must run before saving decks with illustrations. Files 14–16 add the billing tables and RPCs, the
+free monthly question quota and the lazy monthly point reset (including the separate bonus-point
+bucket); the app shows a free plan if they are missing, but generation fails closed.
 
 ### With the database runner (no CLI)
 

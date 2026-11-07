@@ -41,6 +41,20 @@ export function loadEnvFiles() {
   }
 }
 
+/**
+ * Load `.dev.vars`, the Worker-style file the local API uses for server-only
+ * values (Stripe, provider keys). Real environment variables and `.env` win, so
+ * this only fills gaps. Kept separate from loadEnvFiles because database/seed
+ * tools should not pick up unrelated provider secrets unless they ask for them.
+ */
+export function loadDevVars() {
+  const file = path.join(root, '.dev.vars');
+  if (!existsSync(file)) return;
+  for (const [key, value] of parse(readFileSync(file, 'utf8'))) {
+    if (process.env[key] === undefined) process.env[key] = value;
+  }
+}
+
 export function required(name, hint = '') {
   const value = process.env[name]?.trim();
   if (!value) {

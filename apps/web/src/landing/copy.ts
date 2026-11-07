@@ -38,16 +38,24 @@ export const LANDING = {
   } satisfies Bi,
 
   heroBody: {
-    en: 'Study official decks or import your course material. Generate practice questions with your own AI endpoint, practise code in six languages, and see exactly what you have learned. No ads, no tracking, and no selling your data.',
-    zh: '研讀官方題庫或匯入自己的教材，用自己設定的 AI 端點生成練習題，練習六種程式語言，並清楚看見自己學會了什麼。沒有廣告、沒有行為追蹤，也不出售你的資料。',
+    en: 'Study official decks or import your course material. Generate practice questions with the built-in AI service, practise code in six languages, and see exactly what you have learned. No ads, no tracking, and no selling your data.',
+    zh: '研讀官方題庫或匯入自己的教材，用內建的 AI 服務生成練習題，練習六種程式語言，並清楚看見自己學會了什麼。沒有廣告、沒有行為追蹤，也不出售你的資料。',
   } satisfies Bi,
 
   ctaPrimary: { en: 'Start studying', zh: '開始練習' } satisfies Bi,
   ctaSignIn: { en: 'Sign in', zh: '登入' } satisfies Bi,
   ctaCreate: { en: 'Create a free account', zh: '建立免費帳號' } satisfies Bi,
+  nav: {
+    pricing: { en: 'Pricing', zh: '方案與價格' },
+  } satisfies Record<string, Bi>,
+
   ctaNote: {
-    en: 'Free to use in the browser and as a desktop app, with offline decks when you need them.',
-    zh: '免費使用，支援瀏覽器與桌面版，需要時也可離線練習題庫。',
+    en: 'Start free in the browser or desktop app. Paid plans add AI points, stronger models and images; cancel any time.',
+    zh: '可免費開始，支援瀏覽器與桌面版。付費方案提供 AI 點數、更強模型與生圖，並可隨時取消。',
+  } satisfies Bi,
+  ctaPricing: {
+    en: 'See plans and points',
+    zh: '查看方案與點數',
   } satisfies Bi,
 
   preview: {
@@ -99,10 +107,10 @@ export const LANDING = {
       },
       {
         number: '03',
-        title: { en: 'AI questions, your key', zh: 'AI 出題，用你的金鑰' },
+        title: { en: 'AI questions, built in', zh: 'AI 出題，內建服務' },
         body: {
-          en: 'Turn your own notes into practice questions with any OpenAI-compatible endpoint. Your key and materials stay on your device.',
-          zh: '用任何相容 OpenAI 介面的端點，把自己的筆記變成練習題。金鑰與教材只留在你的裝置。',
+          en: 'Turn your notes into practice questions with the built-in GLM and DeepSeek service. The free plan includes 200 questions a month; paid plans add points and stronger models — no API key needed.',
+          zh: '用內建的 GLM 與 DeepSeek 服務把筆記變成練習題。免費方案每月 200 題；付費方案提供點數與更強模型，不需自備 API 金鑰。',
         },
       },
       {
@@ -217,17 +225,25 @@ export const LANDING = {
     eyebrow: { en: 'AI and content policy', zh: 'AI 與內容政策' },
     title: { en: 'AI for study questions — nothing else.', zh: 'AI 只用來出練習題，不做其他用途。' },
     body: {
-      en: 'AI generation is optional and runs against an endpoint you configure with your own API key. It is designed to turn study material into practice questions, not to produce general-purpose or adult content.',
-      zh: 'AI 出題是選用的，並使用你自己設定的端點與 API 金鑰。它的用途是把溫習教材變成練習題，不是產生通用或成人內容。',
+      en: 'AI generation is optional and runs through this service, which uses GLM, DeepSeek and Cloudflare Workers AI with provider keys held on the server. AI-generated output is labelled in the app. It is designed to turn study material into practice questions, not to produce general-purpose or adult content.',
+      zh: 'AI 出題是選用的，經由本服務使用 GLM、DeepSeek 與 Cloudflare Workers AI，供應商金鑰由伺服器保管。AI 生成的內容會在應用程式內標示。它的用途是把溫習教材變成練習題，不是產生通用或成人內容。',
     },
     points: [
       {
-        en: 'Your materials, prompts and API key stay on your device; requests go directly from your browser to your endpoint.',
-        zh: '教材、提示詞與 API 金鑰只留在你的裝置；請求由瀏覽器直接送到你的端點。',
+        en: 'Materials are parsed on your device; only a bounded excerpt is sent to the AI service for the request, and provider keys never reach the browser.',
+        zh: '教材在你的裝置上解析；只有有限的片段會為該次請求送到 AI 服務，供應商金鑰不會進入瀏覽器。',
       },
       {
-        en: 'Generated questions are for study only and may be wrong. Check them before relying on them.',
-        zh: '生成的題目僅供溫習，可能有誤；使用前請自行核對。',
+        en: 'AI-generated questions, answers, explanations and images are labelled at the result level. Keep the label when you share or export them.',
+        zh: 'AI 生成的題目、答案、解釋與插圖會以整份結果標示；分享或匯出時請保留標示。',
+      },
+      {
+        en: 'AI can invent facts, citations, calculations or code. Verify them against independent sources before you rely on them.',
+        zh: 'AI 可能虛構事實、引用、計算或程式碼；使用前請以獨立來源核對。',
+      },
+      {
+        en: 'Do not use AI output as the only source for exams, professional advice or other high-stakes decisions.',
+        zh: '不要只依賴 AI 輸出作考試答案、專業意見或其他高風險決定。',
       },
     ] satisfies Bi[],
     policy: {
@@ -257,6 +273,7 @@ export const LANDING = {
     },
     privacy: { en: 'Privacy Policy', zh: '隱私權政策' },
     terms: { en: 'Terms of Service', zh: '服務條款' },
+    pricing: { en: 'Pricing', zh: '方案與價格' },
     contact: { en: 'Contact', zh: '聯絡我們' },
   },
 } as const;

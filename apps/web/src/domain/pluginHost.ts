@@ -1,4 +1,4 @@
-import type { Deck } from '@mengyin/core';
+import type { Deck, QuestionMedia } from '@mengyin/core';
 import {
   adaptDeck,
   parseDeckFile,
@@ -172,11 +172,14 @@ async function inlineDeckMedia(
     return imageUrls.get(path) ?? src;
   };
 
-  const rewrite = <T extends { media?: { type: 'image'; src: string; alt?: string }[] }>(
-    item: T,
-  ): T =>
+  const rewrite = <T extends { media?: QuestionMedia[] }>(item: T): T =>
     item.media
-      ? { ...item, media: item.media.map((media) => ({ ...media, src: resolve(media.src) })) }
+      ? {
+          ...item,
+          media: item.media.map((media) =>
+            media.type === 'figure' ? media : { ...media, src: resolve(media.src) },
+          ),
+        }
       : item;
 
   return {

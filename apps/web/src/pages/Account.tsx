@@ -3,11 +3,13 @@ import { Icon } from '@/components/Icons';
 import { OfficialStatus } from '@/components/OfficialStatus';
 import { Note, PageHead, Sheet } from '@/components/ui';
 import { describeBackendError } from '@/i18n/backend';
-import { formatDate } from '@/lib/format';
+import { formatDate, formatShortDay } from '@/lib/format';
 import { navigate } from '@/lib/router';
-import type { BackendError } from '@/services/errors';
+import { cancelBillingSubscription } from '@/services/billing';
+import { toBackendError, type BackendError } from '@/services/errors';
 import { useApp } from '@/state/AppContext';
 import { useAuth } from '@/state/AuthContext';
+import { useBilling } from '@/state/BillingContext';
 import { useUserDecks } from '@/state/UserDecksContext';
 import { useUserLibrary } from '@/state/UserLibraryContext';
 
@@ -21,6 +23,16 @@ function initialsOf(name: string): string {
 export function AccountPage() {
   const { t, locale, actions: appActions } = useApp();
   const { state, configured, configReason, actions } = useAuth();
+  const {
+    plan,
+    points,
+    me,
+    questionsLimit,
+    questionsRemaining,
+    enforced,
+    error: billingError,
+    refresh: refreshBilling,
+  } = useBilling();
   const { state: cloud } = useUserDecks();
   const { state: library } = useUserLibrary();
   const user = state.user;
@@ -37,6 +49,12 @@ export function AccountPage() {
   useEffect(() => {
     setName(displayName);
   }, [displayName]);
+
+  // The profile page is where the learner checks the image/point counters.
+  // Read a fresh snapshot on arrival instead of showing the last cached value.
+  useEffect(() => {
+    void refreshBilling();
+  }, [refreshBilling]);
 
   const save = async () => {
     setError(null);
@@ -59,15 +77,51 @@ export function AccountPage() {
     }
   };
 
+  const copyId = async () => {
+    if (!user?.id) return;
+    let copied = false;
+    if (navigator.clipboard) {
+      try {
+        await navigator.clipboard.writeText(user.id);
+        copied = true;
+      } catch {
+        // Fall through to the selection-based copy below.
+      }
+    }
+    if (!copied) {
+      try {
+        const area = document.createElement('textarea');
+        area.value = user.id;
+        area.setAttribute('readonly', '');
+        area.style.position = 'fixed';
+        area.style.opacity = '0';
+        document.body.append(area);
+        area.select();
+        copied = document.execCommand('copy');
+        area.remove();
+      } catch {
+        copied = false;
+      }
+    }
+    if (copied) appActions.notify('success', t('account.idCopied'));
+  };
+
   const memberSince = profile?.createdAt ? Date.parse(profile.createdAt) : Number.NaN;
   const provider = user?.provider ?? 'email';
   const role = profile?.role === 'admin' ? t('account.admin') : t('account.user');
   const avatar = profile?.avatarUrl ?? user?.avatarUrl ?? null;
+  const pointsResetAt = me?.pointsResetAt ? Date.parse(me.pointsResetAt) : Number.NaN;
 
   // The learner types the word itself: a stray click on a destructive button
   // should not end an account, and the sheet should slow the decision down.
   const deleteWord = t('account.deleteWord');
   const canDelete = deleteTyped.trim().toUpperCase() === deleteWord.trim().toUpperCase();
+  // A paid or past-due account still has a Stripe subscription. Stop its
+  // renewal before the Supabase row disappears, otherwise Stripe would keep
+  // charging an account that no longer exists.
+  const needsBillingCancel = me
+    ? me.plan !== 'free' || ['past_due', 'unpaid', 'paused'].includes(me.status ?? '')
+    : false;
 
   const closeDelete = () => {
     if (deleting) return;
@@ -80,6 +134,15 @@ export function AccountPage() {
     if (!canDelete || deleting) return;
     setDeleting(true);
     setDeleteError(null);
+    if (needsBillingCancel) {
+      try {
+        await cancelBillingSubscription();
+      } catch (caught) {
+        setDeleting(false);
+        setDeleteError(toBackendError(caught));
+        return;
+      }
+    }
     const result = await actions.deleteAccount();
     setDeleting(false);
     if (!result.ok) {
@@ -185,6 +248,17 @@ export function AccountPage() {
               </dd>
             </div>
             <div>
+              <dt>{t('account.id')}</dt>
+              <dd className="account-id">
+                <code>{user?.id ?? '—'}</code>
+                {user?.id ? (
+                  <button type="button" className="text-btn" onClick={() => void copyId()}>
+                    {t('account.copyId')}
+                  </button>
+                ) : null}
+              </dd>
+            </div>
+            <div>
               <dt>{t('account.cloudDecks')}</dt>
               <dd>{cloud.decks.length}</dd>
             </div>
@@ -207,6 +281,67 @@ export function AccountPage() {
           </div>
         </section>
       </div>
+
+      <section className="panel account-panel">
+        <div className="panel__head">
+          <h2 className="panel__title">{t('account.billing')}</h2>
+          <button type="button" className="panel__more" onClick={() => navigate('/pricing')}>
+            {t('account.viewPlans')} →
+          </button>
+        </div>
+        <div className="account-billing__row">
+          <span className="badge badge--official">{t(`plan.${plan.id}`)}</span>
+          {plan.id === 'free' ? (
+            <strong>
+              {t('gen.freeRemaining', {
+                n: questionsRemaining ?? questionsLimit,
+                limit: questionsLimit,
+              })}
+            </strong>
+          ) : (
+            <strong>{t('billing.points', { n: points })}</strong>
+          )}
+          {me && !me.membershipActive ? (
+            <span className="footnote">{t('gen.membershipInactive')}</span>
+          ) : null}
+          {me ? (
+            <span className="footnote">
+              {plan.imagesPerMonth > 0
+                ? t('billing.imagesUsed', { used: me.imagesUsed, limit: me.imagesPerMonth })
+                : t('billing.noAiImages')}
+            </span>
+          ) : null}
+          {me && me.monthlyPoints > 0 ? (
+            <span className="footnote">{t('account.monthlyPoints', { n: me.monthlyPoints })}</span>
+          ) : null}
+          {me && me.bonusPoints > 0 ? (
+            <span className="footnote">{t('account.bonusPoints', { n: me.bonusPoints })}</span>
+          ) : null}
+          {Number.isFinite(pointsResetAt) ? (
+            <span className="footnote">
+              {t('account.pointsReset', { date: formatShortDay(pointsResetAt, locale) })}
+            </span>
+          ) : null}
+          {!enforced ? <span className="footnote">{t('billing.unenforced')}</span> : null}
+          <button type="button" className="btn btn--sm" onClick={() => navigate('/pricing')}>
+            {t('account.viewPlans')}
+          </button>
+          <button type="button" className="text-btn" onClick={() => navigate('/docs/billing')}>
+            {t('billingDocs.title')}
+          </button>
+        </div>
+        <p className="footnote">{t('account.billingHint')}</p>
+        {billingError ? (
+          <Note tone="warn">
+            {t('billing.error', {
+              message:
+                billingError === 'popup-blocked'
+                  ? t('billing.popupBlocked')
+                  : billingError,
+            })}
+          </Note>
+        ) : null}
+      </section>
 
       <Note>{t('account.securityNote')}</Note>
 
@@ -255,6 +390,7 @@ export function AccountPage() {
           <li>{t('account.deleteItemLibrary')}</li>
         </ul>
         <p className="footnote">{t('account.deleteKeep')}</p>
+        {needsBillingCancel ? <p className="footnote">{t('account.deleteBilling')}</p> : null}
         <label className="field">
           <span className="field__label">{t('account.deleteTypeLabel', { word: deleteWord })}</span>
           <input

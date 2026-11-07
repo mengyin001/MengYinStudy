@@ -24,6 +24,7 @@ export type BackendErrorCode =
   | 'signup-disabled'
   | 'profile-missing'
   | 'invalid-data'
+  | 'quota'
   | 'unknown';
 
 export class BackendError extends Error {
@@ -108,9 +109,15 @@ export function toBackendError(error: unknown): BackendError {
     case 'signup_disabled':
       return new BackendError('signup-disabled', message);
     case 'session_not_found':
+    case 'session_expired':
     case 'refresh_token_not_found':
     case 'refresh_token_already_used':
     case 'invalid_token':
+    case 'bad_jwt':
+      return new BackendError('unauthorized', message);
+    case 'user_not_found':
+      // GoTrue returns this when the JWT is valid but its account is gone
+      // (`delete_account` on another device). Treat it as an expired session.
       return new BackendError('unauthorized', message);
     case 'email_address_invalid':
       return new BackendError('invalid-data', message);
@@ -142,6 +149,11 @@ export function toBackendError(error: unknown): BackendError {
     return new BackendError('network', message, { details: details ?? undefined });
   }
   if (status === 0) return new BackendError('network', message);
+  // GoTrue says this when the JWT is valid but its account no longer exists,
+  // even on older servers that omit `error_code` from the body.
+  if (/user from sub claim|user not found/i.test(message)) {
+    return new BackendError('unauthorized', message);
+  }
   if (status === 401) return new BackendError('unauthorized', message);
   if (status === 403) return new BackendError('forbidden', message);
   if (status === 429) return new BackendError('rate-limited', message);
@@ -154,6 +166,12 @@ export function toBackendError(error: unknown): BackendError {
   }
   if (/invalid login credentials/i.test(message)) {
     return new BackendError('invalid-credentials', message);
+  }
+  if (/user_(media|storage)_quota_exceeded|quota exceeded/i.test(message)) {
+    return new BackendError(
+      'quota',
+      'Cloud storage is full (30 MB per account including deck text and images). Delete an old deck or remove images.',
+    );
   }
 
   return new BackendError('unknown', message, { details: details ?? undefined, cause: error });

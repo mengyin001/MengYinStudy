@@ -3,7 +3,9 @@ dist/
 .env
 .env.local
 .env.*.local
+.dev.vars
 !.env.example
+!.dev.vars.example
 .npm-cache/
 .vite/
 *.log
@@ -17,3 +19,4 @@ apps/web/public/runtime-manifest.json
 coverage/
 .tmp/
 _screenshots/
+supabase/.temp/

@@ -7,11 +7,38 @@
 /** Built-in question types; plugins may register additional ids. */
 export type QuestionTypeId = 'single' | 'multi' | 'boolean' | 'fill' | 'short' | (string & {});
 
-export interface QuestionMedia {
+/**
+ * A bitmap illustration. `digest`/`signature` are present when the server
+ * signed the bytes it generated; the renderer verifies them before display so
+ * a hand-edited upload cannot masquerade as AI output.
+ */
+export interface ImageMedia {
   type: 'image';
   src: string;
   alt?: string;
+  /** Lower-case SHA-256 of the stored bytes. */
+  digest?: string;
+  /** Base64url ECDSA P-256 signature over `mengyin-image:v1:<digest>`. */
+  signature?: string;
+  /** Attribution line for a web-search photo, e.g. "Jane Doe · Wikimedia Commons · CC BY-SA 4.0". */
+  credit?: string;
+  /** The file's description page, for a clickable attribution. */
+  sourceUrl?: string;
+  /** Short licence name, when the image came from a licensed source. */
+  license?: string;
 }
+
+/**
+ * A figure drawn locally from a declarative spec. Nothing is uploaded, so a
+ * precise diagram costs no storage and cannot be tampered with in transit.
+ */
+export interface FigureMedia {
+  type: 'figure';
+  figure: import('./figure').FigureSpec;
+  alt?: string;
+}
+
+export type QuestionMedia = ImageMedia | FigureMedia;
 
 export interface Option {
   id: string;
@@ -28,12 +55,6 @@ export type AnswerKey =
   | { kind: 'short'; model: string; keywords?: string[] }
   /** Graded by a plugin question type; `value` is plugin-defined. */
   | { kind: 'custom'; value: unknown };
-
-export interface QuestionMedia {
-  type: 'image';
-  src: string;
-  alt?: string;
-}
 
 export interface Question {
   id: string;

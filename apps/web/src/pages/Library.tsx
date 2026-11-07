@@ -10,14 +10,18 @@ import {
   type StudyMode,
 } from '@mengyin/core';
 import { Icon } from '@/components/Icons';
+import { CollectionEditorSheet, CollectionPickerSheet } from '@/components/CollectionSheets';
 import { OfficialStatus } from '@/components/OfficialStatus';
-import { Empty, Meter, PageHead, Sheet } from '@/components/ui';
+import { Empty, Meter, Note, PageHead, Sheet } from '@/components/ui';
+import { buildCollectionView, collectionsContainingDeck } from '@/domain/collections';
 import type { DeckView } from '@/domain/library';
 import { questionTypeLabel } from '@/domain/registry';
+import { describeBackendError } from '@/i18n/backend';
 import type { MessageKey } from '@/i18n/messages';
 import { pct, shorten } from '@/lib/format';
 import { navigate } from '@/lib/router';
 import { useApp } from '@/state/AppContext';
+import { useCollections } from '@/state/CollectionsContext';
 
 type Filter = 'all' | 'due' | 'mistakes' | 'new';
 
@@ -39,8 +43,37 @@ export function LibraryPage() {
   const [modeDeck, setModeDeck] = useState<string | null>(null);
   const [removeKey, setRemoveKey] = useState<string | null>(null);
   const [removing, setRemoving] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [pendingDeckKey, setPendingDeckKey] = useState<string | null>(null);
+  const [pickDeckKey, setPickDeckKey] = useState<string | null>(null);
+  const {
+    state: collectionsState,
+    authenticated: collectionsAuthenticated,
+    actions: collectionActions,
+  } = useCollections();
 
   const mastery = useMemo(() => masteryMap(state.progress.attempts), [state.progress.attempts]);
+  const collectionViewByKey = useMemo(
+    () => new Map(deckViews.map((view) => [view.deck.key, view])),
+    [deckViews],
+  );
+  const collectionViews = useMemo(
+    () =>
+      collectionsState.collections.map((collection) =>
+        buildCollectionView(collection, collectionViewByKey),
+      ),
+    [collectionViewByKey, collectionsState.collections],
+  );
+  const pickView = pickDeckKey ? collectionViewByKey.get(pickDeckKey) : undefined;
+  const pickSelection = useMemo(
+    () =>
+      pickDeckKey
+        ? collectionsContainingDeck(collectionsState.collections, pickDeckKey).map((item) => item.id)
+        : [],
+    [collectionsState.collections, pickDeckKey],
+  );
+  const unit = (n: number, one: MessageKey, many: MessageKey) =>
+    t(n === 1 ? one : many, { n });
 
   const counts = useMemo(
     () => ({
@@ -83,6 +116,38 @@ export function LibraryPage() {
     setRemoving(false);
     setRemoveKey(null);
     setSelected(null);
+  };
+
+  const createCollection = async (input: { name: string; description: string | null }) => {
+    const result = await collectionActions.create(input);
+    if (!result.ok) {
+      actions.notify('error', describeBackendError(result.error, t));
+      return false;
+    }
+    const created = result.value;
+    let addFailed = false;
+    if (pendingDeckKey) {
+      const added = await collectionActions.addDecks(created.id, [pendingDeckKey]);
+      if (!added.ok) {
+        actions.notify('error', describeBackendError(added.error, t));
+        addFailed = true;
+      }
+      setPendingDeckKey(null);
+    }
+    if (!addFailed) actions.notify('success', t('collections.created'));
+    navigate(`/collections/${encodeURIComponent(created.id)}`);
+    return true;
+  };
+
+  const saveCollectionPick = async (collectionIds: string[]) => {
+    if (!pickDeckKey) return false;
+    const result = await collectionActions.setDeckMembership(pickDeckKey, collectionIds);
+    if (!result.ok) {
+      actions.notify('error', describeBackendError(result.error, t));
+      return false;
+    }
+    actions.notify('success', t('collections.pickSaved'));
+    return true;
   };
 
   const modeOptions = (view: DeckView): ModeOption[] => {
@@ -147,6 +212,90 @@ export function LibraryPage() {
       />
 
       <OfficialStatus />
+
+      <section className="collection-shelf-block">
+        <div className="panel__head">
+          <h2 className="panel__title">{t('collections.my')}</h2>
+          {collectionsAuthenticated ? (
+            <button type="button" className="panel__more" onClick={() => setCreateOpen(true)}>
+              {t('collections.new')} →
+            </button>
+          ) : null}
+        </div>
+
+        {collectionsState.error ? (
+          <Note tone="warn">
+            {t('collections.loadError')} · {describeBackendError(collectionsState.error, t)}
+          </Note>
+        ) : null}
+
+        {!collectionsAuthenticated ? (
+          <div className="collection-empty">
+            <p className="empty__body">{t('collections.signInHint')}</p>
+            <button
+              type="button"
+              className="btn btn--sm"
+              onClick={() => navigate('/login?next=/library')}
+            >
+              {t('collections.signIn')}
+            </button>
+          </div>
+        ) : !collectionsState.ready ? (
+          <p className="footnote">{t('collections.loading')}</p>
+        ) : collectionViews.length === 0 ? (
+          <div className="collection-empty">
+            <div>
+              <p className="empty__title">{t('collections.empty')}</p>
+              <p className="empty__body">{t('collections.emptyHint')}</p>
+            </div>
+            <button type="button" className="btn btn--sm" onClick={() => setCreateOpen(true)}>
+              {t('collections.new')}
+            </button>
+          </div>
+        ) : (
+          <div className="collection-shelf">
+            {collectionViews.map((collectionView) => (
+              <button
+                type="button"
+                className="collection-card"
+                key={collectionView.collection.id}
+                onClick={() =>
+                  navigate(`/collections/${encodeURIComponent(collectionView.collection.id)}`)
+                }
+              >
+                <span
+                  className="collection-card__crest"
+                  data-tone={collectionView.tone}
+                  aria-hidden="true"
+                >
+                  {collectionView.crest}
+                </span>
+                <span className="collection-card__name">{collectionView.collection.name}</span>
+                <span className="collection-card__meta">
+                  {unit(collectionView.decks.length, 'plaza.deckCountOne', 'plaza.deckCount')}
+                  {' · '}
+                  {unit(collectionView.questionCount, 'plaza.questionCountOne', 'plaza.questionCount')}
+                </span>
+                <span className="collection-card__meter">
+                  <Meter value={collectionView.ratio} accent />
+                </span>
+                <span className="collection-card__foot">
+                  <span>{pct(collectionView.ratio)}</span>
+                  <Icon name="chevronRight" size={13} strokeWidth={1.6} />
+                </span>
+              </button>
+            ))}
+            <button
+              type="button"
+              className="collection-card collection-card--new"
+              onClick={() => setCreateOpen(true)}
+            >
+              <Icon name="plus" size={17} strokeWidth={1.6} />
+              <span>{t('collections.new')}</span>
+            </button>
+          </div>
+        )}
+      </section>
 
       <div className="toolbar">
         <label className="search-field">
@@ -279,6 +428,18 @@ export function LibraryPage() {
                 })}
               </span>
               <div className="deck-row__actions">
+                {collectionsAuthenticated ? (
+                  <button
+                    type="button"
+                    className="text-btn"
+                    onClick={() => {
+                      setSelected(null);
+                      setPickDeckKey(selectedView.deck.key);
+                    }}
+                  >
+                    {t('collections.addToCollection')}
+                  </button>
+                ) : null}
                 {!guestDeckKeys.has(selectedView.deck.key) ? (
                   <button
                     type="button"
@@ -403,6 +564,32 @@ export function LibraryPage() {
         <p>{t('lib.removeBody', { name: removeView?.deck.title ?? '' })}</p>
         <p className="footnote">{t('lib.removeHint')}</p>
       </Sheet>
+
+      <CollectionPickerSheet
+        open={!!pickDeckKey}
+        deckTitle={pickView?.deck.title ?? ''}
+        collections={collectionsState.collections}
+        initialSelected={pickSelection}
+        busy={collectionsState.busy}
+        onClose={() => setPickDeckKey(null)}
+        onSave={saveCollectionPick}
+        onCreate={() => {
+          setPendingDeckKey(pickDeckKey);
+          setPickDeckKey(null);
+          setCreateOpen(true);
+        }}
+      />
+
+      <CollectionEditorSheet
+        open={createOpen}
+        initial={null}
+        busy={collectionsState.busy}
+        onClose={() => {
+          setCreateOpen(false);
+          setPendingDeckKey(null);
+        }}
+        onSave={createCollection}
+      />
     </div>
   );
 }

@@ -136,3 +136,47 @@ describe('deck exam length', () => {
     expect(parseDeckFile(rawDeck({ examMinutes: 12.5 })).ok).toBe(false);
   });
 });
+
+describe('figure media', () => {
+  const figure = {
+    v: 1,
+    coords: 'cartesian',
+    x: { min: -2, max: 2 },
+    y: { min: 0, max: 4 },
+    elements: [{ kind: 'plot', expr: 'x^2' }],
+  };
+  const withFigure = (spec: unknown) =>
+    rawDeck({
+      questions: [
+        {
+          id: 'q1',
+          type: 'boolean',
+          prompt: 'The curve opens upwards.',
+          answer: { kind: 'boolean', value: true },
+          tags: ['Graphs'],
+          difficulty: 2,
+          media: [{ type: 'figure', figure: spec, alt: '拋物線' }],
+        },
+      ],
+    });
+
+  it('parses a figure, normalises it and keeps it on the question', () => {
+    const parsed = parseDeckFile(withFigure(figure));
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    const media = adaptDeck('test.pack', parsed.value).questions[0]?.media?.[0];
+    expect(media?.type).toBe('figure');
+    if (media?.type === 'figure') {
+      expect(media.figure.width).toBe(420);
+      expect(media.figure.elements).toHaveLength(1);
+      expect(media.alt).toBe('拋物線');
+    }
+  });
+
+  it('rejects an invalid spec instead of storing it', () => {
+    expect(parseDeckFile(withFigure({ v: 1, elements: [{ kind: 'plot', expr: 'alert(1)' }] })).ok).toBe(
+      false,
+    );
+    expect(parseDeckFile(withFigure({ v: 9, elements: figure.elements })).ok).toBe(false);
+  });
+});

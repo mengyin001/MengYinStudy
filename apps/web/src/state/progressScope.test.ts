@@ -100,11 +100,37 @@ describe('progress scopes', () => {
     expect((await loadScopeProgress(store, guest)).attempts).toHaveLength(0);
   });
 
+  it('does not give an existing account the guest record by default', async () => {
+    const store = memoryStore();
+    await saveScopeProgress(store, guest, record(4));
+
+    const loaded = await loadScopeProgress(store, alice);
+
+    // Regression: signing into an existing account used to adopt guest
+    // practice and then sync it into that account's cloud history.
+    expect(loaded.attempts).toHaveLength(0);
+    expect(hasLearningRecord(loaded)).toBe(false);
+    // The guest keeps their practice for the next signed-out view.
+    expect((await loadScopeProgress(store, guest)).attempts).toHaveLength(4);
+  });
+
+  it('borrows the guest appearance without inheriting guest history', async () => {
+    const store = memoryStore();
+    await saveScopeProgress(store, guest, record(3, 'zh-Hant'));
+
+    const loaded = await loadScopeProgress(store, alice);
+
+    expect(loaded.attempts).toHaveLength(0);
+    // Language/theme are device-local, so switching identity must not reset them.
+    expect(loaded.settings.locale).toBe('zh-Hant');
+    expect((await loadScopeProgress(store, guest)).attempts).toHaveLength(3);
+  });
+
   it('adopts guest practice into a new account and clears the guest record', async () => {
     const store = memoryStore();
     await saveScopeProgress(store, guest, record(4));
 
-    const adopted = await loadScopeProgress(store, alice);
+    const adopted = await loadScopeProgress(store, alice, { adoptGuest: true });
     expect(adopted.attempts).toHaveLength(4);
 
     const afterSignOut = await loadScopeProgress(store, guest);
@@ -112,7 +138,7 @@ describe('progress scopes', () => {
     expect(hasLearningRecord(afterSignOut)).toBe(false);
   });
 
-  it('still adopts guest practice when the account only has saved settings', async () => {
+  it('still adopts guest practice when the new account only has saved settings', async () => {
     const store = memoryStore();
     await saveScopeProgress(store, alice, {
       ...emptyProgress(),
@@ -120,9 +146,23 @@ describe('progress scopes', () => {
     });
     await saveScopeProgress(store, guest, record(2));
 
-    const adopted = await loadScopeProgress(store, alice);
+    const adopted = await loadScopeProgress(store, alice, { adoptGuest: true });
     expect(adopted.attempts).toHaveLength(2);
     // The account's own appearance wins over the guest record's.
     expect(adopted.settings.locale).toBe('zh-Hant');
+  });
+
+  it('keeps a settings-only account record when adoption is not allowed', async () => {
+    const store = memoryStore();
+    await saveScopeProgress(store, alice, {
+      ...emptyProgress(),
+      settings: { ...emptyProgress().settings, locale: 'zh-Hant' },
+    });
+    await saveScopeProgress(store, guest, record(2));
+
+    const loaded = await loadScopeProgress(store, alice);
+    expect(loaded.attempts).toHaveLength(0);
+    expect(loaded.settings.locale).toBe('zh-Hant');
+    expect((await loadScopeProgress(store, guest)).attempts).toHaveLength(2);
   });
 });

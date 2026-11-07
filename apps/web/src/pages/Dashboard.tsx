@@ -13,9 +13,11 @@ import { Empty, Meter, PageHead } from '@/components/ui';
 import { formatDuration, formatLongDate, pct } from '@/lib/format';
 import { navigate } from '@/lib/router';
 import { useApp } from '@/state/AppContext';
+import { useBilling } from '@/state/BillingContext';
 
 export function DashboardPage() {
   const { state, entries, deckViews, t, locale, actions } = useApp();
+  const { plan, points } = useBilling();
   const progress = state.progress;
   const now = Date.now();
 
@@ -71,10 +73,21 @@ export function DashboardPage() {
     actions.startSession({ mode: 'srs', entries: due, label: t('mode.srs') });
   };
 
+  // Plans live at the top right of Today rather than in the left navigation.
+  const planButton = (
+    <button type="button" className="btn btn--sm" onClick={() => navigate('/pricing')}>
+      {t(`plan.${plan.id}`)} · {t('billing.pointsShort', { n: points })}
+    </button>
+  );
+
   if (entries.length === 0) {
     return (
       <div className="page">
-        <PageHead eyebrow={formatLongDate(now, locale)} title={t('dash.title')} />
+        <PageHead
+          eyebrow={formatLongDate(now, locale)}
+          title={t('dash.title')}
+          actions={planButton}
+        />
         <Empty
           title={t('dash.emptyTitle')}
           body={t('dash.emptyBody')}
@@ -100,6 +113,7 @@ export function DashboardPage() {
         })}
         actions={
           <>
+            {planButton}
             <button type="button" className="btn btn--quiet" onClick={startRandom}>
               {t('dash.random')}
             </button>

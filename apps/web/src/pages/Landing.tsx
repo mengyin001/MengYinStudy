@@ -56,6 +56,9 @@ export function LandingPage() {
           <button type="button" onClick={() => scrollTo('how-it-works')}>
             {text(LANDING.how.eyebrow, locale)}
           </button>
+          <button type="button" onClick={() => navigate('/pricing')}>
+            {text(LANDING.nav.pricing, locale)}
+          </button>
           <a href="./privacy/">{text(LANDING.footer.privacy, locale)}</a>
         </nav>
 
@@ -111,6 +114,16 @@ export function LandingPage() {
               </button>
             </div>
             <p className="landing__note">{text(LANDING.ctaNote, locale)}</p>
+            <a
+              className="landing__inline-link"
+              href="#/pricing"
+              onClick={(event) => {
+                event.preventDefault();
+                navigate('/pricing');
+              }}
+            >
+              {text(LANDING.ctaPricing, locale)} →
+            </a>
           </div>
 
           <div className="landing__preview" aria-label={text(LANDING.preview.label, locale)}>
@@ -269,6 +282,12 @@ export function LandingPage() {
         <nav className="landing__foot-links" aria-label="Legal and contact">
           <a href="./privacy/">{text(LANDING.footer.privacy, locale)}</a>
           <a href="./terms/">{text(LANDING.footer.terms, locale)}</a>
+          <a href="#/pricing" onClick={(event) => {
+            event.preventDefault();
+            navigate('/pricing');
+          }}>
+            {text(LANDING.footer.pricing, locale)}
+          </a>
           <a href={`mailto:${contactEmail}`}>{text(LANDING.footer.contact, locale)}</a>
         </nav>
 

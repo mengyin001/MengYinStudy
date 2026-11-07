@@ -18,8 +18,8 @@ explicitly adds the ones they want to their own library. Supabase provides six t
 Official decks are visible in the Plaza without signing in, but adding one requires an account.
 Progress is scoped to the current identity: a guest record and one record per account, so signing
 out zeros the dashboard and signing back in restores that account's statistics. The cloud row is
-live, not a manual backup path; `updated_at` is the optimistic-concurrency token. AI keys and
-material files are never sent to Supabase.
+live, not a manual backup path; `updated_at` is the optimistic-concurrency token. AI provider keys
+stay in the Worker, and material excerpts go to the AI API, never to Supabase.
 
 ```
 React pages / contexts
@@ -134,6 +134,23 @@ signed-in device. Relative images in imported folders are converted to `data:` U
 so a cloud deck is self-contained JSON. The `questions` size limit is 8 MB and the module limit is
 1 MB.
 
+### `user_collections`
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `client_id` | `text` PK | generated on the device; stable across cache and cloud |
+| `user_id` | `uuid` | default `auth.uid()`; FK to `auth.users` on delete cascade |
+| `name`, `description` | text / text | 1–80 / ≤2000 characters |
+| `deck_keys` | `text[]` | ≤500 `pluginId::deckId` references, not copies |
+| `created_at`, `updated_at` | `timestamptz` | `updated_at` maintained by `set_updated_at()` |
+
+A collection is an ordered list of references, so a deck keeps its own `user_decks` row, progress and
+`exam_minutes`. A key may point at a generated/imported cloud deck, an added official deck, a bundled
+starter deck or a local import; the client resolves keys against the current library and shows missing
+ones instead of dropping them. One deck may appear in several collections. `client_id` is insert-only,
+and the client uses select-then-insert/update so a rename cannot fork the identity. Owner-only RLS and
+column grants match `user_decks`.
+
 ### `user_progress`
 
 | Column | Type | Notes |
@@ -157,9 +174,38 @@ filtered to the user's id and RLS still applies. Owner-only RLS, same as `user_d
 
 `official-media` is a **public** bucket. Admin write policies; public read. `media_base_url` on a
 deck points at `…/storage/v1/object/public/official-media/<pack>/<deck>/`, so relative image paths
-in question JSON resolve without hard-coding a CDN. User-uploaded decks use inline `data:` images
-instead of a separate bucket: imported relative images are embedded at import time, so another
-device never gets a broken image. The 8 MB question limit applies to the embedded JSON.
+in question JSON resolve without hard-coding a CDN.
+
+`user-media` is a **private** bucket for learner decks. It accepts PNG/JPEG/WebP/GIF/AVIF and
+`image/svg+xml`; the client normally rasterises SVG to WebP before upload, but the SVG fallback
+covers browsers where that decode fails. Paths are
+`<user-id>/<deck-id>/<question-id>-<hash>.<ext>`; the first folder segment must equal `auth.uid()`,
+and every Storage policy checks it. A deck row stores `src: "storage:<path>"`, never base64. The
+browser creates a seven-day signed URL when it renders the image, so DB rows stay small and no
+public URL is ever written.
+
+**Figures are not stored here.** A diagram is a `figure` spec inside the deck JSON, drawn locally as
+SVG; it has no bytes, no object and no quota cost. Only photo-like illustrations are uploaded.
+
+Generated photos can be **attested**. With `IMAGE_SIGNING_KEY` / `IMAGE_VERIFY_KEY` configured, the
+API signs `sha256(bytes)` with ECDSA P-256 and returns `digest` + `signature` on the media item. On
+save, the client verifies the digest and uploads the bytes unchanged (no WebP re-encode, which would
+change the digest); on display it downloads the object, re-hashes it and verifies the signature
+against the public key in `/api/ai/config` before rendering. A replaced object is therefore hidden
+rather than shown. Images created before attestation render normally; they make no authenticity
+claim. Perfect enforcement against a modified client would require moving uploads behind the API;
+the current scheme protects the object bytes and makes tampering detectable at the point of display.
+
+Each account has **30 MB** shared by deck text and images. A trigger on `user_decks` counts
+`questions::text`, `entry_source`, title, description, tags and ids; a trigger on `storage.objects`
+counts the account's objects. Each write checks the total, and both use the same per-account
+advisory lock so a deck save and an image upload cannot both pass the check. The sidebar meter and
+Settings show total usage plus the text/image split;
+`public.user_media_usage()` returns `{bytes, deckBytes, storageBytes, limit}`.
+
+Imported folders are still inlined at import time so the local deck is self-contained. The cloud
+upload moves those data URLs into `user-media`; the 8 MB question limit applies only to the row
+after images have been removed.
 
 ---
 
@@ -176,8 +222,10 @@ auto-exposes new `public` tables to the Data API (enforced from October 2026). T
 | `official_catalog_meta` | select | select | select | all |
 | `user_official_decks` | none | select/insert/delete own references | same as learner (no admin read) | all |
 | `user_decks` | none | select/insert/update/delete own rows | same as learner (no admin read) | all |
+| `user_collections` | none | select/insert/update/delete own collections | same as learner (no admin read) | all |
 | `user_progress` | none | select/insert/update/delete own live row; Realtime delivers only that row | same as learner (no admin read) | all |
 | `storage.objects` (`official-media`) | select | select | insert/update/delete | all |
+| `storage.objects` (`user-media`) | none | select/insert/update/delete own folder | same as learner | all |
 
 ### Why a learner cannot promote themselves
 
@@ -220,7 +268,7 @@ A publishable key is public by design; RLS is what protects the data.
 
 ### SQL fixtures
 
-`supabase/migrations/` contains nine migrations:
+`supabase/migrations/` contains the schema history:
 
 | File | Contents |
 | --- | --- |
@@ -229,10 +277,13 @@ A publishable key is public by design; RLS is what protects the data.
 | `20261103122000_official_media.sql` | public `official-media` bucket and its policies |
 | `20261103235500_user_decks.sql` | private `user_decks`, owner-only RLS, narrow column grants |
 | `20261104003000_user_progress.sql` | private `user_progress` row, owner-only RLS |
-| `20261104004000_user_deck_runtime_and_media.sql` | `entry_source`, 8 MB inline-media budget |
+| `20261104004000_user_deck_runtime_and_media.sql` | `entry_source`, 8 MB row budget |
+| `20261106213000_user_media_storage.sql` | private `user-media` bucket, owner RLS |
+| `20261106230000_storage_quota_includes_decks.sql` | shared 30 MB text+image quota, usage RPC |
 | `20261104020000_user_official_library.sql` | Plaza references in `user_official_decks` |
 | `20261104030000_user_progress_realtime.sql` | explicit `user_id` insert grant, Realtime publication |
 | `20261104040000_exam_minutes.sql` | deck-owned exam length on `official_decks` and `user_decks` |
+| `20261110090000_user_collections.sql` | owner-only `user_collections`, deck-key references and narrow grants |
 
 Apply them with the Supabase CLI, paste them, in order, into the SQL editor, or use the database
 runner:
@@ -303,7 +354,14 @@ variable.
    reused; otherwise it is replaced. On another device the deck appears with a **Cloud** badge. A
    cloud copy replaces the local deck with the same key, so progress still matches.
 5. Removing a deck from **Decks** or **Plugins** deletes the cloud row and the local copy, so it
-   cannot be uploaded again. AI keys and material files are never uploaded.
+   cannot be uploaded again. The delete is verified: a `DELETE` that matches no row still returns
+   success, so the service asks PostgREST for the deleted rows, retries once by the stable
+   `plugin::deck` client key when the id has gone stale, and raises `forbidden` when the row is still
+   readable afterwards. The UI reports the failure instead of a false “removed”.
+   A list request that started before the write must not repaint the deck, so a delete or upload
+   invalidates every refresh issued earlier (`state/refreshGuard.ts`), and the key is tombstoned for
+   the session: it is filtered out of the merged deck list and never re-uploaded from a local copy.
+   AI provider keys and material files are never uploaded.
 
 ### Live progress sync
 
@@ -537,8 +595,14 @@ If you intentionally run the browser smoke test against an unprovisioned project
   clear the local cache on sign-out.
 - **PKCE recovery links** are same-browser by design. Opening a reset link in a different browser
   cannot use the code verifier; request a fresh link there.
-- **Storage objects are not garbage-collected.** Deleting a deck/pack removes the database rows but
-  leaves its media in `official-media`; remove those objects in Studio if that matters.
+- **Official media is not garbage-collected.** Deleting an official deck/pack removes the database
+  rows but leaves its files in `official-media`; remove them in Studio if that matters. Learner
+  images in `user-media` are removed only for a deck row that was actually deleted (a `DELETE` that
+  matches nothing still returns success, so the service checks the row count first), and an upsert
+  only sweeps its uploads when the row never committed. A deck whose objects are missing anyway is
+  repaired on load from the local copy, which still holds the inline image: the object is written
+  back at the same content-hashed path, so the stored `storage:` marker keeps working. Orphaned
+  objects can still be swept from Studio.
 - **OAuth in the desktop shell** is not configured (random loopback port).
 - **Official custom question types are not run.** Official packs use the built-in types only;
   third-party plugin code still comes from local plugin folders.

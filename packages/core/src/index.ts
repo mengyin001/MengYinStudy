@@ -1,4 +1,6 @@
 export * from './types';
+export * from './figure';
+export * from './flow';
 export * from './code';
 export * from './ids';
 export * from './rng';
@@ -7,6 +9,8 @@ export * from './srs';
 export * from './session';
 export * from './exam';
 export * from './stats';
+export * from './streak';
+export * from './billing';
 export * from './progress';
 export * from './sync';
 export * from './selectors';

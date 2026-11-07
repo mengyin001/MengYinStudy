@@ -100,12 +100,20 @@ describe('buildOfficialPacks', () => {
       }),
     );
     const built = result.packs[0]?.decks[0];
-    expect(built?.questions[0]?.media?.[0]?.src).toBe(
-      'https://example.supabase.co/storage/v1/object/public/official-media/p/images/assets/chart.svg',
-    );
-    expect(built?.questions[0]?.options?.[0]?.media?.[0]?.src).toBe(
-      'https://example.supabase.co/storage/v1/object/public/official-media/p/images/assets/a.svg',
-    );
+    const media = built?.questions[0]?.media?.[0];
+    expect(media?.type).toBe('image');
+    if (media?.type === 'image') {
+      expect(media.src).toBe(
+        'https://example.supabase.co/storage/v1/object/public/official-media/p/images/assets/chart.svg',
+      );
+    }
+    const optionMedia = built?.questions[0]?.options?.[0]?.media?.[0];
+    expect(optionMedia?.type).toBe('image');
+    if (optionMedia?.type === 'image') {
+      expect(optionMedia.src).toBe(
+        'https://example.supabase.co/storage/v1/object/public/official-media/p/images/assets/a.svg',
+      );
+    }
   });
 
   it('drops an invalid deck and reports it instead of failing the whole pack', () => {

@@ -4,6 +4,7 @@ import react from '@vitejs/plugin-react';
 import { legalContext } from './src/legal/config';
 import { LEGAL_DOCS } from './src/legal/content';
 import { renderLegalHtml } from './src/legal/staticHtml';
+import { normalizeSiteOrigin, renderRobots, renderSitemap } from './src/seo/site';
 
 const resolvePath = (relative: string) => fileURLToPath(new URL(relative, import.meta.url));
 
@@ -17,7 +18,7 @@ const resolvePath = (relative: string) => fileURLToPath(new URL(relative, import
  */
 function legalDocuments(env: Record<string, string>): Plugin {
   const overrides: Parameters<typeof legalContext>[0] = {
-    origin: (env.VITE_PUBLIC_ORIGIN ?? '').trim().replace(/\/+$/, ''),
+    origin: normalizeSiteOrigin(env.VITE_PUBLIC_ORIGIN),
   };
   const operator = (env.VITE_LEGAL_OPERATOR ?? '').trim();
   if (operator) overrides.operator = operator;
@@ -57,18 +58,64 @@ function legalDocuments(env: Record<string, string>): Plugin {
   };
 }
 
+/**
+ * Emits `/sitemap.xml` and `/robots.txt` from the same origin and route list.
+ *
+ * Keeping them out of `public/` means the production domain is defined once
+ * and the sitemap's dates follow the legal documents. Vite's dev server has no
+ * build output, so the same files are served from memory there.
+ */
+function seoFiles(env: Record<string, string>): Plugin {
+  const origin = normalizeSiteOrigin(env.VITE_PUBLIC_ORIGIN);
+  const files = new Map([
+    ['/sitemap.xml', { body: renderSitemap(origin), type: 'application/xml; charset=utf-8' }],
+    ['/robots.txt', { body: renderRobots(origin), type: 'text/plain; charset=utf-8' }],
+  ]);
+
+  return {
+    name: 'mengyin:seo-files',
+    generateBundle() {
+      for (const [pathname, file] of files) {
+        this.emitFile({
+          type: 'asset',
+          fileName: pathname.slice(1),
+          source: file.body,
+        });
+      }
+    },
+    configureServer(server) {
+      server.middlewares.use((request, response, next) => {
+        const pathname = (request.url ?? '').split('?')[0] ?? '';
+        const file = files.get(pathname);
+        if (!file) {
+          next();
+          return;
+        }
+        response.statusCode = 200;
+        response.setHeader('Content-Type', file.type);
+        response.end(file.body);
+      });
+    },
+  };
+}
+
 export default defineConfig(({ mode }) => {
   // One .env at the repository root, shared by the web app and the tooling.
   const envDir = resolvePath('../..');
   const env = loadEnv(mode, envDir, 'VITE_');
+  // `npm run dev:api` serves the Worker locally on 8787. A separate deployment
+  // can point VITE_AI_API_BASE at an absolute URL instead.
+  const apiProxy = (env.VITE_AI_API_PROXY ?? '').trim() || 'http://127.0.0.1:8787';
+  const proxy = { '/api': { target: apiProxy, changeOrigin: true } };
 
   return {
     // Relative base keeps the build working from file:// (Electron/desktop shell).
     base: './',
     envDir,
-    plugins: [react(), legalDocuments(env)],
+    plugins: [react(), legalDocuments(env), seoFiles(env)],
     resolve: {
       alias: {
+        '@mengyin/ai-contract': resolvePath('../../packages/ai-contract/src/index.ts'),
         '@mengyin/core': resolvePath('../../packages/core/src/index.ts'),
         '@mengyin/plugin-sdk': resolvePath('../../packages/plugin-sdk/src/index.ts'),
         '@': resolvePath('./src'),
@@ -80,11 +127,16 @@ export default defineConfig(({ mode }) => {
       host: '127.0.0.1',
       // The sandbox iframe is an opaque origin; its runtime fetches need CORS.
       cors: true,
+      // Editing tools write through temporary directories; watching those
+      // files can fail with EBUSY on Windows and take the dev server down.
+      watch: { ignored: ['**/.*.tmpdir/**', '**/*.tmp'] },
+      proxy,
     },
     preview: {
       port: 4173,
       strictPort: true,
       cors: true,
+      proxy,
     },
     build: {
       outDir: 'dist',

@@ -1,21 +1,57 @@
 {
   "name": "mengyinstudy",
+  "main": "./apps/api/src/index.ts",
   "compatibility_date": "2026-11-01",
 
-  // MengYin Study is a static Vite build: there is no Worker code and no API
-  // route. Wrangler only uploads apps/web/dist as static assets.
-  //
-  // This file also tells Wrangler which project to deploy. Without it,
-  // `wrangler deploy` run from the repository root refuses to guess, because
-  // the root package.json declares npm `workspaces`:
-  //   "The Cloudflare application detection logic has been run in the root of
-  //    a workspace instead of targeting a specific project."
+  // The Worker serves the built Vite app and the AI API from one origin, so
+  // `/api/ai/*` needs no CORS in the browser. Platform secrets (GLM_API_KEY,
+  // DEEPSEEK_API_KEY, ...) are set with `wrangler secret put`; see
+  // docs/AI_API.md. The publishable Supabase values below are safe in config.
   "assets": {
     "directory": "./apps/web/dist",
+    "binding": "ASSETS",
 
     // The app uses hash routing (/#/library), so a missing file must stay a
     // 404. Never add an SPA catch-all: a missing runtime would return HTML
     // with a 200 and surface as a confusing WebAssembly error.
     "not_found_handling": "none"
+  },
+
+  // Workers AI: free daily allocation used for text-to-image generation.
+  "ai": {
+    "binding": "AI"
+  },
+
+  "vars": {
+    "AUTH_REQUIRED": "true",
+    "SUPABASE_URL": "https://yukmxeieklwgnwdcqwpb.supabase.co",
+    "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_bl2gRxOO8EgNOQMlQR3dYQ_ZBbOvhaE",
+    // The desktop shell runs from a loopback origin, and external API clients
+    // are welcome. Authentication is a bearer token, not a cookie, so a
+    // wildcard CORS origin does not grant access to anyone's account.
+    "ALLOWED_ORIGINS": "*",
+    "IMAGE_PROVIDER": "cloudflare",
+    "IMAGE_MODEL": "@cf/black-forest-labs/flux-1-schnell",
+    // Add comma-separated Workers AI image model ids here to offer them in
+    // Generate. IMAGE_MODEL is always included and stays the default.
+    "IMAGE_MODELS": "@cf/black-forest-labs/flux-1-schnell",
+    // Real scene questions search Wikimedia Commons first, then use the image
+    // model. Set to "off" to disable the external request.
+    "IMAGE_SEARCH": "wikimedia",
+    // Plan limits, the free question quota and point charges are on by default:
+    // generation must never trust a client-side plan. Set "false" only for a
+    // deliberate off-line demo. Enforcement needs SUPABASE_SERVICE_KEY (the
+    // free quota and refunds are service-role RPCs) and the migrations applied.
+    "BILLING_ENFORCE": "true"
+  },
+
+  "observability": {
+    "enabled": true
   }
+
+  // Optional per-account daily quotas. Create a KV namespace and bind it:
+  //   npx wrangler kv namespace create AI_QUOTA
+  // then add:
+  //   "kv_namespaces": [{ "binding": "AI_QUOTA", "id": "<id>" }]
+  // and set AI_DAILY_QUESTIONS / AI_DAILY_IMAGES in vars.
 }

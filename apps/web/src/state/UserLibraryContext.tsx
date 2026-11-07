@@ -62,9 +62,21 @@ function reducer(state: UserLibraryState, action: Action): UserLibraryState {
   }
 }
 
+export interface BulkAddResult {
+  added: number;
+  failed: number;
+  /** Ids that were accepted, in the order they succeeded. */
+  addedDeckIds: string[];
+}
+
 export interface UserLibraryActions {
   refresh(): Promise<void>;
   add(packId: string, deckId: string): Promise<ServiceResult<OfficialDeckRef>>;
+  /**
+   * Add several decks from one pack with a single library refresh. A failure
+   * for one deck does not stop the rest; the caller sees both counts.
+   */
+  addMany(packId: string, deckIds: readonly string[]): Promise<ServiceResult<BulkAddResult>>;
   remove(packId: string, deckId: string): Promise<ServiceResult>;
 }
 
@@ -187,6 +199,44 @@ export function UserLibraryProvider({ children }: { children: ReactNode }) {
     [refresh, userId],
   );
 
+  const addMany = useCallback(
+    async (packId: string, deckIds: readonly string[]): Promise<ServiceResult<BulkAddResult>> => {
+      if (!userId) {
+        return fail(new BackendError('unauthorized', 'Sign in to add decks from the Plaza.'));
+      }
+      const wanted = [...new Set(deckIds.map((id) => id.trim()).filter(Boolean))];
+      if (wanted.length === 0) {
+        return ok({ added: 0, failed: 0, addedDeckIds: [] });
+      }
+
+      dispatch({ type: 'busy', busy: true });
+      const addedDeckIds: string[] = [];
+      let firstError: BackendError | null = null;
+      try {
+        for (const deckId of wanted) {
+          try {
+            await backend.userLibrary.add(packId, deckId);
+            addedDeckIds.push(deckId);
+          } catch (error) {
+            firstError ??= toBackendError(error);
+          }
+        }
+        // One refresh for the whole batch: every accepted deck is in the reply.
+        await refresh(true);
+      } finally {
+        dispatch({ type: 'busy', busy: false });
+      }
+
+      if (addedDeckIds.length === 0 && firstError) return fail(firstError);
+      return ok({
+        added: addedDeckIds.length,
+        failed: wanted.length - addedDeckIds.length,
+        addedDeckIds,
+      });
+    },
+    [refresh, userId],
+  );
+
   const remove = useCallback(
     async (packId: string, deckId: string): Promise<ServiceResult> => {
       if (!userId) {
@@ -222,9 +272,10 @@ export function UserLibraryProvider({ children }: { children: ReactNode }) {
     () => ({
       refresh: () => refresh(),
       add,
+      addMany,
       remove,
     }),
-    [refresh, add, remove],
+    [refresh, add, addMany, remove],
   );
 
   const value = useMemo<UserLibraryContextValue>(

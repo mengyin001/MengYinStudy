@@ -3,6 +3,8 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 import { AppProvider } from './state/AppContext';
 import { AuthProvider } from './state/AuthContext';
+import { BillingProvider } from './state/BillingContext';
+import { CollectionsProvider } from './state/CollectionsContext';
 import { OfficialContentProvider } from './state/OfficialContentContext';
 import { UserDecksProvider } from './state/UserDecksContext';
 import { UserLibraryProvider } from './state/UserLibraryContext';
@@ -25,15 +27,19 @@ async function start(): Promise<void> {
     createRoot(rootElement).render(
       <StrictMode>
         <AuthProvider>
-          <UserDecksProvider>
-            <UserLibraryProvider>
-              <OfficialContentProvider>
-                <AppProvider>
-                  <App />
-                </AppProvider>
-              </OfficialContentProvider>
-            </UserLibraryProvider>
-          </UserDecksProvider>
+          <BillingProvider>
+            <UserDecksProvider>
+              <UserLibraryProvider>
+                <CollectionsProvider>
+                  <OfficialContentProvider>
+                    <AppProvider>
+                      <App />
+                    </AppProvider>
+                  </OfficialContentProvider>
+                </CollectionsProvider>
+              </UserLibraryProvider>
+            </UserDecksProvider>
+          </BillingProvider>
         </AuthProvider>
       </StrictMode>,
     );

@@ -110,7 +110,7 @@ on a question overrides that question's share of the estimate.
 | `difficulty` | – | 1–5, default 2. |
 | `points` | – | Reserved. |
 | `source` | – | Shown for reference. |
-| `media` | – | `[{ "type": "image", "src": "…", "alt": "…" }]`; see [Images](#images). |
+| `media` | – | `[{ "type": "image", "src": "…", "alt": "…" }]` or `[{ "type": "figure", "figure": {...}, "alt": "…" }]`; see [Images](#images). |
 | `meta` | – | Free-form JSON for plugin question types (e.g. `tolerance`); `estimatedSeconds` sets this question's exam-time budget. |
 
 ### Answer shapes
@@ -174,6 +174,102 @@ Notes:
   cannot resolve there — use `data:` URIs for locally imported packs.
 - Put the images in the plugin's own `assets/` folder and keep the `src` relative (`./assets/x.svg`);
   the app resolves it against the plugin directory.
+
+### Figures
+
+A visual can also be a **figure**: a declarative spec the app draws itself, with no image file. AI
+generation uses this for exact diagrams, and a plugin may use it too:
+
+```json
+"media": [
+  {
+    "type": "figure",
+    "alt": "y = x²",
+    "figure": {
+      "v": 1,
+      "coords": "cartesian",
+      "x": { "min": -2, "max": 2 },
+      "y": { "min": 0, "max": 4 },
+      "grid": true,
+      "elements": [{ "kind": "plot", "expr": "x^2" }]
+    }
+  }
+]
+```
+
+A flowchart can be described as a graph instead of hand-placed boxes. The app parses a small Mermaid
+subset, lays out the nodes and routes the arrows:
+
+```json
+"media": [
+  {
+    "type": "figure",
+    "alt": "開始、處理、結束",
+    "figure": {
+      "v": 1,
+      "mermaid": "flowchart TD\n  A([開始]) --> B[處理]\n  B --> C([結束])"
+    }
+  }
+]
+```
+
+`flowchart TD` and `flowchart LR` are supported; node shapes use `A[process]`, `A(start)`,
+`A([start/end])`, `A{decision}`, `A[/input/output/]` and `A((connector))`; edges use `-->`, `---`,
+`-.->`, `==>`, `|label|` or `-- label -->`. Up to 12 nodes and 16 edges. The same graph may be sent
+as `{"flow":{"direction":"TD","nodes":[…],"edges":[…]}}`, and a bare Mermaid string is accepted in
+place of `figure`. JSON nodes accept `shape` names `rect`, `rounded`, `diamond`, `ellipse` and
+`parallelogram`, plus semantic aliases such as `process`, `decision`, `terminator`, `input`, `output`
+and `connector`. The compiled result is still a `v: 1` spec of ordinary elements.
+
+A **table** is a plain-canvas element, so row and column alignment is owned by the renderer rather
+than by hand-placed lines. Use it for truth tables, comparisons and matrices:
+
+```json
+"elements": [
+  {
+    "kind": "table",
+    "x": 10,
+    "y": 20,
+    "w": 80,
+    "h": 40,
+    "columns": ["P", "Q", "P ∧ Q"],
+    "rows": [["T", "T", "T"], ["T", "F", "F"], ["F", "T", "F"]],
+    "header": true
+  }
+]
+```
+
+### Compound figure elements
+
+A chart, graph, map, circuit, molecule, staff, timeline, apparatus, 3-D surface, code block or
+formula is one semantic element. The data is small and the renderer owns the geometry, so a plugin
+does not need to compute coordinates:
+
+```json
+"elements": [
+  {
+    "kind": "chart",
+    "variant": "bar",
+    "x": 8, "y": 10, "w": 84, "h": 72,
+    "categories": ["A", "B"],
+    "series": [{ "name": "2024", "values": [3, 5] }],
+    "xLabel": "group", "yLabel": "count"
+  }
+]
+```
+
+The same pattern covers `graph` (nodes/edges, layouts `layered`, `tree`, `radial`, `network`; shapes
+`class`, `entity`, `person`), `map` (schematic regions, routes, contours, cross-sections), `circuit`
+(parts and wires), `molecule` (atoms/bonds, reaction, crystal, orbital), `music` (pitches and
+durations), `timeline` (events or Gantt tasks), `apparatus` (lab/optics/simple-machine parts),
+`surface3d` (z-grid or point cloud), `code` and `formula`. Each element has a plain-canvas frame
+`x`/`y`/`w`/`h` in 0–100 percentages.
+
+The full grammar is in `docs/AI_GENERATION.md` and `apps/api/src/generation/figure-skill.ts`:
+`plot`, `line`, `point`, `circle`, `polygon`, `arc`, `label`, `bar`, `pie`, `table`, `shape` (a
+manually placed node), the compound elements above, and `mermaid`/`flow` (a graph laid out by the
+app), 1–60 elements. The spec is validated on load; labels are rendered as text, so they are sharp
+and accessible. Formulas are interpreted, never executed as JavaScript.
 
 ## Code questions
 
@@ -562,8 +658,8 @@ Decks produced by **Generate** are validated with the same schemas as a hand-wri
 uploaded to the owner-only `user_decks` table when you save. A per-account copy is cached in
 IndexedDB under `local-plugins:v1`; it is hidden while signed out and listed on the Plugins page as
 `ai.<topic>-<stamp>` while signed in. Imported folder/JSON plugins remain purely local. See
-[AI question generation](AI_GENERATION.md) for provider setup, the 1 GB material budget and the
-question authoring skill.
+[AI question generation](AI_GENERATION.md) for the hosted service, the 1 GB material budget and the
+server-side prompt; the HTTP contract is in [AI_API.md](AI_API.md).
 
 ## Debugging
 

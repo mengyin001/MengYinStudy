@@ -1,0 +1,111 @@
+# ---------------------------------------------------------------------------
+# MengYin AI API — Worker local secrets
+#
+# Copy to `.dev.vars` (git-ignored) for `wrangler dev`, or set the same names
+# with `npx wrangler secret put <NAME>` before `npm run deploy`.
+# `npm run dev:api` reads `.env` and `.dev.vars` too.
+# ---------------------------------------------------------------------------
+
+# Text providers (official APIs). Configure at least one.
+GLM_API_KEY=
+GLM_MODEL=glm-4.7-flash
+GLM_MODELS=glm-4.7-flash
+# Base URL only; the server appends /chat/completions.
+GLM_BASE_URL=https://open.bigmodel.cn/api/paas/v4
+# Optional: enabled / disabled / auto. Question generation uses disabled.
+GLM_THINKING=disabled
+
+DEEPSEEK_API_KEY=
+DEEPSEEK_MODEL=deepseek-flash
+DEEPSEEK_MODELS=deepseek-flash,deepseek-v4-pro
+DEEPSEEK_BASE_URL=https://api.deepseek.com/v1
+# DeepSeek turns thinking on by default; question batches use disabled.
+DEEPSEEK_THINKING=disabled
+# DEEPSEEK_REASONING_EFFORT=high
+
+# Images: Cloudflare Workers AI free allocation.
+# Leave empty to auto-pick cloudflare when the REST credentials below exist,
+# otherwise demo (placeholder SVG). You can force cloudflare, demo or none.
+IMAGE_PROVIDER=
+IMAGE_MODEL=@cf/black-forest-labs/flux-1-schnell
+# Selectable image models shown in Generate. IMAGE_MODEL is always included.
+IMAGE_MODELS=@cf/black-forest-labs/flux-1-schnell
+IMAGE_STEPS=4
+# There is no per-deck illustration cap. One picture per question is the
+# natural ceiling, and the per-account 30 MB storage quota is the only budget.
+# Real scene questions try Wikimedia Commons first, then the image model.
+# Set to off to disable the external search entirely.
+IMAGE_SEARCH=wikimedia
+# IMAGE_SEARCH_LIMIT=8
+# IMAGE_SEARCH_TIMEOUT_MS=12000
+
+# Attestation: run `npm run image:keys` and paste both values here. The API
+# signs every generated photo; the browser verifies it before upload and
+# before display, so a modified object in Storage is rejected. Optional: when
+# unset, images are stored without a signature.
+IMAGE_SIGNING_KEY=
+IMAGE_VERIFY_KEY=
+
+# Optional multimodal check for generated photos. Set a vision model id for a
+# provider (e.g. glm-4v-flash on Zhipu) and each finished photo is sent back
+# with the question. A mismatch drops the picture. AI_VERIFY_IMAGES=off
+# disables the check even when a model is configured.
+# GLM_VISION_MODEL=
+# DEEPSEEK_VISION_MODEL=
+# AI_VERIFY_IMAGES=on
+
+# Required only for real images through `npm run dev:api` (Node has no AI
+# binding). The deployed Worker uses the `AI` binding and does not need them.
+CLOUDFLARE_ACCOUNT_ID=
+CLOUDFLARE_AI_TOKEN=
+
+# Session verification. Keep AUTH_REQUIRED=true in production.
+AUTH_REQUIRED=true
+SUPABASE_URL=https://yukmxeieklwgnwdcqwpb.supabase.co
+SUPABASE_PUBLISHABLE_KEY=sb_publishable_bl2gRxOO8EgNOQMlQR3dYQ_ZBbOvhaE
+# For the Electron shell or a direct browser call to 127.0.0.1:8787:
+# ALLOWED_ORIGINS=*
+
+# Optional generation tuning. 0 / blank = automatic.
+# AI_TEMPERATURE=0.4
+# AI_MAX_TOKENS=0          # auto: 32K for GLM (up to 128K) and DeepSeek (up to 64K)
+# AI_TIMEOUT_MS=300000    # inactivity gap; every streamed chunk resets it
+# AI_JSON_MODE=true
+
+# Optional: per-account daily quotas (requires an AI_QUOTA KV binding).
+# AI_DAILY_QUESTIONS=120
+# AI_DAILY_IMAGES=30
+
+# Local demo without any provider key. Never enable in production.
+# AI_MOCK=1
+# AUTH_REQUIRED=false
+
+# ---------------------------------------------------------------------------
+# Billing and subscriptions (Stripe)
+# ---------------------------------------------------------------------------
+# Plan limits, the 200-question free quota and point charges apply by default.
+# Keep enforcement on outside a throwaway demo; this is what stops a client from
+# claiming a paid plan. Set "false" only for an intentional off-line demo.
+# BILLING_ENFORCE=true
+
+# Server-side Stripe secrets. Never put these in a VITE_* variable.
+# STRIPE_SECRET_KEY=sk_live_...
+# STRIPE_WEBHOOK_SECRET=whsec_...
+
+# One price id per paid plan and interval, created in the Stripe dashboard.
+# Annual prices are supported: points are still granted every month even though
+# Stripe invoices once a year. Set all six for a full launch. Full walkthrough:
+# docs/STRIPE_SETUP.md.
+# STRIPE_PRICE_LIGHT_MONTH=price_...
+# STRIPE_PRICE_LIGHT_YEAR=price_...
+# STRIPE_PRICE_STANDARD_MONTH=price_...
+# STRIPE_PRICE_STANDARD_YEAR=price_...
+# STRIPE_PRICE_PRO_MONTH=price_...
+# STRIPE_PRICE_PRO_YEAR=price_...
+
+# Webhook, free-question quota and refunds use this. It falls back to
+# SUPABASE_SECRET_KEY. Generation fails closed if enforcement is on and this is
+# missing.
+# SUPABASE_SERVICE_KEY=
+# Public origin for Checkout success/cancel links (defaults to the request origin).
+# APP_URL=http://127.0.0.1:5173

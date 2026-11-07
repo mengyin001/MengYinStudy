@@ -1,5 +1,7 @@
+import type { AiMaterialInput } from '@mengyin/ai-contract';
 import { appStore, STORAGE_KEYS } from '@/lib/storage';
 import { formatBytes } from '@/lib/format';
+import { chunkText, queryTerms, scoreChunk } from './chunks';
 import { extractDocument, MAX_MATERIAL_CHARS, materialKindOf } from './extract';
 import type { AiMaterial } from './types';
 
@@ -7,6 +9,10 @@ import type { AiMaterial } from './types';
 export const MAX_MATERIAL_BYTES = 1024 * 1024 * 1024;
 /** Text kept in IndexedDB across all materials; PDFs are mostly images. */
 export const MAX_STORED_CHARS = 32_000_000;
+/** The server accepts 400k characters; leave room for the description. */
+export const API_MATERIAL_BUDGET = 300_000;
+export const API_MATERIAL_MAX = 8;
+export const API_MATERIAL_PART_CHARS = 180_000;
 // A one-line brief such as "C++ coding" is a valid topic, especially when the
 // learner adds a description in the Generate form. Only whitespace is useless.
 const MIN_USEFUL_CHARS = 1;
@@ -143,4 +149,73 @@ export async function loadMaterials(): Promise<AiMaterial[]> {
 
 export async function saveMaterials(materials: readonly AiMaterial[]): Promise<void> {
   await appStore.set(STORAGE_KEYS.aiMaterials, materials);
+}
+
+export interface PackedMaterials {
+  materials: AiMaterialInput[];
+  /** Excerpts dropped to fit the request limit, for a user-facing warning. */
+  omitted: number;
+}
+
+/**
+ * Turn the device's material set into a bounded request body.
+ *
+ * Up to 300k characters and eight excerpts are sent. Larger sources are split
+ * into 180k parts, ranked against the topic, and the best parts are kept. That
+ * is several times more text than the generation batches consume, so a 1 GB
+ * PDF still contributes its most relevant pages instead of being rejected.
+ */
+export function packMaterialsForApi(
+  materials: readonly AiMaterial[],
+  topic: string,
+): PackedMaterials {
+  const usable = materials
+    .filter((material) => material.text.trim().length > 0)
+    .map((material) => ({ name: material.name.slice(0, 200), text: material.text }));
+  if (usable.length === 0) return { materials: [], omitted: 0 };
+
+  const total = usable.reduce((sum, material) => sum + material.text.length, 0);
+  const fits =
+    usable.length <= API_MATERIAL_MAX &&
+    usable.every((material) => material.text.length <= API_MATERIAL_PART_CHARS) &&
+    total <= API_MATERIAL_BUDGET;
+  if (fits) return { materials: usable, omitted: 0 };
+
+  const terms = queryTerms(topic);
+  const parts: { name: string; text: string; order: number; score: number }[] = [];
+  usable.forEach((material, materialIndex) => {
+    const pieces =
+      material.text.length > API_MATERIAL_PART_CHARS
+        ? chunkText(material.text, API_MATERIAL_PART_CHARS, 0)
+        : [material.text];
+    pieces.forEach((text, partIndex) => {
+      parts.push({
+        name:
+          pieces.length > 1
+            ? `${material.name} (part ${partIndex + 1})`.slice(0, 200)
+            : material.name,
+        text,
+        order: materialIndex * 1000 + partIndex,
+        score: scoreChunk(text, terms),
+      });
+    });
+  });
+
+  const ranked = [...parts].sort((a, b) => b.score - a.score || a.order - b.order);
+  const selected: typeof parts = [];
+  let chars = 0;
+  for (const part of ranked) {
+    if (selected.length >= API_MATERIAL_MAX) break;
+    if (chars + part.text.length > API_MATERIAL_BUDGET && selected.length > 0) continue;
+    selected.push(part);
+    chars += part.text.length;
+    if (chars >= API_MATERIAL_BUDGET) break;
+  }
+  if (selected.length === 0 && ranked[0]) selected.push(ranked[0]);
+  selected.sort((a, b) => a.order - b.order);
+
+  return {
+    materials: selected.map((part) => ({ name: part.name, text: part.text })),
+    omitted: Math.max(0, parts.length - selected.length),
+  };
 }

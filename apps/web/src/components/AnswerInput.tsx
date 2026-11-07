@@ -1,6 +1,7 @@
 import type { Answer, GradeResult, Question } from '@mengyin/core';
 import { CodeAnswer } from './CodeAnswer';
 import { Icon } from './Icons';
+import { QuestionImage } from './QuestionImage';
 import { rendererKindOf } from '@/domain/answers';
 import { useApp } from '@/state/AppContext';
 
@@ -147,8 +148,8 @@ export function AnswerInput({
                   {option.text}
                   {option.media?.length ? (
                     <span className="choice__media">
-                      {option.media.map((media) => (
-                        <img key={media.src} src={media.src} alt={media.alt ?? ''} loading="lazy" />
+                      {option.media.map((media, index) => (
+                        <QuestionImage key={`${media.type}-${index}`} media={media} loading="lazy" />
                       ))}
                     </span>
                   ) : null}

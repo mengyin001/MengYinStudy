@@ -13,6 +13,7 @@ import { backend } from '@/services';
 import { BackendError, fail, ok, toBackendError, type ServiceResult } from '@/services/errors';
 import type { UserDeck } from '@/services/types';
 import type { LocalPluginRecord } from '@/domain/pluginHost';
+import { createRefreshGuard, type RefreshGuard } from './refreshGuard';
 import { appStore, STORAGE_KEYS } from '@/lib/storage';
 import { useAuth } from './AuthContext';
 
@@ -67,7 +68,8 @@ function reducer(state: UserDecksState, action: Action): UserDecksState {
 export interface UserDecksActions {
   refresh(): Promise<void>;
   upload(record: LocalPluginRecord): Promise<ServiceResult<number>>;
-  remove(id: string): Promise<ServiceResult>;
+  /** `clientKey` lets the service retry a delete whose row id has gone stale. */
+  remove(id: string, clientKey?: string): Promise<ServiceResult>;
 }
 
 export interface UserDecksContextValue {
@@ -82,7 +84,8 @@ export interface UserDecksContextValue {
 const UserDecksContext = createContext<UserDecksContextValue | null>(null);
 
 function relativeMedia(src: string): boolean {
-  return !/^(https:\/\/|data:)/i.test(src);
+  // `storage:` is the private-bucket marker written by the cloud service.
+  return !/^(https:\/\/|data:|storage:)/i.test(src);
 }
 
 /**
@@ -102,7 +105,7 @@ function validateDeck(record: LocalPluginRecord, deckIndex: number): void {
       );
     }
     const media = [...(question.media ?? []), ...(question.options ?? []).flatMap((option) => option.media ?? [])];
-    if (media.some((item) => relativeMedia(item.src))) {
+    if (media.some((item) => item.type === 'image' && relativeMedia(item.src))) {
       throw new BackendError(
         'invalid-data',
         'This deck still contains a relative image. Re-import its folder so the image can be embedded, then upload again.',
@@ -211,13 +214,15 @@ export function UserDecksProvider({ children }: { children: ReactNode }) {
   const { state: auth } = useAuth();
   const userId = auth.user?.id ?? null;
   const [state, dispatch] = useReducer(reducer, initialState);
-  const requestId = useRef(0);
+  const guard = useRef<RefreshGuard>(createRefreshGuard());
+  /** One in-flight upload per local record; concurrent callers share it. */
+  const inFlight = useRef(new Map<string, Promise<ServiceResult<number>>>());
   const loadedDecks = useRef<UserDeck[] | null>(null);
   const loadedFingerprint = useRef<string | null>(null);
 
   const refresh = useCallback(
     async (quiet = false): Promise<void> => {
-      const request = ++requestId.current;
+      const request = guard.current.begin();
       if (!userId || !backend.configured) {
         loadedDecks.current = null;
         loadedFingerprint.current = null;
@@ -229,7 +234,7 @@ export function UserDecksProvider({ children }: { children: ReactNode }) {
       // cache is keyed by user id, so signing out or switching account never
       // exposes another learner's generated decks.
       const cached = loadedDecks.current ? null : await readUserDecksCache(userId);
-      if (request !== requestId.current) return;
+      if (!guard.current.accept(request)) return;
       if (!loadedDecks.current && cached) {
         loadedDecks.current = cached.decks;
         loadedFingerprint.current = cached.fingerprint;
@@ -240,7 +245,7 @@ export function UserDecksProvider({ children }: { children: ReactNode }) {
 
       try {
         const decks = await backend.userDecks.list();
-        if (request !== requestId.current) return;
+        if (!guard.current.accept(request)) return;
         const fingerprint = userDeckFingerprint(decks);
         const unchanged = cached
           ? cached.fingerprint === fingerprint
@@ -252,7 +257,7 @@ export function UserDecksProvider({ children }: { children: ReactNode }) {
           await writeUserDecksCache(userId, decks, fingerprint);
         }
       } catch (error) {
-        if (request !== requestId.current) return;
+        if (!guard.current.accept(request)) return;
         if (!loadedDecks.current && cached) {
           loadedDecks.current = cached.decks;
           loadedFingerprint.current = cached.fingerprint;
@@ -265,7 +270,7 @@ export function UserDecksProvider({ children }: { children: ReactNode }) {
   );
 
   useEffect(() => {
-    requestId.current += 1;
+    guard.current.invalidate();
     loadedDecks.current = null;
     loadedFingerprint.current = null;
     dispatch({ type: 'reset' });
@@ -287,46 +292,65 @@ export function UserDecksProvider({ children }: { children: ReactNode }) {
       if (record.decks.length === 0) {
         return fail(new BackendError('invalid-data', 'This plugin has no decks to upload.'));
       }
-
-      dispatch({ type: 'busy', busy: true });
+      // The explicit save and the automatic uploader can ask for the same record
+      // in the same tick. Share one request instead of racing two inserts, which
+      // lost with `duplicate key value violates unique constraint`.
+      const running = inFlight.current.get(record.id);
+      if (running) return running;
+      const task = (async (): Promise<ServiceResult<number>> => {
+        dispatch({ type: 'busy', busy: true });
+        // A list request that started before this write describes the account as
+        // it was; letting it land would repaint decks this write just changed.
+        guard.current.invalidate();
+        try {
+          // Validate every deck before the first write, so a multi-deck plugin
+          // cannot leave a half-uploaded state.
+          for (let index = 0; index < record.decks.length; index += 1) {
+            validateDeck(record, index);
+          }
+          for (const deck of record.decks) {
+            await backend.userDecks.upsert({
+              clientKey: deck.key,
+              pluginId: deck.pluginId,
+              deckId: deck.id,
+              title: deck.title,
+              ...(deck.description ? { description: deck.description } : {}),
+              tags: deck.tags,
+              questions: deck.questions,
+              examMinutes: deck.examMinutes ?? null,
+              entrySource: record.entrySource,
+            });
+          }
+          await refresh(true);
+          return ok(record.decks.length);
+        } catch (error) {
+          return fail(toBackendError(error));
+        } finally {
+          dispatch({ type: 'busy', busy: false });
+        }
+      })();
+      inFlight.current.set(record.id, task);
       try {
-        // Validate every deck before the first write, so a multi-deck plugin
-        // cannot leave a half-uploaded state.
-        for (let index = 0; index < record.decks.length; index += 1) {
-          validateDeck(record, index);
-        }
-        for (const deck of record.decks) {
-          await backend.userDecks.upsert({
-            clientKey: deck.key,
-            pluginId: deck.pluginId,
-            deckId: deck.id,
-            title: deck.title,
-            ...(deck.description ? { description: deck.description } : {}),
-            tags: deck.tags,
-            questions: deck.questions,
-            examMinutes: deck.examMinutes ?? null,
-            entrySource: record.entrySource,
-          });
-        }
-        await refresh(true);
-        return ok(record.decks.length);
-      } catch (error) {
-        return fail(toBackendError(error));
+        return await task;
       } finally {
-        dispatch({ type: 'busy', busy: false });
+        inFlight.current.delete(record.id);
       }
     },
     [refresh, userId],
   );
 
   const remove = useCallback(
-    async (id: string): Promise<ServiceResult> => {
+    async (id: string, clientKey?: string): Promise<ServiceResult> => {
       if (!userId) {
         return fail(new BackendError('unauthorized', 'Sign in to remove a cloud deck.'));
       }
       dispatch({ type: 'busy', busy: true });
+      // Any list request that started before this delete still contains the row.
+      // Without invalidating it the stale reply lands a second later and puts
+      // the deck back on screen, so the learner has to delete it twice.
+      guard.current.invalidate();
       try {
-        await backend.userDecks.remove(id);
+        await backend.userDecks.remove(id, clientKey);
         // Paint the deletion immediately. The follow-up refresh is authoritative,
         // but on an older database (missing `exam_minutes`) it can fail while the
         // delete itself succeeded; without this the row appeared to come back.
@@ -338,6 +362,16 @@ export function UserDecksProvider({ children }: { children: ReactNode }) {
           await writeUserDecksCache(userId, loadedDecks.current, fingerprint);
         }
         await refresh(true);
+        // Trust the server, not the optimistic paint: if the row survived the
+        // delete it must not be reported as deleted.
+        const stillListed = (loadedDecks.current ?? []).some(
+          (deck) => deck.id === id || (clientKey !== undefined && deck.clientKey === clientKey),
+        );
+        if (stillListed) {
+          return fail(
+            new BackendError('forbidden', 'The deck is still in the cloud library after the delete.'),
+          );
+        }
         return ok(undefined);
       } catch (error) {
         return fail(toBackendError(error));

@@ -1,6 +1,6 @@
 {
   "name": "mengyin-study",
-  "version": "0.6.0",
+  "version": "0.8.0",
   "private": true,
   "type": "module",
   "description": "MengYin Study — a plugin-driven revision and practice app (web + desktop)",
@@ -9,8 +9,11 @@
     "apps/*"
   ],
   "scripts": {
-    "dev": "npm run plugins:sync && npm run runtimes:fetch && npm run dev --workspace @mengyin/web",
+    "dev": "node tools/dev-all.mjs",
+    "dev:web": "npm run plugins:sync && npm run runtimes:fetch && npm run dev --workspace @mengyin/web",
+    "dev:api": "node tools/api-local.mjs",
     "build": "npm run plugins:sync && npm run runtimes:fetch && npm run build --workspace @mengyin/web",
+    "deploy": "npm run build && wrangler deploy",
     "preview": "npm run preview --workspace @mengyin/web",
     "runtimes:fetch": "node tools/fetch-code-runtimes.mjs",
     "plugins:sync": "node tools/sync-plugins.mjs",
@@ -23,19 +26,25 @@
     "serve:dist": "node tools/serve-dist.mjs",
     "verify:browser": "node tools/browser-check.mjs",
     "backend:check": "node tools/check-backend.mjs",
+    "stripe:check": "node tools/stripe-check.mjs",
+    "stripe:seed-test": "node tools/stripe-seed-test.mjs",
+    "stripe:replay-test": "node tools/stripe-replay-test.mjs",
     "auth:check": "node tools/auth-check.mjs",
     "db:migrate": "node tools/apply-migrations.mjs",
     "seed:official": "node tools/seed-official.mjs",
     "icons": "python tools/make-icons.py",
+    "image:keys": "node tools/image-keys.mjs",
     "desktop": "npm run build && npm run start --workspace @mengyin/desktop",
     "desktop:dev": "npm run build && npm run dev --workspace @mengyin/desktop"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
+    "esbuild": "^0.28.0",
     "pg": "^8.23.1",
     "puppeteer-core": "^25.16.0",
     "typescript": "^5.9.3",
     "vite": "^7.3.7",
-    "vitest": "^4.1.12"
+    "vitest": "^4.1.12",
+    "wrangler": "^4.158.0"
   }
 }

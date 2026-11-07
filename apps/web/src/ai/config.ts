@@ -1,46 +1,74 @@
+import { FREE_MODEL, SUPPORTED_MODELS } from '@mengyin/core';
+import { AI_API_BASE, type AiImageMode } from '@mengyin/ai-contract';
 import { appStore, STORAGE_KEYS } from '@/lib/storage';
-import type { AiConfig } from './types';
+import type { AiSettings } from './types';
 
-export const DEFAULT_AI_CONFIG: AiConfig = {
-  baseUrl: 'https://api.openai.com/v1',
-  apiKey: '',
-  model: 'gpt-4o-mini',
-  temperature: 0.4,
-  jsonMode: true,
-  maxTokens: 4096,
-  timeoutMs: 120_000,
+export const AI_AUTO = 'auto';
+
+export const DEFAULT_AI_SETTINGS: AiSettings = {
+  model: FREE_MODEL,
+  imageMode: 'auto',
+  imageModel: AI_AUTO,
 };
 
-export function normalizeAiConfig(input: unknown): AiConfig {
-  if (!input || typeof input !== 'object') return { ...DEFAULT_AI_CONFIG };
-  const raw = input as Partial<AiConfig>;
-  const number = (value: unknown, fallback: number, min: number, max: number) =>
-    typeof value === 'number' && Number.isFinite(value) ? Math.min(max, Math.max(min, value)) : fallback;
+function imageMode(value: unknown): AiImageMode {
+  return value === 'off' || value === 'on' || value === 'auto' ? value : 'auto';
+}
+
+function modelId(value: unknown): string {
+  if (typeof value !== 'string') return FREE_MODEL;
+  const trimmed = value.trim();
+  return (SUPPORTED_MODELS as readonly string[]).includes(trimmed) ? trimmed : FREE_MODEL;
+}
+
+/**
+ * Accept both the current settings object and the pre-0.6.1 BYO-key shape.
+ *
+ * The provider field and the API key are deliberately dropped: generation now
+ * names a model directly, and a key must not stay in local storage once
+ * generation moves to the hosted service. An unknown legacy model falls back
+ * to the free model rather than being sent to the server.
+ */
+export function normalizeAiSettings(input: unknown): AiSettings {
+  if (!input || typeof input !== 'object') return { ...DEFAULT_AI_SETTINGS };
+  const raw = input as Record<string, unknown>;
+  const rawImageModel = typeof raw.imageModel === 'string' ? raw.imageModel.trim() : '';
+
   return {
-    baseUrl: typeof raw.baseUrl === 'string' ? raw.baseUrl.trim() : DEFAULT_AI_CONFIG.baseUrl,
-    apiKey: typeof raw.apiKey === 'string' ? raw.apiKey.trim() : '',
-    model: typeof raw.model === 'string' ? raw.model.trim() : DEFAULT_AI_CONFIG.model,
-    temperature: number(raw.temperature, DEFAULT_AI_CONFIG.temperature, 0, 2),
-    jsonMode: raw.jsonMode !== false,
-    maxTokens: Math.round(number(raw.maxTokens, DEFAULT_AI_CONFIG.maxTokens, 256, 32_000)),
-    timeoutMs: Math.round(number(raw.timeoutMs, DEFAULT_AI_CONFIG.timeoutMs, 10_000, 600_000)),
+    model: modelId(raw.model),
+    imageMode: imageMode(raw.imageMode),
+    imageModel: rawImageModel || AI_AUTO,
   };
 }
 
-/** A model and endpoint are enough; local servers often need no API key. */
-export function isAiConfigured(config: AiConfig): boolean {
-  return config.baseUrl.trim().length > 0 && config.model.trim().length > 0;
+export async function loadAiSettings(): Promise<AiSettings> {
+  const stored = await appStore.get<unknown>(STORAGE_KEYS.aiConfig);
+  const settings = normalizeAiSettings(stored);
+  // Migrate away from the old shape, which could contain a provider key.
+  if (stored && typeof stored === 'object') {
+    const raw = stored as Record<string, unknown>;
+    const hasLegacySecret = typeof raw.apiKey === 'string' && raw.apiKey.trim().length > 0;
+    const hasLegacyBase = typeof raw.baseUrl === 'string';
+    const hasLegacyProvider = typeof raw.provider === 'string';
+    if (hasLegacySecret || hasLegacyBase || hasLegacyProvider) await saveAiSettings(settings);
+  }
+  return settings;
 }
 
-export async function loadAiConfig(): Promise<AiConfig> {
-  return normalizeAiConfig(await appStore.get<unknown>(STORAGE_KEYS.aiConfig));
+export async function saveAiSettings(settings: AiSettings): Promise<void> {
+  await appStore.set(STORAGE_KEYS.aiConfig, settings);
 }
 
-export async function saveAiConfig(config: AiConfig): Promise<void> {
-  await appStore.set(STORAGE_KEYS.aiConfig, config);
+/**
+ * Absolute base for the desktop shell or a separately hosted web build.
+ * The default is same-origin, which is how the Worker deployment works.
+ */
+export function aiApiBase(): string {
+  const configured = (import.meta.env.VITE_AI_API_BASE ?? '').trim();
+  const base = configured || AI_API_BASE;
+  return base.replace(/\/+$/, '');
 }
 
-/** Join a user-supplied base URL with an API path without doubling slashes. */
-export function apiUrl(baseUrl: string, path: string): string {
-  return `${baseUrl.trim().replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`;
+export function aiApiUrl(path: string): string {
+  return `${aiApiBase()}/${path.replace(/^\/+/, '')}`;
 }
