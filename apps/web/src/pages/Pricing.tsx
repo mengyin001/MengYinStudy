@@ -3,6 +3,7 @@ import { annualMonthlyCents, formatUsd, type Plan } from '@mengyin/core';
 import { Icon } from '@/components/Icons';
 import { Note, PageHead, Seg } from '@/components/ui';
 import { SUPPORT_EMAIL } from '@/lib/contact';
+import { docsUrl } from '@/lib/docs';
 import { formatLongDate } from '@/lib/format';
 import { modelLabel } from '@/lib/models';
 import { navigate, useRoute } from '@/lib/router';
@@ -105,16 +106,22 @@ export function PricingPage() {
                 { value: 'year', label: t('pricing.annual') },
               ]}
             />
-            <button
-              type="button"
+            <a
               className="text-btn"
-              onClick={() => navigate('/docs/billing')}
+              href={docsUrl('/docs/billing')}
+              target="_blank"
+              rel="noopener noreferrer"
             >
               {t('billingDocs.title')}
-            </button>
-            <button type="button" className="text-btn" onClick={() => navigate('/docs')}>
+            </a>
+            <a
+              className="text-btn"
+              href={docsUrl('/docs')}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               {t('nav.docs')}
-            </button>
+            </a>
           </>
         }
       />

@@ -3,6 +3,7 @@ import { Icon } from '@/components/Icons';
 import { OfficialStatus } from '@/components/OfficialStatus';
 import { Note, PageHead, Sheet } from '@/components/ui';
 import { describeBackendError } from '@/i18n/backend';
+import { docsUrl } from '@/lib/docs';
 import { formatDate, formatShortDay } from '@/lib/format';
 import { navigate } from '@/lib/router';
 import {
@@ -402,9 +403,14 @@ export function AccountPage() {
           <button type="button" className="btn btn--sm" onClick={() => navigate('/pricing')}>
             {t('account.viewPlans')}
           </button>
-          <button type="button" className="text-btn" onClick={() => navigate('/docs/billing')}>
+          <a
+            className="text-btn"
+            href={docsUrl('/docs/billing')}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             {t('billingDocs.title')}
-          </button>
+          </a>
           {me?.membershipActive && plan.id !== 'free' ? (
             <button type="button" className="text-btn" onClick={() => void openRefund()}>
               {t('refund.request')}
@@ -617,9 +623,14 @@ export function AccountPage() {
         ) : null}
 
         <p className="footnote">
-          <button type="button" className="text-btn" onClick={() => navigate('/docs/refunds')}>
+          <a
+            className="text-btn"
+            href={docsUrl('/docs/refunds')}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             {t('refund.policy')}
-          </button>
+          </a>
         </p>
       </Sheet>
     </div>

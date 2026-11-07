@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { BrandMark } from '@/components/BrandMark';
 import { browserLegalContext } from '@/legal/config';
 import { LANDING, type Bi } from '@/landing/copy';
+import { docsUrl } from '@/lib/docs';
 import { navigate } from '@/lib/router';
 import { useApp } from '@/state/AppContext';
 
@@ -280,13 +281,7 @@ export function LandingPage() {
         </div>
 
         <nav className="landing__foot-links" aria-label="Legal and contact">
-          <a
-            href="#/docs"
-            onClick={(event) => {
-              event.preventDefault();
-              navigate('/docs');
-            }}
-          >
+          <a href={docsUrl('/docs')} target="_blank" rel="noopener noreferrer">
             {text(LANDING.footer.docs, locale)}
           </a>
           <a href="./privacy/">{text(LANDING.footer.privacy, locale)}</a>

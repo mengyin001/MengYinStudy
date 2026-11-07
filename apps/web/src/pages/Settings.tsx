@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Icon } from '@/components/Icons';
 import { Meter, NumField, PageHead, Seg, Sheet, Switch } from '@/components/ui';
+import { docsUrl } from '@/lib/docs';
 import { formatBytes } from '@/lib/format';
 import { appStore } from '@/lib/storage';
 import { APP_NAME, APP_VERSION } from '@/lib/version';
@@ -348,7 +349,9 @@ export function SettingsPage() {
             <div className="about__row">
               <span className="about__key">{t('settings.legal')}</span>
               <span className="about__links">
-                <a href="#/docs">{t('nav.docs')}</a>
+                <a href={docsUrl('/docs')} target="_blank" rel="noopener noreferrer">
+                  {t('nav.docs')}
+                </a>
                 <span aria-hidden="true">·</span>
                 <a href="#/privacy">{t('legal.privacy')}</a>
                 <span aria-hidden="true">·</span>

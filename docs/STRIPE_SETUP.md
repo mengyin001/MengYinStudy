@@ -625,7 +625,8 @@ npx wrangler deploy
 | `supabase/migrations/20261111090000_billing_refunds.sql` | 退款記錄、帳戶降級、延遲 webhook 防護 |
 | `apps/web/src/pages/Pricing.tsx` | 方案頁、Checkout／Portal 入口 |
 | `apps/web/src/pages/Account.tsx` | 方案、點數、下次重置日、退款報價與確認 |
-| `apps/web/src/pages/Docs.tsx` | `#/docs` 說明與政策整合頁 |
+| `apps/web/src/pages/Docs.tsx` | `#/docs` 獨立說明文件站（側欄、右側目錄、新分頁） |
+| `apps/web/src/components/BillingReference.tsx` | 說明文件站內的方案、價目與素材費用表 |
 | `tools/refund-preview-check.mjs` | 本機 test-mode 退款端到端檢查 |
 | `docs/SUBSCRIPTION_POINTS.md` | 定價、規則與經濟計算 |
 

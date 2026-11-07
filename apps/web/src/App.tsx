@@ -10,7 +10,6 @@ import { StreakFlame } from './components/StreakFlame';
 import { Toast } from './components/Toast';
 import { AccountPage } from './pages/Account';
 import { AuthPage, ResetPasswordPage } from './pages/Auth';
-import { BillingDocsPage } from './pages/BillingDocs';
 import { CollectionPage } from './pages/CollectionPage';
 import { DashboardPage } from './pages/Dashboard';
 import { DocsPage } from './pages/Docs';
@@ -29,6 +28,7 @@ import { useApp } from './state/AppContext';
 import { useAuth } from './state/AuthContext';
 import { useBilling } from './state/BillingContext';
 import type { MessageKey } from './i18n/messages';
+import { docsUrl } from './lib/docs';
 import { streakLabel } from './lib/streakLabel';
 import { navigate, useRoute } from './lib/router';
 import { APP_VERSION } from './lib/version';
@@ -108,12 +108,6 @@ export default function App() {
         return <PluginsPage />;
       case '/pricing':
         return <PricingPage />;
-      case '/docs':
-        return <DocsPage />;
-      case '/docs/refunds':
-        return <DocsPage focus="refund" />;
-      case '/docs/billing':
-        return <BillingDocsPage />;
       case '/settings':
         return <SettingsPage />;
       case '/login':
@@ -161,6 +155,27 @@ export default function App() {
     return (
       <>
         <LegalPage docId={legal} />
+        <Toast />
+      </>
+    );
+  }
+
+  // Documentation is a standalone reading surface. It is normally opened in a
+  // new tab from the app, so it deliberately does not inherit the app sidebar.
+  if (
+    route.path === '/docs' ||
+    route.path === '/docs/refunds' ||
+    route.path === '/docs/billing'
+  ) {
+    const focus =
+      route.path === '/docs/refunds'
+        ? 'refund'
+        : route.path === '/docs/billing'
+          ? 'billing'
+          : undefined;
+    return (
+      <>
+        <DocsPage focus={focus} />
         <Toast />
       </>
     );
@@ -237,9 +252,14 @@ export default function App() {
               </span>
             </button>
           ) : null}
-          <button type="button" className="side-docs" onClick={() => navigate('/docs')}>
+          <a
+            className="side-docs"
+            href={docsUrl('/docs')}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             {t('nav.docs')}
-          </button>
+          </a>
           <div className="lang-row">
             <button
               type="button"

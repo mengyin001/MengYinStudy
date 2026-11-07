@@ -1362,6 +1362,17 @@ export const messages = {
 
   // -- Help and policies ----------------------------------------------------
   'docs.title': m('Help & policies', '說明與政策'),
+  'docs.badge': m('Docs', '文件'),
+  'docs.kicker': m('MengYin Study documentation', 'MengYin Study 使用文件'),
+  'docs.updated': m('Updated {date}', '更新於 {date}'),
+  'docs.contents': m('Contents', '目錄'),
+  'docs.onThisPage': m('On this page', '本頁目錄'),
+  'docs.language': m('Language', '語言'),
+  'docs.openApp': m('Open the app', '開啟 App'),
+  'docs.navStart': m('Getting started', '快速開始'),
+  'docs.navBilling': m('Billing', '計費'),
+  'docs.navPolicies': m('Documents', '文件'),
+  'docs.navSupport': m('Support', '支援'),
   'docs.lede': m(
     'How to use MengYin Study, what things cost, and the rules that apply to your account.',
     'MengYin Study 的使用方法、費用，以及適用於你帳戶的規則。',

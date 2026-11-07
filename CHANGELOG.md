@@ -20,10 +20,13 @@
   a refund fails after the subscription was already cancelled. Both the preview and production
   Stripe endpoints now subscribe to `charge.refund.updated` as their seventh event; the setup guide
   records it.
-- **A single Help & policies page.** `#/docs` now explains the practice loop, AI labelling, plans
-  and points, the refund formula, and links every longer document (billing guide, refund policy,
-  privacy, terms). `#/docs/refunds` opens the same page at the refund section. It is linked from the
-  sidebar, Settings, Pricing, the landing footer and the Account page.
+- **A standalone Help & policies site with a contents rail.** `#/docs` now opens in its own tab
+  instead of inside the app shell, with a guide rail, the document and a sticky “On this page”
+  table of contents that follows the reading position on desktop (a collapsible Contents menu on
+  mobile). It explains the practice loop, AI labelling, plans and points, the refund formula and
+  links every longer document. `#/docs/refunds` and `#/docs/billing` open the same site at the
+  relevant section, and the sidebar, Settings, Pricing, landing footer and Account page all open
+  it in a new tab.
 - **Checkout and the billing portal open in a new tab.** The original page stays put and shows a
   small outcome sheet: “Payment succeeded” refreshes the billing state and reloads, while “Payment
   failed / back” restores the plan buttons so another attempt can be made. Closing the sheet counts
