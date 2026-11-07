@@ -29,6 +29,7 @@
     "stripe:check": "node tools/stripe-check.mjs",
     "stripe:seed-test": "node tools/stripe-seed-test.mjs",
     "stripe:replay-test": "node tools/stripe-replay-test.mjs",
+    "stripe:refund-check": "node tools/refund-preview-check.mjs",
     "auth:check": "node tools/auth-check.mjs",
     "db:migrate": "node tools/apply-migrations.mjs",
     "seed:official": "node tools/seed-official.mjs",

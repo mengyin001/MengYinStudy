@@ -4,9 +4,12 @@ import type { BillingSnapshot } from './store';
 import {
   cancelAtPeriodEndFrom,
   hasLiveSubscription,
+  invoicePaymentIds,
+  invoiceSubscriptionId,
   meFromSnapshot,
   periodEndFrom,
   shouldCancelSubscription,
+  subscriptionInterval,
   subscriptionPlan,
 } from './routes';
 
@@ -56,6 +59,41 @@ describe('Stripe subscription shapes', () => {
     expect(cancelAtPeriodEndFrom({ cancel_at_period_end: true })).toBe(true);
     expect(cancelAtPeriodEndFrom({ items: { data: [{ cancel_at_period_end: true }] } })).toBe(true);
     expect(cancelAtPeriodEndFrom({ items: { data: [{}] } })).toBe(false);
+  });
+
+  it('reads the subscription interval from the price', () => {
+    expect(
+      subscriptionInterval({ items: { data: [{ price: { recurring: { interval: 'year' } } }] } }),
+    ).toBe('year');
+    expect(
+      subscriptionInterval({ items: { data: [{ price: { recurring: { interval: 'month' } } }] } }),
+    ).toBe('month');
+    expect(subscriptionInterval({})).toBe('month');
+  });
+
+  it('reads an invoice subscription from the old and new API shapes', () => {
+    expect(invoiceSubscriptionId({ subscription: 'sub_old' })).toBe('sub_old');
+    expect(
+      invoiceSubscriptionId({
+        parent: { subscription_details: { subscription: 'sub_new' } },
+      }),
+    ).toBe('sub_new');
+    expect(invoiceSubscriptionId({})).toBe('');
+  });
+
+  it('reads an invoice payment from the old and new API shapes', () => {
+    expect(invoicePaymentIds({ payment_intent: 'pi_old', charge: 'ch_old' })).toEqual({
+      paymentIntentId: 'pi_old',
+      chargeId: 'ch_old',
+    });
+    expect(
+      invoicePaymentIds({
+        payments: {
+          data: [{ payment: { payment_intent: 'pi_new', charge: null } }],
+        },
+      }),
+    ).toEqual({ paymentIntentId: 'pi_new', chargeId: null });
+    expect(invoicePaymentIds({})).toEqual({ paymentIntentId: null, chargeId: null });
   });
 });
 

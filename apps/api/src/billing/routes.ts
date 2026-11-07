@@ -20,18 +20,25 @@ import {
   billingConfigured,
   billingEnforced,
   claimStripeEvent,
+  finalizeRefund,
   finishStripeEvent,
   isBillingUnavailable,
+  latestRecordedRefund,
   readSnapshot,
+  recordedRefund,
   releaseStripeEvent,
   serviceKey,
   userIdForCustomer,
   type BillingSnapshot,
+  type RefundRecord,
 } from './store';
 import {
   cancelSubscriptionAtPeriodEnd,
+  cancelSubscriptionNow,
   createCheckoutSession,
   createPortalSession,
+  createRefund,
+  fetchInvoice,
   fetchSubscription,
   planForPrice,
   priceIdFor,
@@ -40,6 +47,12 @@ import {
   verifyWebhook,
   type BillingInterval,
 } from './stripe';
+import {
+  calculateRefundQuote,
+  REFUND_WINDOW_DAYS,
+  type RefundQuote,
+  type RefundReason,
+} from './refund';
 
 export function billingConfig(env: Env) {
   return {
@@ -257,6 +270,414 @@ export async function cancelSubscription(
   return { canceled: true };
 }
 
+// -- Refunds -----------------------------------------------------------------
+
+export interface RefundQuoteView extends RefundQuote {
+  currency: string;
+  /** The automatic refund window, repeated here so the UI does not hard-code it. */
+  windowDays: number;
+}
+
+function blockedQuote(
+  reason: RefundReason,
+  overrides: Partial<RefundQuote> = {},
+): RefundQuote {
+  return {
+    eligible: false,
+    reason,
+    paidCents: 0,
+    amountCents: 0,
+    unusedRatio: 0,
+    refundRatio: 0,
+    unusedPoints: 0,
+    monthlyPoints: 0,
+    interval: 'month',
+    windowEndsAt: null,
+    ...overrides,
+  };
+}
+
+function numberValue(value: unknown): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : 0;
+}
+
+function nestedId(value: unknown): string {
+  if (typeof value === 'string') return value;
+  return asString(asRecord(value).id);
+}
+
+/**
+ * Stripe moved `invoice.subscription` to
+ * `invoice.parent.subscription_details.subscription` in the 2025-03-31 API.
+ * Read both so invoice events work on either account API version.
+ */
+export function invoiceSubscriptionId(invoice: Record<string, unknown>): string {
+  const direct = nestedId(invoice.subscription);
+  if (direct) return direct;
+  return asString(asRecord(asRecord(invoice.parent).subscription_details).subscription);
+}
+
+interface InvoicePaymentIds {
+  paymentIntentId: string | null;
+  chargeId: string | null;
+}
+
+/**
+ * The invoice's payment is `payments.data[0].payment` on newer API versions
+ * and `payment_intent`/`charge` on older ones.
+ */
+export function invoicePaymentIds(invoice: Record<string, unknown>): InvoicePaymentIds {
+  const payments = asRecord(invoice.payments);
+  const first = Array.isArray(payments.data) ? payments.data[0] : null;
+  const payment = asRecord(asRecord(first).payment);
+  const paymentIntentId =
+    nestedId(payment.payment_intent) || nestedId(invoice.payment_intent) || null;
+  const chargeId = nestedId(payment.charge) || nestedId(invoice.charge) || null;
+  return { paymentIntentId, chargeId };
+}
+
+export function subscriptionInterval(subscription: Record<string, unknown>): BillingInterval {
+  const items = asRecord(subscription.items);
+  const first = Array.isArray(items.data) ? items.data[0] : null;
+  const recurring = asRecord(asRecord(asRecord(first).price).recurring);
+  return asString(recurring.interval) === 'year' ? 'year' : 'month';
+}
+
+interface RefundContext {
+  quote: RefundQuote;
+  currency: string;
+  invoiceId: string;
+  paymentIntentId: string | null;
+  chargeId: string | null;
+  subscriptionId: string;
+  record: RefundRecord | null;
+}
+
+/**
+ * Read the one invoice the automatic flow may refund: the first successful
+ * subscription invoice. A later invoice, a plan-change proration or a missing
+ * payment reference is sent to support rather than guessed at.
+ */
+async function buildRefundContext(
+  env: Env,
+  auth: AuthContext,
+  now: number,
+): Promise<RefundContext> {
+  const snapshot = await readSnapshot(env, auth);
+
+  // A retry after a dropped response must be able to return the refund that
+  // was already recorded, even though the account is now on the free plan.
+  const previous = await latestRecordedRefund(env, auth.userId ?? '');
+  if (
+    previous?.subscriptionId &&
+    snapshot.stripeSubscriptionId &&
+    previous.subscriptionId === snapshot.stripeSubscriptionId
+  ) {
+    const priorSubscription = await fetchSubscription(env, previous.subscriptionId);
+    return {
+      quote: blockedQuote('already_refunded', {
+        interval: priorSubscription ? subscriptionInterval(priorSubscription) : 'month',
+        unusedPoints: previous.unusedPoints,
+        monthlyPoints: previous.monthlyPoints,
+        unusedRatio:
+          previous.monthlyPoints > 0 ? previous.unusedPoints / previous.monthlyPoints : 0,
+        refundRatio: previous.refundRatio,
+      }),
+      currency: previous.currency,
+      invoiceId: previous.invoiceId ?? '',
+      paymentIntentId: null,
+      chargeId: null,
+      subscriptionId: previous.subscriptionId,
+      record: previous,
+    };
+  }
+
+  if (!snapshot.stripeSubscriptionId || snapshot.plan === 'free') {
+    return {
+      quote: blockedQuote('not_paid'),
+      currency: 'usd',
+      invoiceId: '',
+      paymentIntentId: null,
+      chargeId: null,
+      subscriptionId: '',
+      record: null,
+    };
+  }
+  if (!snapshot.membershipActive) {
+    return {
+      quote: blockedQuote('not_active'),
+      currency: 'usd',
+      invoiceId: '',
+      paymentIntentId: null,
+      chargeId: null,
+      subscriptionId: snapshot.stripeSubscriptionId,
+      record: null,
+    };
+  }
+
+  const subscription = await fetchSubscription(env, snapshot.stripeSubscriptionId);
+  if (!subscription) {
+    return {
+      quote: blockedQuote('not_active'),
+      currency: 'usd',
+      invoiceId: '',
+      paymentIntentId: null,
+      chargeId: null,
+      subscriptionId: snapshot.stripeSubscriptionId,
+      record: null,
+    };
+  }
+
+  const subscriptionId = asString(subscription.id) || snapshot.stripeSubscriptionId;
+  const created = numberValue(subscription.created);
+  const interval = subscriptionInterval(subscription);
+  const status = asString(subscription.status);
+  const windowEndsAt =
+    created > 0
+      ? new Date(created * 1000 + REFUND_WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString()
+      : null;
+
+  const invoiceId = nestedId(subscription.latest_invoice);
+  if (!invoiceId) {
+    return {
+      quote: blockedQuote('no_payment', { interval, windowEndsAt }),
+      currency: 'usd',
+      invoiceId: '',
+      paymentIntentId: null,
+      chargeId: null,
+      subscriptionId,
+      record: null,
+    };
+  }
+
+  const invoice = await fetchInvoice(env, invoiceId);
+  if (!invoice) {
+    return {
+      quote: blockedQuote('unavailable', { interval, windowEndsAt }),
+      currency: 'usd',
+      invoiceId,
+      paymentIntentId: null,
+      chargeId: null,
+      subscriptionId,
+      record: null,
+    };
+  }
+
+  const invoiceSubscription = invoiceSubscriptionId(invoice);
+  const billingReason = asString(invoice.billing_reason);
+  const paidCents = numberValue(invoice.amount_paid);
+  const currency = asString(invoice.currency) || 'usd';
+  const { paymentIntentId, chargeId } = invoicePaymentIds(invoice);
+
+  if (
+    (invoiceSubscription && invoiceSubscription !== subscriptionId) ||
+    (billingReason && billingReason !== 'subscription_create')
+  ) {
+    return {
+      quote: blockedQuote('unsupported_invoice', {
+        interval,
+        paidCents,
+        windowEndsAt,
+      }),
+      currency,
+      invoiceId,
+      paymentIntentId,
+      chargeId,
+      subscriptionId,
+      record: null,
+    };
+  }
+
+  const record = await recordedRefund(env, auth.userId ?? '', invoiceId);
+  const quote = calculateRefundQuote({
+    now,
+    subscriptionCreatedAt: created > 0 ? created : null,
+    status,
+    interval,
+    paidCents,
+    planPoints: snapshot.planPoints,
+    monthlyPoints: snapshot.monthlyPoints,
+  });
+
+  if (record) {
+    return {
+      quote: {
+        ...quote,
+        eligible: false,
+        reason: 'already_refunded',
+        amountCents: 0,
+      },
+      currency: record.currency || currency,
+      invoiceId,
+      paymentIntentId,
+      chargeId,
+      subscriptionId,
+      record,
+    };
+  }
+
+  if (quote.eligible && !paymentIntentId && !chargeId) {
+    return {
+      quote: blockedQuote('unsupported_invoice', {
+        interval,
+        paidCents,
+        unusedRatio: quote.unusedRatio,
+        refundRatio: quote.refundRatio,
+        unusedPoints: quote.unusedPoints,
+        monthlyPoints: quote.monthlyPoints,
+        windowEndsAt,
+      }),
+      currency,
+      invoiceId,
+      paymentIntentId,
+      chargeId,
+      subscriptionId,
+      record: null,
+    };
+  }
+
+  return {
+    quote,
+    currency,
+    invoiceId,
+    paymentIntentId,
+    chargeId,
+    subscriptionId,
+    record: null,
+  };
+}
+
+const REFUND_REASON_TEXT: Record<RefundReason, string> = {
+  not_paid: 'There is no paid subscription to refund on this account.',
+  not_active: 'The subscription is not active, so it cannot be refunded automatically.',
+  outside_window:
+    `The automatic refund window is ${REFUND_WINDOW_DAYS} days from the first payment. Contact support to discuss your options.`,
+  no_payment: 'No paid invoice was found for this subscription.',
+  no_plan_points: 'This plan has no monthly plan points to measure the refund against.',
+  no_unused_points:
+    'All plan points for this period have been used, so there is no unused portion to refund. You can still cancel from Manage billing.',
+  unsupported_invoice:
+    'This invoice cannot be refunded automatically. Contact support and we will review it.',
+  already_refunded: 'This payment has already been refunded.',
+  unavailable: 'The payment details are temporarily unavailable. Try again shortly.',
+};
+
+export async function getRefundQuote(
+  env: Env,
+  auth: AuthContext,
+  now = Date.now(),
+): Promise<RefundQuoteView> {
+  const context = await buildRefundContext(env, auth, now);
+  return {
+    ...context.quote,
+    currency: context.currency,
+    windowDays: REFUND_WINDOW_DAYS,
+  };
+}
+
+export interface RefundReceipt {
+  refunded: true;
+  alreadyRefunded: boolean;
+  refundId: string;
+  amountCents: number;
+  paidCents: number;
+  currency: string;
+  unusedPoints: number;
+  monthlyPoints: number;
+  unusedRatio: number;
+  refundRatio: number;
+  interval: 'month' | 'year';
+  subscriptionCanceled: boolean;
+}
+
+export async function startRefund(
+  env: Env,
+  auth: AuthContext,
+  now = Date.now(),
+): Promise<RefundReceipt> {
+  const context = await buildRefundContext(env, auth, now);
+
+  // A retry after a dropped response must return the recorded refund, not
+  // attempt a second one.
+  if (context.record) {
+    return {
+      refunded: true,
+      alreadyRefunded: true,
+      refundId: context.record.refundId,
+      amountCents: context.record.amountCents,
+      paidCents: 0,
+      currency: context.record.currency,
+      unusedPoints: context.record.unusedPoints,
+      monthlyPoints: context.record.monthlyPoints,
+      unusedRatio:
+        context.record.monthlyPoints > 0
+          ? context.record.unusedPoints / context.record.monthlyPoints
+          : 0,
+      refundRatio: context.record.refundRatio,
+      interval: context.quote.interval,
+      subscriptionCanceled: false,
+    };
+  }
+
+  if (!context.quote.eligible) {
+    throw badRequest(REFUND_REASON_TEXT[context.quote.reason ?? 'unavailable']);
+  }
+
+  const refund = await createRefund(env, {
+    paymentIntentId: context.paymentIntentId,
+    chargeId: context.chargeId,
+    amountCents: context.quote.amountCents,
+    idempotencyKey: `mengyin-refund-${context.invoiceId}-${context.quote.amountCents}-${context.quote.unusedPoints}`,
+    metadata: {
+      invoice_id: context.invoiceId,
+      user_id: auth.userId ?? '',
+    },
+  });
+
+  if (refund.status === 'failed' || refund.status === 'canceled') {
+    throw badRequest('Stripe could not complete the refund. Contact support and we will help.');
+  }
+
+  // Try to end access immediately. If Stripe refuses, at least stop renewal at
+  // the period end; the database marker below still prevents a late webhook
+  // from restoring the paid plan.
+  let subscriptionCanceled = true;
+  try {
+    await cancelSubscriptionNow(env, context.subscriptionId);
+  } catch {
+    subscriptionCanceled = false;
+    await cancelSubscriptionAtPeriodEnd(env, context.subscriptionId).catch(() => undefined);
+  }
+
+  await finalizeRefund(env, {
+    userId: auth.userId ?? '',
+    refundId: refund.id,
+    invoiceId: context.invoiceId,
+    subscriptionId: context.subscriptionId,
+    amountCents: refund.amount,
+    currency: refund.currency || context.currency,
+    unusedPoints: context.quote.unusedPoints,
+    monthlyPoints: context.quote.monthlyPoints,
+    refundRatio: context.quote.refundRatio,
+    reason: 'requested_by_customer',
+  });
+
+  return {
+    refunded: true,
+    alreadyRefunded: false,
+    refundId: refund.id,
+    amountCents: refund.amount,
+    paidCents: context.quote.paidCents,
+    currency: refund.currency || context.currency,
+    unusedPoints: context.quote.unusedPoints,
+    monthlyPoints: context.quote.monthlyPoints,
+    unusedRatio: context.quote.unusedRatio,
+    refundRatio: context.quote.refundRatio,
+    interval: context.quote.interval,
+    subscriptionCanceled,
+  };
+}
+
 // -- Webhook -----------------------------------------------------------------
 
 function asRecord(value: unknown): Record<string, unknown> {
@@ -385,8 +806,9 @@ export async function handleWebhook(
       }
     } else if (type === 'invoice.paid' || type === 'invoice.payment_failed') {
       // The invoice is the reliable renewal signal; the subscription object
-      // carries the authoritative period and plan.
-      const subscriptionId = asString(object.subscription);
+      // carries the authoritative period and plan. Newer API versions put the
+      // subscription under `parent.subscription_details`.
+      const subscriptionId = invoiceSubscriptionId(object);
       if (subscriptionId) {
         const subscription = await fetchSubscription(env, subscriptionId);
         if (subscription) await applySubscriptionEvent(env, subscription, false);

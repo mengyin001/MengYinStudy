@@ -19,6 +19,7 @@ export const messages = {
   'nav.plugins': m('Plugins', '插件'),
   'nav.settings': m('Settings', '設定'),
   'nav.pricing': m('Plans', '方案'),
+  'nav.docs': m('Help & policies', '說明與政策'),
 
   'legal.privacy': m('Privacy Policy', '隱私權政策'),
   'legal.terms': m('Terms of Service', '服務條款'),
@@ -1350,10 +1351,174 @@ export const messages = {
     'Cancel or switch plans from Manage billing. Unused plan points do not roll over: they are replaced at the next monthly reset and expire when the plan ends. Downgrades take effect at the end of the current period.',
     '可在「管理帳單」取消或轉換方案。未使用的方案點數不累積：會在下一次每月重置時換成新方案點數，方案結束時失效；降級在目前計費期間結束時生效。',
   ),
+  'billingDocs.faqRefund': m(
+    'Within 7 days of the first payment you can request a refund in Account. The refund covers the unused plan points, not automatically the full amount; a yearly plan also returns untouched future months. A refund ends the subscription immediately and clears the remaining plan points.',
+    '首次付款後 7 天內可在「帳戶」申請退款。退款按未使用的方案點數計算，不是自動全額；年繳亦會退還未使用的完整未來月份。退款會即時終止訂閱並清除剩餘方案點數。',
+  ),
+  'billingDocs.refundPolicy': m('Refund policy', '退款政策'),
   'billingDocs.viewPlans': m('View plans', '查看方案'),
   'billingDocs.manage': m('Manage billing', '管理帳單'),
   'billingDocs.pointValue': m('Point value varies by plan', '點數價值依方案而異'),
 
+  // -- Help and policies ----------------------------------------------------
+  'docs.title': m('Help & policies', '說明與政策'),
+  'docs.lede': m(
+    'How to use MengYin Study, what things cost, and the rules that apply to your account.',
+    'MengYin Study 的使用方法、費用，以及適用於你帳戶的規則。',
+  ),
+  'docs.startTitle': m('How to use', '如何使用'),
+  'docs.startLede': m(
+    'The app is built around one loop: add questions, practise them, review what went wrong, and come back at the right time.',
+    '這個 App 圍繞一個循環：加入題目、練習、檢討錯題，然後在適當時候再複習。',
+  ),
+  'docs.step1Title': m('Add a deck', '加入題庫'),
+  'docs.step1Body': m(
+    'Browse the Plaza for official question packs, or import your own JSON, CSV or Markdown. Generated and imported decks upload automatically to your private account.',
+    '在廣場瀏覽官方題庫，或匯入自己的 JSON、CSV 或 Markdown。生成與匯入的題庫會自動上傳到你的私人帳戶。',
+  ),
+  'docs.step1Action': m('Browse the Plaza', '前往廣場'),
+  'docs.step2Title': m('Generate with AI', '用 AI 出題'),
+  'docs.step2Body': m(
+    'Choose a model, topic, number of questions and optional source material. AI photos and diagrams are attached only when they help the question.',
+    '選擇模型、主題、題數與可選素材。AI 相片與圖表只在有助理解題目時附加。',
+  ),
+  'docs.step2Action': m('Open Generate', '前往 AI 出題'),
+  'docs.step3Title': m('Practise and review', '練習與複習'),
+  'docs.step3Body': m(
+    'Study mode shows the answer and explanation as you go. Review mode brings back questions you got wrong or that are due for spaced repetition.',
+    '學習模式會即時顯示答案與解釋；複習模式會重新出現你答錯或到期需要間隔複習的題目。',
+  ),
+  'docs.step3Action': m('Start practising', '開始練習'),
+  'docs.step4Title': m('See your progress', '查看進度'),
+  'docs.step4Body': m(
+    'Statistics show accuracy, your streak, due questions and the topics that need the most attention.',
+    '統計頁顯示正確率、連續學習日數、到期題目，以及最需要留意的主題。',
+  ),
+  'docs.step4Action': m('View statistics', '查看統計'),
+  'docs.aiTitle': m('AI content and accuracy', 'AI 內容與準確度'),
+  'docs.aiBody': m(
+    'Questions, explanations and images produced by AI are labelled in the generation view. They are not individually reviewed by a person. Verify facts before relying on them, and keep the label when you share or export a generated deck.',
+    'AI 生成的題目、解釋與圖片會在生成畫面標示。它們未經人工逐題審核；引用前請自行核實，並在分享或匯出生成題庫時保留標示。',
+  ),
+  'docs.billingTitle': m('Plans and points', '方案與點數'),
+  'docs.billingBody': m(
+    'The free plan includes 200 GLM-4.7 questions each calendar month. Paid plans grant plan points on the subscription anniversary: Light 500, Standard 1,100 and Pro 2,500. Yearly plans also grant monthly. Unused plan points do not roll over. AI images use the monthly image allowance first, then 10 points each; diagrams drawn by the app are free on every plan.',
+    '免費方案每個日曆月有 200 題 GLM-4.7。付費方案在訂閱週年日發放方案點數：輕量 500、標準 1,100、進階 2,500；年繳同樣每月發放。未用完的方案點數不會累積。AI 生圖先用每月圖片額度，超出每張 10 點；由 App 繪製的圖表所有方案免費。',
+  ),
+  'docs.billingCta': m('Read the billing guide', '查看計費說明'),
+  'docs.refundTitle': m('Refund policy', '退款政策'),
+  'docs.refundIntro': m(
+    'You can request a refund from the Account page within 7 days of the first successful payment. We return the unused part of that payment, not automatically the full amount.',
+    '你可以在首次成功付款後 7 天內，從帳戶頁面申請退款。我們會退還該筆付款中未使用的部分，而不是自動全額退款。',
+  ),
+  'docs.refundFormulaTitle': m('How the unused part is calculated', '未使用部分如何計算'),
+  'docs.refundMonthly': m(
+    'Monthly plan: refund = amount paid × unused plan points ÷ monthly plan points.',
+    '月繳方案：退款 = 實付金額 × 未使用方案點數 ÷ 每月方案點數。',
+  ),
+  'docs.refundAnnual': m(
+    'Yearly plan: untouched future months are returned in full, and the current month uses the same unused-point share. In one line: amount paid × (11 + unused points ÷ monthly points) ÷ 12.',
+    '年繳方案：未使用的完整未來月份全額退還，當前月份則按未使用點數比例計算。公式：實付金額 ×（11 + 未使用點數 ÷ 每月點數）÷ 12。',
+  ),
+  'docs.refundFull': m(
+    'If no plan points were used at all, the unused share is 100%, so the refund is the full amount paid.',
+    '若完全沒有使用方案點數，未使用比例為 100%，退款即為實付全額。',
+  ),
+  'docs.refundBullet1': m(
+    'Only the first successful subscription invoice can use the automatic 7-day flow; each subscription can be refunded once.',
+    '只有首次成功的訂閱帳單可使用 7 天自動退款流程；每個訂閱只能退款一次。',
+  ),
+  'docs.refundBullet2': m(
+    'Bonus points are not part of the calculation and are not refundable.',
+    '加購或贈送點數不計入計算，亦不可退款。',
+  ),
+  'docs.refundBullet3': m(
+    'A refund ends the subscription immediately and clears the remaining plan points. You do not keep the unused access.',
+    '退款會即時終止訂閱並清除剩餘方案點數，未使用的使用權不會保留。',
+  ),
+  'docs.refundBullet4': m(
+    'Stripe returns the money to the original payment method. Your bank or card issuer decides when it appears.',
+    'Stripe 會把款項退回原付款方式；實際入帳時間由發卡機構或銀行決定。',
+  ),
+  'docs.refundBullet5': m(
+    'Nothing in this policy limits a mandatory refund or cancellation right you have where you live. If the automatic flow does not fit your case, email us.',
+    '本政策不限制你所在地強制賦予的退款或取消權利。若自動流程不適用於你的情況，請電郵聯絡我們。',
+  ),
+  'docs.refundCta': m('Request a refund in Account', '前往帳戶申請退款'),
+  'docs.policiesTitle': m('All documents', '所有文件'),
+  'docs.policiesLede': m(
+    'The longer reference pages are linked here so there is one place to find them.',
+    '較完整的參考文件都集中在這裡，方便一次找到。',
+  ),
+  'docs.policyBillingTitle': m('Billing guide', '計費說明'),
+  'docs.policyBillingBody': m('Plan prices, point rates, image allowances and how charging works.', '方案價格、點數價目、圖片額度與扣費方式。'),
+  'docs.policyRefundTitle': m('Refund policy', '退款政策'),
+  'docs.policyRefundBody': m('The 7-day window, the unused-point formula and what happens to your plan.', '7 天申請期限、未使用點數公式，以及退款後方案的變化。'),
+  'docs.policyPrivacyTitle': m('Privacy Policy', '隱私權政策'),
+  'docs.policyPrivacyBody': m('What data is stored, where it goes, and how to export or delete it.', '儲存哪些資料、資料流向，以及如何匯出或刪除。'),
+  'docs.policyTermsTitle': m('Terms of Service', '服務條款'),
+  'docs.policyTermsBody': m('The agreement for using the service, including billing, acceptable use and liability.', '使用本服務的協議，包括計費、可接受用途與責任。'),
+  'docs.contactTitle': m('Still need help?', '還需要協助？'),
+  'docs.contactBody': m(
+    'Email us for account, billing or refund questions. Include the email address on your account so we can find it.',
+    '帳戶、帳單或退款問題可電郵聯絡我們。請附上帳戶使用的電郵地址，以便查找。',
+  ),
+
+  // -- Refund flow ----------------------------------------------------------
+  'refund.request': m('Request a refund', '申請退款'),
+  'refund.title': m('Request a refund', '申請退款'),
+  'refund.loading': m('Calculating the unused part…', '正在計算未使用部分…'),
+  'refund.summary': m(
+    'You have {unused} of {monthly} plan points left ({percent}%). Refund {amount} of {paid}.',
+    '你的方案點數剩 {unused}／{monthly}（{percent}%）。可退 {amount}，實付 {paid}。',
+  ),
+  'refund.annualNote': m(
+    'This is a yearly plan, so untouched future months are included as well.',
+    '這是年繳方案，因此未使用的完整未來月份亦會計算在內。',
+  ),
+  'refund.window': m(
+    'Available within {days} days of the first payment.',
+    '首次付款後 {days} 天內可申請。',
+  ),
+  'refund.warning': m(
+    'Confirming ends the subscription immediately and clears the remaining plan points. Bonus points are not included and are not refundable.',
+    '確認後會即時終止訂閱並清除剩餘方案點數。加購點數不計入，亦不可退款。',
+  ),
+  'refund.confirm': m('Refund {amount}', '退款 {amount}'),
+  'refund.working': m('Processing refund…', '正在處理退款…'),
+  'refund.doneTitle': m('Refund requested', '退款已申請'),
+  'refund.doneBody': m(
+    '{amount} is being returned to your original payment method. Your account is now on the free plan.',
+    '{amount} 正在退回原付款方式。你的帳戶已回到免費方案。',
+  ),
+  'refund.doneAlready': m(
+    'This payment was already refunded. No new refund was made.',
+    '這筆付款已經退款，沒有再次退款。',
+  ),
+  'refund.cancelFallback': m(
+    'Stripe has stopped the renewal. Access ends at the end of the paid period.',
+    'Stripe 已停止續訂；使用權會在已付期間結束時終止。',
+  ),
+  'refund.policy': m('Read the refund policy', '查看退款政策'),
+  'refund.close': m('Close', '關閉'),
+  'refund.reason.not_paid': m('There is no paid subscription on this account.', '這個帳戶沒有付費訂閱。'),
+  'refund.reason.not_active': m('The subscription is not active.', '訂閱目前不是有效狀態。'),
+  'refund.reason.outside_window': m(
+    'The 7-day automatic refund window has passed. Email support to discuss your options.',
+    '7 天自動退款期限已過。請電郵聯絡我們討論可行安排。',
+  ),
+  'refund.reason.no_payment': m('No paid invoice was found for this subscription.', '找不到這個訂閱的已付款帳單。'),
+  'refund.reason.no_plan_points': m('This plan has no monthly plan points to measure the refund against.', '這個方案沒有每月方案點數可作為退款計算基礎。'),
+  'refund.reason.no_unused_points': m(
+    'All plan points for this period have been used, so there is nothing to refund. You can still cancel in Manage billing.',
+    '本期方案點數已全部用完，沒有可退部分。你仍可在「管理帳單」取消訂閱。',
+  ),
+  'refund.reason.unsupported_invoice': m(
+    'This invoice cannot be refunded automatically. Email support and we will review it.',
+    '這張帳單無法自動退款。請電郵聯絡我們審查。',
+  ),
+  'refund.reason.already_refunded': m('This payment has already been refunded.', '這筆付款已經退款。'),
+  'refund.reason.unavailable': m('Payment details are temporarily unavailable. Try again shortly.', '付款資料暫時無法讀取，請稍後再試。'),
 
   // -- Generation points ----------------------------------------------------
   'gen.yourPlan': m('Your plan', '你的方案'),

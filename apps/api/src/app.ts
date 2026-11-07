@@ -38,9 +38,11 @@ import {
   billingConfig,
   billingMe,
   cancelSubscription,
+  getRefundQuote,
   handleWebhook,
   startCheckout,
   startPortal,
+  startRefund,
 } from './billing/routes';
 
 export interface ExecutionContextLike {
@@ -677,6 +679,16 @@ async function route(context: RequestContext, ctx?: ExecutionContextLike): Promi
     const auth = await requireAuth(context);
     await readOptionalJson(request);
     return json(context, await cancelSubscription(env, auth));
+  }
+
+  if (pathname === '/api/billing/refund') {
+    if (method !== 'GET' && method !== 'POST') return methodNotAllowed(context, 'GET, POST');
+    const auth = await requireAuth(context);
+    if (method === 'GET') {
+      return json(context, await getRefundQuote(env, auth, context.deps.now()));
+    }
+    await readOptionalJson(request);
+    return json(context, await startRefund(env, auth, context.deps.now()));
   }
 
   if (pathname === '/api/billing/webhook') {

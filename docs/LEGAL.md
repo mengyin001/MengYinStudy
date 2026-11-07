@@ -11,6 +11,11 @@ The trailing slash matters when you paste the URL into Google Play, the App Stor
 Microsoft Partner Center form: `/privacy/` is a real directory with an `index.html`, while
 `/privacy` relies on the host redirecting to it.
 
+In the app, `#/docs` is the single Help & policies hub. It explains the practice loop and AI
+labelling, summarises plans and refunds, and links the billing guide, refund policy, privacy
+policy and terms. `#/docs/refunds` opens the same page at the refund section. The legal documents
+remain standalone pages so an app-store reviewer can read them without the app shell.
+
 ## Why two forms of the same document
 
 An app-store reviewer opens the URL without signing in, often with JavaScript blocked. A
@@ -26,7 +31,8 @@ bootstrap on the legal page applies an explicit light/dark choice before paint, 
 `system` and first-time visitors follow the OS `prefers-color-scheme`.
 
 Inside the app, `#/privacy` and `#/terms` follow the reader's language and are linked from
-the sidebar footer, Settings → About → Legal, and the sign-up consent line.
+the sidebar footer, Settings → About → Legal, the Help & policies hub (`#/docs`), the Pricing
+footer and the sign-up consent line.
 
 ## Where the wording lives
 
@@ -75,6 +81,14 @@ have to change with it:
   cover automatic renewal, cancellation, the monthly plan-point allowance (including annual
   plans), upgrades/downgrades, refunds, taxes and failed payments; the Privacy Policy adds the
   billing row, Stripe as a processor, and the tax/accounting retention exception.
+- Refunds use the same source of truth as spending. Within seven days of the first successful
+  payment, `POST /api/billing/refund` returns the unused part of that invoice: monthly
+  `paid × unused plan points ÷ monthly plan points`; yearly
+  `paid × (11 + unused ÷ monthly) ÷ 12`, so untouched future months are returned in full. No
+  points used means a full refund of that invoice. Bonus points are excluded. A refund cancels
+  the subscription immediately, clears the remaining plan points and records the Stripe refund
+  in `billing_refunds`; the Account page shows the quote before the learner confirms. The legal
+  wording, the Help & policies hub and the billing guide all state this formula.
 - Google Sign-In is optional and receives only the basic profile (`openid`, `email`, `profile`).
   The policy states the Google API Services User Data Policy and Limited Use requirements
   explicitly, and says Google APIs are used only for sign-in, never for AI generation.
@@ -86,7 +100,8 @@ have to change with it:
   the `delete_account()` RPC in `supabase/migrations/20261104230000_delete_account.sql`, which
   removes `auth.uid()` and lets the existing `on delete cascade` constraints clear the profile,
   decks, library, progress and billing rows. Email is the fallback for a learner who cannot sign
-  in; the current paid period is not refunded.
+  in. Deleting an account does not itself issue a refund; the refund flow has to run first, while
+  the billing row and Stripe identifiers still exist.
 
 The Google Cloud Console fields and the resubmission steps are in
 [docs/OAUTH_VERIFICATION.md](OAUTH_VERIFICATION.md). Submit the standalone URLs

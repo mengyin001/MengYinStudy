@@ -4,6 +4,20 @@
 
 ### Added
 
+- **Self-service refunds for paid subscriptions.** `GET /api/billing/refund` returns a quote and
+  `POST /api/billing/refund` performs it. The automatic window is seven days from the first
+  successful payment. A monthly refund returns `paid × unused plan points ÷ monthly plan points`;
+  a yearly refund returns untouched future months plus the current month's unused share
+  (`paid × (11 + unused ÷ monthly) ÷ 12`). The flow refuses to refund used points in full, records
+  the Stripe refund against the invoice, cancels the subscription immediately, clears the remaining
+  plan points and returns the account to Free. `billing_refunds` is service-role only, and a
+  database guard keeps a late subscription webhook from restoring the paid plan or granting points.
+  The Account page shows the calculated amount and requires explicit confirmation; a retry returns
+  the recorded refund instead of refunding twice.
+- **A single Help & policies page.** `#/docs` now explains the practice loop, AI labelling, plans
+  and points, the refund formula, and links every longer document (billing guide, refund policy,
+  privacy, terms). `#/docs/refunds` opens the same page at the refund section. It is linked from the
+  sidebar, Settings, Pricing, the landing footer and the Account page.
 - **Checkout and the billing portal open in a new tab.** The original page stays put and shows a
   small outcome sheet: “Payment succeeded” refreshes the billing state and reloads, while “Payment
   failed / back” restores the plan buttons so another attempt can be made. Closing the sheet counts
@@ -256,7 +270,13 @@
 
 ### Verified
 
-- **592 tests / 71 files**, typecheck clean, production build OK.
+- **627 tests / 72 files**, typecheck clean, production build OK.
+- Refund preview check against Stripe test mode and both the local API and the preview Worker
+  (`0296cb2a-1c7b-43d2-bcf8-7f80b88e6cae`): monthly US$3.99 from US$4.99 with 400/500 points
+  left, annual US$49.06 from US$49.90 with the same unused share; the Stripe refund succeeded,
+  the subscription was canceled, the account returned to Free with zero plan points, a retry
+  returned the recorded refund, and a simulated late webhook was refused. The preview UI also
+  showed the quote, confirmed the refund and displayed the Free-plan result.
 
 ## 0.8.0 — 2026-11-06
 

@@ -522,6 +522,33 @@ Portal → 取消訂閱 → webhook `customer.subscription.updated` 會把
 > `active=false`，Checkout 會直接拒絕；先 unarchive，或用 **+ Add another price**
 > 建一個新的。
 
+### 5.7 退款預覽測試
+
+先確認 `.dev.vars` 是 **test mode** key，並啟動本機 API：
+
+```bash
+npm run dev:api
+```
+
+另一個終端機執行：
+
+```bash
+npm run stripe:refund-check          # 月繳：用 500 點、已用 100 點，退 US$3.99
+npm run stripe:refund-check -- --year # 年繳：退 US$49.06（11.8/12）
+
+# 已部署的 preview Worker（測試模式）
+REFUND_API_BASE=https://mengyinstudy-preview.libingzham1.workers.dev npm run stripe:refund-check
+```
+
+腳本會建立一個 Stripe test 訂閱與一個即棄 Supabase 使用者、扣 100 點、呼叫真正的
+`GET/POST /api/billing/refund`，再確認 Stripe refund 成功、訂閱已取消、帳戶回落 Free，
+並模擬延遲 webhook 確認不會重新發點。最後會刪除 test 使用者與 Stripe customer。
+它會拒絕 live key；不要用正式卡或 live secret 執行。
+
+手動流程：登入本機預覽 → 方案頁買 Light（測試卡 `4242 4242 4242 4242`）→
+帳戶頁按「申請退款」→ 看到「400 / 500 點、可退 US$3.99」→ 確認 → Stripe Dashboard
+的 Refunds 應見到 `re_...`，Subscriptions 應見 `canceled`，Account 應回到 Free。
+
 ## 6. 正式上線
 
 1. **啟用 Stripe 帳號**：Dashboard 依指示填公司／個人資料、銀行帳戶、稅務資訊。
@@ -586,12 +613,16 @@ npx wrangler deploy
 | 位置 | 作用 |
 | --- | --- |
 | `packages/core/src/billing.ts` | 方案、價格、每題點數、素材級距（金額的唯一來源） |
-| `apps/api/src/billing/routes.ts` | `/api/billing/config\|me\|checkout\|portal\|cancel\|webhook` |
-| `apps/api/src/billing/stripe.ts` | Checkout／Portal／訂閱讀取、webhook 驗簽 |
-| `apps/api/src/billing/store.ts` | Supabase RPC 呼叫與 snapshot 正規化 |
+| `apps/api/src/billing/routes.ts` | `/api/billing/config\|me\|checkout\|portal\|cancel\|refund\|webhook` |
+| `apps/api/src/billing/refund.ts` | 未使用點數比例、7 天窗口、月繳／年繳退款公式 |
+| `apps/api/src/billing/stripe.ts` | Checkout／Portal／訂閱讀取、退款、webhook 驗簽 |
+| `apps/api/src/billing/store.ts` | Supabase RPC 呼叫、退款記錄與 snapshot 正規化 |
 | `supabase/migrations/20261109090000_monthly_point_reset.sql` | 每月重置、加購點數 bucket |
+| `supabase/migrations/20261111090000_billing_refunds.sql` | 退款記錄、帳戶降級、延遲 webhook 防護 |
 | `apps/web/src/pages/Pricing.tsx` | 方案頁、Checkout／Portal 入口 |
-| `apps/web/src/pages/Account.tsx` | 方案、點數、下次重置日 |
+| `apps/web/src/pages/Account.tsx` | 方案、點數、下次重置日、退款報價與確認 |
+| `apps/web/src/pages/Docs.tsx` | `#/docs` 說明與政策整合頁 |
+| `tools/refund-preview-check.mjs` | 本機 test-mode 退款端到端檢查 |
 | `docs/SUBSCRIPTION_POINTS.md` | 定價、規則與經濟計算 |
 
 ## 10. 最短檢查清單
@@ -602,6 +633,7 @@ npx wrangler deploy
 - [ ] `stripe listen` 取得本機 `whsec_`，設進 `.dev.vars`
 - [ ] 測試卡 `4242` 完成一次 Light 月繳，Supabase 看到 500 點
 - [ ] 用 `points_reset_at` 撥回測試每月重置
+- [ ] `npm run stripe:refund-check` 通過（月繳 US$3.99、年繳 US$49.06）
 - [ ] Portal 開啟取消、改卡、方案切換
 - [ ] 正式模式：live 價格、live key、live webhook、`APP_URL`、`wrangler deploy`
 - [ ] 真卡小額測試與退款流程

@@ -5,8 +5,16 @@ import { Note, PageHead, Sheet } from '@/components/ui';
 import { describeBackendError } from '@/i18n/backend';
 import { formatDate, formatShortDay } from '@/lib/format';
 import { navigate } from '@/lib/router';
-import { cancelBillingSubscription } from '@/services/billing';
+import {
+  cancelBillingSubscription,
+  getRefundQuote,
+  requestRefund,
+  type RefundQuote,
+  type RefundReason,
+  type RefundReceipt,
+} from '@/services/billing';
 import { toBackendError, type BackendError } from '@/services/errors';
+import type { MessageKey } from '@/i18n/messages';
 import { useApp } from '@/state/AppContext';
 import { useAuth } from '@/state/AuthContext';
 import { useBilling } from '@/state/BillingContext';
@@ -19,6 +27,29 @@ function initialsOf(name: string): string {
   if (parts.length === 1) return parts[0]?.slice(0, 2).toUpperCase() ?? '?';
   return `${parts[0]?.[0] ?? ''}${parts[1]?.[0] ?? ''}`.toUpperCase();
 }
+
+function money(cents: number, currency: string, locale: string): string {
+  try {
+    return new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency: (currency || 'usd').toUpperCase(),
+    }).format(cents / 100);
+  } catch {
+    return `${(cents / 100).toFixed(2)} ${currency.toUpperCase()}`;
+  }
+}
+
+const REFUND_REASON_KEYS: Record<RefundReason, MessageKey> = {
+  not_paid: 'refund.reason.not_paid',
+  not_active: 'refund.reason.not_active',
+  outside_window: 'refund.reason.outside_window',
+  no_payment: 'refund.reason.no_payment',
+  no_plan_points: 'refund.reason.no_plan_points',
+  no_unused_points: 'refund.reason.no_unused_points',
+  unsupported_invoice: 'refund.reason.unsupported_invoice',
+  already_refunded: 'refund.reason.already_refunded',
+  unavailable: 'refund.reason.unavailable',
+};
 
 export function AccountPage() {
   const { t, locale, actions: appActions } = useApp();
@@ -45,6 +76,12 @@ export function AccountPage() {
   const [deleteTyped, setDeleteTyped] = useState('');
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<BackendError | null>(null);
+  const [refundOpen, setRefundOpen] = useState(false);
+  const [refundQuote, setRefundQuote] = useState<RefundQuote | null>(null);
+  const [refundLoading, setRefundLoading] = useState(false);
+  const [refundBusy, setRefundBusy] = useState(false);
+  const [refundError, setRefundError] = useState<string | null>(null);
+  const [refundReceipt, setRefundReceipt] = useState<RefundReceipt | null>(null);
 
   useEffect(() => {
     setName(displayName);
@@ -153,6 +190,45 @@ export function AccountPage() {
     setDeleteTyped('');
     appActions.notify('success', t('account.deleted'));
     navigate('/', { replace: true });
+  };
+
+  const openRefund = async () => {
+    setRefundOpen(true);
+    setRefundQuote(null);
+    setRefundReceipt(null);
+    setRefundError(null);
+    setRefundLoading(true);
+    try {
+      setRefundQuote(await getRefundQuote());
+    } catch (caught) {
+      setRefundError(caught instanceof Error ? caught.message : String(caught));
+    } finally {
+      setRefundLoading(false);
+    }
+  };
+
+  const closeRefund = () => {
+    if (refundBusy) return;
+    setRefundOpen(false);
+    setRefundQuote(null);
+    setRefundError(null);
+    setRefundReceipt(null);
+  };
+
+  const confirmRefund = async () => {
+    if (!refundQuote?.eligible || refundBusy) return;
+    setRefundBusy(true);
+    setRefundError(null);
+    try {
+      const receipt = await requestRefund();
+      setRefundReceipt(receipt);
+      await refreshBilling();
+      appActions.notify('success', t('refund.doneTitle'));
+    } catch (caught) {
+      setRefundError(caught instanceof Error ? caught.message : String(caught));
+    } finally {
+      setRefundBusy(false);
+    }
   };
 
   return (
@@ -329,6 +405,11 @@ export function AccountPage() {
           <button type="button" className="text-btn" onClick={() => navigate('/docs/billing')}>
             {t('billingDocs.title')}
           </button>
+          {me?.membershipActive && plan.id !== 'free' ? (
+            <button type="button" className="text-btn" onClick={() => void openRefund()}>
+              {t('refund.request')}
+            </button>
+          ) : null}
         </div>
         <p className="footnote">{t('account.billingHint')}</p>
         {billingError ? (
@@ -406,6 +487,97 @@ export function AccountPage() {
         {deleteError ? (
           <Note tone="warn">{describeBackendError(deleteError, t)}</Note>
         ) : null}
+      </Sheet>
+
+      <Sheet
+        open={refundOpen}
+        title={t('refund.title')}
+        onClose={closeRefund}
+        footer={
+          refundReceipt ? (
+            <button type="button" className="btn btn--primary" onClick={closeRefund}>
+              {t('refund.close')}
+            </button>
+          ) : (
+            <>
+              <button
+                type="button"
+                className="btn btn--quiet"
+                onClick={closeRefund}
+                disabled={refundBusy}
+              >
+                {t('common.cancel')}
+              </button>
+              {refundQuote?.eligible ? (
+                <button
+                  type="button"
+                  className="btn btn--primary"
+                  onClick={() => void confirmRefund()}
+                  disabled={refundBusy}
+                >
+                  {refundBusy
+                    ? t('refund.working')
+                    : t('refund.confirm', {
+                        amount: money(refundQuote.amountCents, refundQuote.currency, locale),
+                      })}
+                </button>
+              ) : null}
+            </>
+          )
+        }
+      >
+        {refundLoading ? <Note>{t('refund.loading')}</Note> : null}
+        {refundError ? <Note tone="warn">{refundError}</Note> : null}
+
+        {refundReceipt ? (
+          <>
+            <p>
+              {refundReceipt.alreadyRefunded
+                ? t('refund.doneAlready')
+                : t('refund.doneBody', {
+                    amount: money(
+                      refundReceipt.amountCents,
+                      refundReceipt.currency,
+                      locale,
+                    ),
+                  })}
+            </p>
+            {!refundReceipt.alreadyRefunded && !refundReceipt.subscriptionCanceled ? (
+              <Note tone="warn">{t('refund.cancelFallback')}</Note>
+            ) : null}
+          </>
+        ) : refundQuote ? (
+          refundQuote.eligible ? (
+            <>
+              <p>
+                {t('refund.summary', {
+                  unused: refundQuote.unusedPoints,
+                  monthly: refundQuote.monthlyPoints,
+                  percent: Math.round(refundQuote.unusedRatio * 100),
+                  amount: money(refundQuote.amountCents, refundQuote.currency, locale),
+                  paid: money(refundQuote.paidCents, refundQuote.currency, locale),
+                })}
+              </p>
+              {refundQuote.interval === 'year' ? (
+                <p className="footnote">{t('refund.annualNote')}</p>
+              ) : null}
+              <p className="footnote">
+                {t('refund.window', { days: refundQuote.windowDays })}
+              </p>
+              <Note tone="warn">{t('refund.warning')}</Note>
+            </>
+          ) : (
+            <Note tone="warn">
+              {t(REFUND_REASON_KEYS[refundQuote.reason ?? 'unavailable'])}
+            </Note>
+          )
+        ) : null}
+
+        <p className="footnote">
+          <button type="button" className="text-btn" onClick={() => navigate('/docs/refunds')}>
+            {t('refund.policy')}
+          </button>
+        </p>
       </Sheet>
     </div>
   );

@@ -176,6 +176,7 @@ export function BillingDocsPage() {
         <ul className="billing-doc__rules">
           <li>{t('billingDocs.faqDaily')}</li>
           <li>{t('billingDocs.faqCancel')}</li>
+          <li>{t('billingDocs.faqRefund')}</li>
         </ul>
       </section>
 
@@ -196,6 +197,13 @@ export function BillingDocsPage() {
             {t('billingDocs.manage')}
           </button>
         ) : null}
+        <button
+          type="button"
+          className="btn btn--quiet btn--sm"
+          onClick={() => navigate('/docs/refunds')}
+        >
+          {t('billingDocs.refundPolicy')}
+        </button>
       </div>
       <p className="footnote billing-doc__contact">
         {t('pricing.contact')}{' '}

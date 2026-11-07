@@ -61,7 +61,8 @@ async function stripeRequest<T>(
   env: Env,
   path: string,
   form: Record<string, string> | null,
-  method: 'GET' | 'POST' = 'POST',
+  method: 'GET' | 'POST' | 'DELETE' = 'POST',
+  idempotencyKey?: string,
 ): Promise<T> {
   const key = secret(env);
   if (!key) throw unconfigured('Stripe is not configured on this server.');
@@ -73,6 +74,7 @@ async function stripeRequest<T>(
       headers: {
         Authorization: `Bearer ${key}`,
         ...(form ? { 'Content-Type': 'application/x-www-form-urlencoded' } : {}),
+        ...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {}),
         Accept: 'application/json',
       },
       ...(form ? { body: new URLSearchParams(form).toString() } : {}),
@@ -193,6 +195,107 @@ export async function fetchSubscription(
     // A deleted subscription returns 404; the caller falls back to the event.
     return null;
   }
+}
+
+/** Read the first invoice for a subscription, with its refundable references. */
+export async function fetchInvoice(
+  env: Env,
+  invoiceId: string,
+): Promise<Record<string, unknown> | null> {
+  try {
+    return await stripeRequest<Record<string, unknown>>(
+      env,
+      // Stripe's 2025-03-31 API moved the payment reference to
+      // `payments.data[].payment`; older accounts still expose `charge`.
+      `/invoices/${encodeURIComponent(invoiceId)}?expand[]=payments&expand[]=charge&expand[]=payment_intent`,
+      null,
+      'GET',
+    );
+  } catch {
+    return null;
+  }
+}
+
+export interface StripeRefundResult {
+  id: string;
+  amount: number;
+  currency: string;
+  status: string;
+}
+
+export interface CreateRefundInput {
+  /** One of these identifies the original payment. */
+  paymentIntentId?: string | null;
+  chargeId?: string | null;
+  amountCents: number;
+  /** A stable key for this invoice/amount, so a retry returns the same refund. */
+  idempotencyKey: string;
+  metadata?: Record<string, string>;
+}
+
+/**
+ * Refund part of the latest subscription payment. `reason` is deliberately
+ * `requested_by_customer`: the learner asked for it from the account page.
+ */
+export async function createRefund(
+  env: Env,
+  input: CreateRefundInput,
+): Promise<StripeRefundResult> {
+  const form: Record<string, string> = {
+    amount: String(Math.max(0, Math.round(input.amountCents))),
+    reason: 'requested_by_customer',
+  };
+  if (input.paymentIntentId) form.payment_intent = input.paymentIntentId;
+  else if (input.chargeId) form.charge = input.chargeId;
+  else throw unconfigured('The paid invoice has no refundable payment reference.');
+
+  for (const [key, value] of Object.entries(input.metadata ?? {})) {
+    form[`metadata[${key}]`] = value;
+  }
+
+  const refund = await stripeRequest<StripeRefundResult>(
+    env,
+    '/refunds',
+    form,
+    'POST',
+    input.idempotencyKey,
+  );
+  return {
+    id: refund.id,
+    amount: refund.amount,
+    currency: refund.currency,
+    status: refund.status,
+  };
+}
+
+/** Sum successful or pending refunds for a payment intent. */
+export async function refundedCentsForPaymentIntent(
+  env: Env,
+  paymentIntentId: string,
+): Promise<number> {
+  const payload = await stripeRequest<{ data?: Array<{ amount?: number; status?: string }> }>(
+    env,
+    `/refunds?payment_intent=${encodeURIComponent(paymentIntentId)}&limit=100`,
+    null,
+    'GET',
+  );
+  return (payload.data ?? []).reduce((total, refund) => {
+    if (refund.status === 'failed' || refund.status === 'canceled') return total;
+    return total + (typeof refund.amount === 'number' ? refund.amount : 0);
+  }, 0);
+}
+
+/**
+ * Cancel immediately after a refund. The subscription has already been paid
+ * for, so the account is downgraded by the caller as soon as this returns.
+ */
+export async function cancelSubscriptionNow(env: Env, subscriptionId: string): Promise<void> {
+  await stripeRequest<Record<string, unknown>>(
+    env,
+    `/subscriptions/${encodeURIComponent(subscriptionId)}`,
+    null,
+    'DELETE',
+  );
 }
 
 // -- Webhook verification ---------------------------------------------------

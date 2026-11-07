@@ -280,6 +280,15 @@ export function LandingPage() {
         </div>
 
         <nav className="landing__foot-links" aria-label="Legal and contact">
+          <a
+            href="#/docs"
+            onClick={(event) => {
+              event.preventDefault();
+              navigate('/docs');
+            }}
+          >
+            {text(LANDING.footer.docs, locale)}
+          </a>
           <a href="./privacy/">{text(LANDING.footer.privacy, locale)}</a>
           <a href="./terms/">{text(LANDING.footer.terms, locale)}</a>
           <a href="#/pricing" onClick={(event) => {

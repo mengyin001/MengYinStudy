@@ -13,6 +13,7 @@ import { AuthPage, ResetPasswordPage } from './pages/Auth';
 import { BillingDocsPage } from './pages/BillingDocs';
 import { CollectionPage } from './pages/CollectionPage';
 import { DashboardPage } from './pages/Dashboard';
+import { DocsPage } from './pages/Docs';
 import { GeneratePage } from './pages/Generate';
 import { LandingPage } from './pages/Landing';
 import { LegalPage } from './pages/Legal';
@@ -107,6 +108,10 @@ export default function App() {
         return <PluginsPage />;
       case '/pricing':
         return <PricingPage />;
+      case '/docs':
+        return <DocsPage />;
+      case '/docs/refunds':
+        return <DocsPage focus="refund" />;
       case '/docs/billing':
         return <BillingDocsPage />;
       case '/settings':
@@ -232,6 +237,9 @@ export default function App() {
               </span>
             </button>
           ) : null}
+          <button type="button" className="side-docs" onClick={() => navigate('/docs')}>
+            {t('nav.docs')}
+          </button>
           <div className="lang-row">
             <button
               type="button"

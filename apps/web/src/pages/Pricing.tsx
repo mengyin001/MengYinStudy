@@ -112,6 +112,9 @@ export function PricingPage() {
             >
               {t('billingDocs.title')}
             </button>
+            <button type="button" className="text-btn" onClick={() => navigate('/docs')}>
+              {t('nav.docs')}
+            </button>
           </>
         }
       />

@@ -436,8 +436,8 @@ export const privacyPolicy: LegalDoc = {
             'Correct: change your display name on the Account page, or ask us to correct anything else.',
           ],
           [
-            '刪除：在應用程式的「帳號」頁面選擇「刪除帳號」。帳號、雲端題庫、學習進度與筆記會立即永久刪除，無法復原；若你已無法登入，也可以來信由我們代為刪除。若你有付費訂閱，刪除帳號時我們會先停止其自動續訂；目前計費期間的費用不會按比例退還。發票與交易紀錄可能依法律保留（見「保留期間」）。',
-            'Delete: choose Delete account on the Account page. The account, cloud decks, progress and notes are erased immediately and permanently. If you can no longer sign in, write to us and we will delete the account for you. If you have a paid subscription, deleting the account first stops it renewing; fees for the current billing period are not refunded pro rata. Invoices and transaction records may be retained as required by law (see Retention).',
+            '刪除：在應用程式的「帳號」頁面選擇「刪除帳號」。帳號、雲端題庫、學習進度與筆記會立即永久刪除，無法復原；若你已無法登入，也可以來信由我們代為刪除。若你有付費訂閱，刪除帳號時我們會先停止其自動續訂；刪除帳號本身不會退款，請在刪除前先依退款條款申請。發票與交易紀錄可能依法律保留（見「保留期間」）。',
+            'Delete: choose Delete account on the Account page. The account, cloud decks, progress and notes are erased immediately and permanently. If you can no longer sign in, write to us and we will delete the account for you. If you have a paid subscription, deleting the account first stops it renewing; deleting the account does not itself issue a refund, so request one under the refunds section before deleting. Invoices and transaction records may be retained as required by law (see Retention).',
           ],
           [
             '限制或反對處理、撤回同意：來信告知即可，不會影響你在此之前的權益。',
@@ -642,33 +642,37 @@ export const termsOfService: LegalDoc = {
       'Refunds',
       [
         p(
-          '除法律要求或本條款另有規定外，已支付的訂閱費用在計費期間開始後不予退還。若你所在地的法律賦予你強制的取消或退款權利，該等權利不受本條影響。',
-          'Except where the law requires otherwise or these terms say otherwise, subscription fees are non-refundable once a billing period has started. Nothing in this section limits mandatory cancellation or refund rights you have where you live.',
+          '首次成功付款後 7 天內，你可以在「帳戶」頁面申請退款。退款以未使用的方案點數計算，不是一筆過全額退款；若你完全沒有使用方案點數，則退還該筆實付金額。每個訂閱只可退款一次。7 天後或不符合自動流程的情況，請來信聯絡，我們會依適用法律與實際使用情況審查。',
+          'Within 7 days of the first successful payment you may request a refund from the Account page. The refund is based on the plan points you have not used, not automatically the full amount; if you used no plan points at all, the full amount paid is refunded. Each subscription can be refunded once. After 7 days, or where the automatic flow does not apply, write to us and we will review the case under applicable law and actual usage.',
         ),
         ul(
           [
-            '首次購買 7 天內且未使用任何方案點數：你可以來信申請全額退還實付金額。金流手續費、匯率差額與已產生的稅費可能不退。',
-            'First purchase within 7 days and no plan points used: you may write to us to request a full refund of the amount you paid. Payment-processing fees, exchange-rate differences and taxes already incurred may not be refunded.',
+            '月繳方案：退款 = 實付金額 × 未使用方案點數 ÷ 每月方案點數。例如每月 500 點、實付 US$4.99，已使用 100 點，退款為 US$4.99 × 400 ÷ 500 = US$3.99。',
+            'Monthly plan: refund = amount paid × unused plan points ÷ monthly plan points. For example, with 500 points a month and US$4.99 paid, using 100 points leaves 400, so the refund is US$4.99 × 400 ÷ 500 = US$3.99.',
           ],
           [
-            '已使用點數：退款金額以實付金額為上限，並扣除已使用點數按該方案實付每點單價計算的價值。',
-            'Points already used: any refund is capped at the amount you paid and reduced by the value of the points used, calculated at the plan’s effective per-point price.',
+            '年繳方案：未使用的完整未來月份全額退還，當前月份按未使用點數比例計算。公式為：實付金額 ×（11 + 未使用方案點數 ÷ 每月方案點數）÷ 12。若完全未使用，比例為 12/12，即全額退還。',
+            'Yearly plan: untouched future months are refunded in full and the current month uses the unused-point share. The formula is: amount paid × (11 + unused plan points ÷ monthly plan points) ÷ 12. With no points used, the ratio is 12/12 and the full amount is refunded.',
           ],
           [
-            '年繳：若我們同意在年度結束前退款，未使用的完整月份按比例退還，已使用的月份以月繳價重算；不足一個月以一個月計，且可能扣除金流手續費。這可能使退款低於你原先支付的金額。',
-            'Yearly plans: if we agree to refund before the year ends, unused complete months are refunded pro rata and used months are recalculated at the monthly price; a partial month counts as a full month, and payment-processing fees may be deducted. The refund may therefore be less than the amount you paid.',
+            '計算只計入方案每月點數；加購或贈送的點數不計入，亦不可退款，但法律要求，或點數因我們的原因無法使用時，不在此限。',
+            'Only the plan’s monthly points are counted. Purchased or gifted bonus points are excluded and non-refundable, except where the law requires it or the points cannot be used for reasons attributable to us.',
           ],
           [
-            '加購或贈送的點數一經發放即不可退款，但法律要求，或點數因我們的原因無法使用時，不在此限。',
-            'Purchased or gifted bonus points are non-refundable once granted, except where the law requires it or the points cannot be used for reasons attributable to us.',
+            '退款一經完成，訂閱會即時終止，帳戶回到免費方案，剩餘的方案點數會清除；你不會保留未使用的付費使用權。單純取消而不申請退款，則可使用至目前已付期間結束。',
+            'Once a refund is completed the subscription ends immediately, the account returns to the free plan and the remaining plan points are cleared; you do not keep the unused paid access. A cancellation without a refund instead keeps access until the end of the period already paid for.',
           ],
           [
-            '退款經 Stripe 退回原付款方式；實際入帳時間依發卡機構與所在地而定。',
-            'Refunds are returned through Stripe to the original payment method; the time to appear depends on your card issuer and location.',
+            '退款經 Stripe 退回原付款方式，原則上以原交易幣別處理；實際入帳時間與當地金額可能因發卡機構、銀行或匯率而異，我們不另扣手續費。',
+            'Refunds are returned through Stripe to the original payment method, normally in the original transaction currency. The time to appear and the local amount may vary with your card issuer, bank or exchange rate; we do not deduct an additional fee.',
           ],
           [
-            '申請退款或對收費有疑問，請透過「管理帳單」或本條款下方的聯絡方式與我們聯絡。',
-            'To request a refund or question a charge, contact us through Manage billing or the contact details at the end of these terms.',
+            '本條不限制你所在地法律賦予的強制取消或退款權利。若你已刪除帳戶、帳單不是首次訂閱付款，或系統無法自動處理，請在刪除帳戶前先來信申請退款；刪除帳戶本身不會自動退款。',
+            'Nothing in this section limits a mandatory cancellation or refund right you have where you live. If you have deleted your account, the invoice is not the first subscription payment, or the automatic flow cannot process it, write to us before deleting the account; deleting an account does not itself issue a refund.',
+          ],
+          [
+            '申請退款或對收費有疑問，請透過「帳戶」頁面或本條款下方的聯絡方式與我們聯絡。',
+            'To request a refund or question a charge, use the Account page or the contact details at the end of these terms.',
           ],
         ),
       ],
@@ -693,8 +697,8 @@ export const termsOfService: LegalDoc = {
             'If you subscribe to a paid plan, keep your billing details accurate and up to date, and make sure you are authorised to use the payment method. You are responsible for subscription charges incurred under your account.',
           ],
           [
-            '你可以隨時在「帳號」頁面刪除帳號。若你有付費訂閱，刪除帳號時我們會先停止其自動續訂；目前計費期間的費用不會按比例退還。發票與交易紀錄可能依法律保留。',
-            'You can delete your account at any time from the Account page. If you have a paid subscription, deleting the account first stops it renewing; fees for the current billing period are not refunded pro rata. Invoices and transaction records may be retained as required by law.',
+            '你可以隨時在「帳號」頁面刪除帳號。若你有付費訂閱，刪除帳號時我們會先停止其自動續訂；刪除帳號本身不會退款，請在刪除前先依退款條款申請。發票與交易紀錄可能依法律保留。',
+            'You can delete your account at any time from the Account page. If you have a paid subscription, deleting the account first stops it renewing; deleting the account does not itself issue a refund, so request one under the refunds section before deleting. Invoices and transaction records may be retained as required by law.',
           ],
           [
             '我們可能在你違反本條款時限制或終止你的帳號。',

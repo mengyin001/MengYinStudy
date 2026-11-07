@@ -133,6 +133,22 @@ describe('legal documents', () => {
     expect(privacy).toContain('A saved deck may still contain AI-generated content');
   });
 
+  it('publishes the unused-point refund formula and the access consequence', () => {
+    const terms = JSON.stringify(resolveDoc(LEGAL_DOCS.terms, 'en', configured));
+    for (const phrase of [
+      'unused plan points',
+      '11 + unused plan points',
+      'amount paid × unused plan points',
+      'ends immediately',
+      'Each subscription can be refunded once',
+      'bonus points',
+    ]) {
+      expect(terms).toContain(phrase);
+    }
+    // The old wording promised a full 7-day refund regardless of usage.
+    expect(terms).not.toContain('no plan points used: you may write to us to request a full refund');
+  });
+
   it('describes the paid plans that replaced the free-only service', () => {
     const terms = JSON.stringify(resolveDoc(LEGAL_DOCS.terms, 'en', configured));
     for (const phrase of [

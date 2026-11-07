@@ -271,6 +271,7 @@ export const LANDING = {
       en: 'Google and Google Sign-In are trademarks of Google LLC.',
       zh: 'Google 與 Google 登入是 Google LLC 的商標。',
     },
+    docs: { en: 'Help & policies', zh: '說明與政策' },
     privacy: { en: 'Privacy Policy', zh: '隱私權政策' },
     terms: { en: 'Terms of Service', zh: '服務條款' },
     pricing: { en: 'Pricing', zh: '方案與價格' },

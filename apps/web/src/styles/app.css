@@ -5056,3 +5056,18 @@
 .streak > span {
   white-space: nowrap;
 }
+
+.side-docs {
+  align-self: flex-start;
+  font-size: var(--t-2xs);
+  letter-spacing: 0.04em;
+  color: var(--ink-3);
+  text-decoration: underline;
+  text-decoration-color: var(--rule);
+  text-underline-offset: 2px;
+}
+
+.side-docs:hover {
+  color: var(--ink);
+  text-decoration-color: currentColor;
+}

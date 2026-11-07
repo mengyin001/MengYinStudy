@@ -1,0 +1,149 @@
+/* Help & policies ---------------------------------------------------------- */
+
+.docs-page {
+  max-width: 960px;
+}
+
+.docs-panel {
+  gap: var(--s3);
+}
+
+.docs-lede {
+  max-width: 78ch;
+  font-size: var(--t-sm);
+  line-height: 1.7;
+  color: var(--ink-2);
+}
+
+.docs-steps {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s3);
+  list-style: none;
+  padding: 0;
+  margin: var(--s2) 0 0;
+}
+
+.docs-step {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s2);
+  padding: var(--s4);
+  border: 1px solid var(--rule);
+  border-radius: var(--r2);
+  background: var(--surface);
+}
+
+.docs-step__num {
+  font-family: var(--mono);
+  font-size: var(--t-2xs);
+  letter-spacing: 0.08em;
+  color: var(--ink-3);
+}
+
+.docs-step h3,
+.docs-formula h3 {
+  font-family: var(--serif);
+  font-size: var(--t-md);
+  font-weight: 500;
+}
+
+.docs-step p,
+.docs-formula p,
+.docs-list {
+  font-size: var(--t-sm);
+  line-height: 1.7;
+  color: var(--ink-2);
+}
+
+.docs-step .text-btn {
+  margin-top: auto;
+  align-self: flex-start;
+}
+
+.docs-formula {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  padding: var(--s4);
+  border-left: 3px solid var(--accent);
+  background: var(--surface-2);
+  border-radius: 0 var(--r2) var(--r2) 0;
+}
+
+.docs-formula__full {
+  color: var(--ink);
+}
+
+.docs-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  padding-left: 1.15em;
+  list-style: disc;
+}
+
+.docs-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s3);
+  margin-top: var(--s2);
+}
+
+.docs-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  padding: var(--s4);
+  text-align: left;
+  border: 1px solid var(--rule);
+  border-radius: var(--r2);
+  background: var(--surface);
+  color: var(--ink);
+  transition: border-color 120ms ease, background 120ms ease;
+}
+
+.docs-card:hover {
+  border-color: var(--rule-2);
+  background: var(--surface-2);
+}
+
+.docs-card__label {
+  font-family: var(--serif);
+  font-size: var(--t-md);
+}
+
+.docs-card__body {
+  font-size: var(--t-sm);
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+.docs-contact {
+  font-size: var(--t-sm);
+  line-height: 1.7;
+  color: var(--ink-2);
+}
+
+.docs-contact a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: var(--rule-2);
+  text-underline-offset: 2px;
+}
+
+.docs-contact a:hover {
+  color: var(--accent);
+}
+
+.docs-panel--refund {
+  scroll-margin-top: var(--s5);
+}
+
+@media (max-width: 720px) {
+  .docs-steps,
+  .docs-cards {
+    grid-template-columns: 1fr;
+  }
+}

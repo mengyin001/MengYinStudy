@@ -141,3 +141,58 @@ export async function cancelBillingSubscription(): Promise<boolean> {
   const result = await post<{ canceled: boolean }>('cancel');
   return result.canceled === true;
 }
+
+export type RefundReason =
+  | 'not_paid'
+  | 'not_active'
+  | 'outside_window'
+  | 'no_payment'
+  | 'no_plan_points'
+  | 'no_unused_points'
+  | 'unsupported_invoice'
+  | 'already_refunded'
+  | 'unavailable';
+
+export interface RefundQuote {
+  eligible: boolean;
+  reason: RefundReason | null;
+  paidCents: number;
+  amountCents: number;
+  unusedRatio: number;
+  refundRatio: number;
+  unusedPoints: number;
+  monthlyPoints: number;
+  interval: 'month' | 'year';
+  windowEndsAt: string | null;
+  windowDays: number;
+  currency: string;
+}
+
+export interface RefundReceipt {
+  refunded: true;
+  alreadyRefunded: boolean;
+  refundId: string;
+  amountCents: number;
+  paidCents: number;
+  currency: string;
+  unusedPoints: number;
+  monthlyPoints: number;
+  unusedRatio: number;
+  refundRatio: number;
+  interval: 'month' | 'year';
+  subscriptionCanceled: boolean;
+}
+
+export async function getRefundQuote(signal?: AbortSignal): Promise<RefundQuote> {
+  const response = await fetch(billingUrl('refund'), {
+    headers: await headers(),
+    ...(signal ? { signal } : {}),
+  });
+  if (!response.ok) throw await readError(response);
+  return (await response.json()) as RefundQuote;
+}
+
+/** Execute the refund after the learner has seen and confirmed the quote. */
+export async function requestRefund(): Promise<RefundReceipt> {
+  return post<RefundReceipt>('refund');
+}

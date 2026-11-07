@@ -386,6 +386,137 @@ export async function grantPoints(
   );
 }
 
+// -- Refund records ---------------------------------------------------------
+
+export interface RefundRecord {
+  refundId: string;
+  invoiceId: string | null;
+  subscriptionId: string | null;
+  amountCents: number;
+  currency: string;
+  unusedPoints: number;
+  monthlyPoints: number;
+  refundRatio: number;
+}
+
+function refundRecord(row: Record<string, unknown>): RefundRecord {
+  return {
+    refundId: String(row.stripe_refund_id ?? ''),
+    invoiceId: typeof row.stripe_invoice_id === 'string' ? row.stripe_invoice_id : null,
+    subscriptionId:
+      typeof row.stripe_subscription_id === 'string' ? row.stripe_subscription_id : null,
+    amountCents: number(row.amount_cents),
+    currency: String(row.currency ?? 'usd'),
+    unusedPoints: number(row.unused_points),
+    monthlyPoints: number(row.monthly_points),
+    refundRatio: number(row.refund_ratio),
+  };
+}
+
+/** Latest refund for an account, used to make a dropped response retryable. */
+export async function latestRecordedRefund(
+  env: Env,
+  userId: string,
+): Promise<RefundRecord | null> {
+  const url = baseUrl(env);
+  const secret = serviceKey(env);
+  if (!url || !secret) throw new BillingUnavailable('SUPABASE_SERVICE_KEY is not configured.');
+  const query = new URLSearchParams({
+    select:
+      'stripe_refund_id,stripe_invoice_id,stripe_subscription_id,amount_cents,currency,unused_points,monthly_points,refund_ratio',
+    user_id: `eq.${userId}`,
+    order: 'created_at.desc',
+    limit: '1',
+  });
+  const response = await fetch(`${url}/rest/v1/billing_refunds?${query.toString()}`, {
+    headers: { apikey: secret, Authorization: `Bearer ${secret}`, Accept: 'application/json' },
+  });
+  if (response.status === 404) return null;
+  if (!response.ok) {
+    throw new BillingUnavailable(`Could not read the refund record (${response.status}).`);
+  }
+  const rows = (await response.json()) as Array<Record<string, unknown>>;
+  const row = rows[0];
+  return row ? refundRecord(row) : null;
+}
+
+/**
+ * Look up a refund already recorded for this invoice. The API checks this
+ * before creating a Stripe refund, so a double-click cannot refund twice.
+ */
+export async function recordedRefund(
+  env: Env,
+  userId: string,
+  invoiceId: string,
+): Promise<RefundRecord | null> {
+  const url = baseUrl(env);
+  const secret = serviceKey(env);
+  if (!url || !secret) throw new BillingUnavailable('SUPABASE_SERVICE_KEY is not configured.');
+  const query = new URLSearchParams({
+    select:
+      'stripe_refund_id,stripe_invoice_id,stripe_subscription_id,amount_cents,currency,unused_points,monthly_points,refund_ratio',
+    user_id: `eq.${userId}`,
+    stripe_invoice_id: `eq.${invoiceId}`,
+    limit: '1',
+  });
+  const response = await fetch(`${url}/rest/v1/billing_refunds?${query.toString()}`, {
+    headers: { apikey: secret, Authorization: `Bearer ${secret}`, Accept: 'application/json' },
+  });
+  if (response.status === 404) return null;
+  if (!response.ok) {
+    throw new BillingUnavailable(`Could not read the refund record (${response.status}).`);
+  }
+  const rows = (await response.json()) as Array<Record<string, unknown>>;
+  const row = rows[0];
+  return row ? refundRecord(row) : null;
+}
+
+export interface FinalizeRefundInput {
+  userId: string;
+  refundId: string;
+  invoiceId: string;
+  subscriptionId: string;
+  amountCents: number;
+  currency: string;
+  unusedPoints: number;
+  monthlyPoints: number;
+  refundRatio: number;
+  reason: string;
+}
+
+/**
+ * Record the money refund and remove the paid plan in one database transaction.
+ * The SQL function also marks the subscription as refunded, so a late Stripe
+ * webhook cannot grant the monthly points again.
+ */
+export async function finalizeRefund(
+  env: Env,
+  input: FinalizeRefundInput,
+): Promise<{ already: boolean; balance: number }> {
+  const raw = await rpc<Record<string, unknown>>(
+    env,
+    'billing_finalize_refund',
+    {
+      p_user: input.userId,
+      p_refund_id: input.refundId,
+      p_invoice_id: input.invoiceId,
+      p_subscription_id: input.subscriptionId,
+      p_amount: Math.max(0, Math.round(input.amountCents)),
+      p_currency: input.currency.toLowerCase(),
+      p_unused_points: Math.max(0, Math.round(input.unusedPoints)),
+      p_monthly_points: Math.max(0, Math.round(input.monthlyPoints)),
+      p_refund_ratio: input.refundRatio,
+      p_reason: input.reason,
+    },
+    null,
+    { service: true },
+  );
+  return {
+    already: raw?.already === true,
+    balance: number(raw?.balance),
+  };
+}
+
 /** Find the account that owns a Stripe customer, when metadata was not enough. */
 export async function userIdForCustomer(env: Env, customerId: string): Promise<string | null> {
   const url = baseUrl(env);

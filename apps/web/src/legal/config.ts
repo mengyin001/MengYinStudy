@@ -8,10 +8,10 @@
  */
 
 /** Bumped whenever the wording of either document changes materially. */
-export const LEGAL_VERSION = '1.4';
+export const LEGAL_VERSION = '1.5';
 
 /** ISO date the current wording took effect. Shown as-is in both documents. */
-export const LEGAL_UPDATED = '2026-11-07';
+export const LEGAL_UPDATED = '2026-11-08';
 
 /**
  * Support and privacy mailbox. Published on purpose: it is the address an app

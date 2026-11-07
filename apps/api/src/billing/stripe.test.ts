@@ -1,6 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Env } from '../env';
-import { cancelSubscriptionAtPeriodEnd, createCheckoutSession, verifyWebhook } from './stripe';
+import {
+  cancelSubscriptionAtPeriodEnd,
+  cancelSubscriptionNow,
+  createCheckoutSession,
+  createRefund,
+  verifyWebhook,
+} from './stripe';
 
 const SECRET = 'whsec_test_secret';
 
@@ -114,5 +120,67 @@ describe('createCheckoutSession', () => {
     const init = call?.[1] as RequestInit | undefined;
     const body = new URLSearchParams(String(init?.body ?? ''));
     expect(body.get('cancel_at_period_end')).toBe('true');
+  });
+});
+
+describe('refunds', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('sends a partial refund with an idempotency key', async () => {
+    const fetchMock = vi.fn(
+      async (_input: RequestInfo | URL, _init?: RequestInit) =>
+        new Response(
+          JSON.stringify({
+            id: 're_1',
+            amount: 399,
+            currency: 'usd',
+            status: 'succeeded',
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await createRefund(
+      { STRIPE_SECRET_KEY: 'sk_test_refund' } as Env,
+      {
+        paymentIntentId: 'pi_1',
+        amountCents: 399,
+        idempotencyKey: 'mengyin-refund-in_1-399-400',
+        metadata: { invoice_id: 'in_1', user_id: 'user_1' },
+      },
+    );
+
+    expect(result).toMatchObject({ id: 're_1', amount: 399, status: 'succeeded' });
+    const call = fetchMock.mock.calls[0];
+    expect(String(call?.[0])).toContain('/v1/refunds');
+    const init = call?.[1] as RequestInit | undefined;
+    const headers = new Headers(init?.headers);
+    expect(headers.get('Idempotency-Key')).toBe('mengyin-refund-in_1-399-400');
+    const body = new URLSearchParams(String(init?.body ?? ''));
+    expect(body.get('amount')).toBe('399');
+    expect(body.get('payment_intent')).toBe('pi_1');
+    expect(body.get('reason')).toBe('requested_by_customer');
+    expect(body.get('metadata[invoice_id]')).toBe('in_1');
+  });
+
+  it('cancels a subscription immediately after a refund', async () => {
+    const fetchMock = vi.fn(
+      async (_input: RequestInfo | URL, _init?: RequestInit) =>
+        new Response(JSON.stringify({ id: 'sub_1', status: 'canceled' }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    await cancelSubscriptionNow({ STRIPE_SECRET_KEY: 'sk_test_cancel' } as Env, 'sub_1');
+
+    const call = fetchMock.mock.calls[0];
+    expect(String(call?.[0])).toContain('/v1/subscriptions/sub_1');
+    const init = call?.[1] as RequestInit | undefined;
+    expect(init?.method).toBe('DELETE');
   });
 });
