@@ -90,6 +90,7 @@ describe('createCheckoutSession', () => {
     expect(body.get('adaptive_pricing[enabled]')).toBe('true');
     expect(body.get('mode')).toBe('subscription');
     expect(body.get('line_items[0][price]')).toBe('price_light_month');
+    expect(body.get('custom_text[submit][message]')).toContain('mengyinqwq@gmail.com');
     expect(body.get('currency')).toBeNull();
   });
 

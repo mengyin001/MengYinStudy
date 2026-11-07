@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { annualMonthlyCents, formatUsd, type Plan } from '@mengyin/core';
 import { Icon } from '@/components/Icons';
 import { Note, PageHead, Seg } from '@/components/ui';
+import { SUPPORT_EMAIL } from '@/lib/contact';
 import { formatLongDate } from '@/lib/format';
 import { modelLabel } from '@/lib/models';
 import { navigate, useRoute } from '@/lib/router';
@@ -233,6 +234,10 @@ export function PricingPage() {
           </section>
           <p className="footnote pricing__images-note">{t('pricing.imagesNote')}</p>
           <p className="footnote">{t('pricing.adaptiveNote')}</p>
+          <p className="footnote pricing__contact">
+            {t('pricing.contact')}{' '}
+            <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>
+          </p>
         </>
       )}
     </div>

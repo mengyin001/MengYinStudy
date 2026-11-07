@@ -7,6 +7,7 @@ import {
   formatUsd,
 } from '@mengyin/core';
 import { Note, PageHead } from '@/components/ui';
+import { SUPPORT_EMAIL } from '@/lib/contact';
 import { modelLabel } from '@/lib/models';
 import { navigate } from '@/lib/router';
 import { useApp } from '@/state/AppContext';
@@ -196,6 +197,10 @@ export function BillingDocsPage() {
           </button>
         ) : null}
       </div>
+      <p className="footnote billing-doc__contact">
+        {t('pricing.contact')}{' '}
+        <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>
+      </p>
     </div>
   );
 }

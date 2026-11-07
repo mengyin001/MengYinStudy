@@ -162,6 +162,9 @@
 
 ### Changed
 
+- **A support email is visible before and during payment.** The Pricing page and billing guide link
+  to `mengyinqwq@gmail.com`, and Stripe Checkout shows the same address below its submit button via
+  `custom_text`, so a learner who has a payment or subscription problem knows where to ask.
 - **The homepage now names the paid plans.** The hero note says the free plan is the starting point
   and paid plans add points, stronger models and images; the AI card no longer implies unlimited
   included generation. Pricing appears in the header, footer and pre-JavaScript shell, so a visitor

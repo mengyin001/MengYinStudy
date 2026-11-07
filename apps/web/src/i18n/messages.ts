@@ -1266,6 +1266,10 @@ export const messages = {
     'Checkout shows your local currency where Stripe supports it; Stripe’s exchange rate is applied there.',
     '結帳時 Stripe 會依所在地顯示當地貨幣（如支援），並於結帳時套用其匯率。',
   ),
+  'pricing.contact': m(
+    'Payment or subscription questions? Email',
+    '付款或訂閱有問題？請聯絡',
+  ),
   'pricing.payHint': m(
     'Secure checkout by Stripe. Cancel any time from Manage billing.',
     '由 Stripe 安全結帳；可隨時在「管理帳單」取消。',

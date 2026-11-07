@@ -54,6 +54,9 @@ interface StripeErrorBody {
   error?: { message?: string; type?: string };
 }
 
+/** Shown on Stripe's hosted Checkout page; keep in sync with the web support address. */
+const SUPPORT_EMAIL = 'mengyinqwq@gmail.com';
+
 async function stripeRequest<T>(
   env: Env,
   path: string,
@@ -132,6 +135,7 @@ export async function createCheckoutSession(env: Env, input: CheckoutInput): Pro
     'subscription_data[metadata][interval]': input.interval,
     'metadata[user_id]': input.userId,
     'metadata[plan]': input.plan,
+    'custom_text[submit][message]': `Payment or subscription questions? Email ${SUPPORT_EMAIL}.`,
   };
   if (input.customerId) form.customer = input.customerId;
 
