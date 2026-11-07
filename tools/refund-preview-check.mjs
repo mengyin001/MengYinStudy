@@ -214,6 +214,12 @@ try {
     throw new Error('Unexpected refund amount.');
   }
 
+  const me = await apiCall('/api/billing/me', accessToken);
+  console.log(`[preview] latest refund status: ${me.body?.latestRefund?.status}`);
+  if (me.body?.latestRefund?.status !== refund.body.status) {
+    throw new Error('Billing me did not expose the refund status.');
+  }
+
   const retry = await apiCall('/api/billing/refund', accessToken, 'POST');
   console.log(`[preview] retry HTTP ${retry.status}:`, JSON.stringify(retry.body));
   if (

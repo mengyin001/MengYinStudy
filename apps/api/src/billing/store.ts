@@ -388,6 +388,20 @@ export async function grantPoints(
 
 // -- Refund records ---------------------------------------------------------
 
+export type RefundStatus = 'pending' | 'requires_action' | 'succeeded' | 'failed' | 'canceled';
+
+const REFUND_STATUSES: readonly string[] = [
+  'pending',
+  'requires_action',
+  'succeeded',
+  'failed',
+  'canceled',
+];
+
+export function isRefundStatus(value: unknown): value is RefundStatus {
+  return typeof value === 'string' && REFUND_STATUSES.includes(value);
+}
+
 export interface RefundRecord {
   refundId: string;
   invoiceId: string | null;
@@ -397,6 +411,9 @@ export interface RefundRecord {
   unusedPoints: number;
   monthlyPoints: number;
   refundRatio: number;
+  status: RefundStatus;
+  failureReason: string | null;
+  createdAt: string | null;
 }
 
 function refundRecord(row: Record<string, unknown>): RefundRecord {
@@ -410,6 +427,9 @@ function refundRecord(row: Record<string, unknown>): RefundRecord {
     unusedPoints: number(row.unused_points),
     monthlyPoints: number(row.monthly_points),
     refundRatio: number(row.refund_ratio),
+    status: isRefundStatus(row.status) ? row.status : 'pending',
+    failureReason: typeof row.failure_reason === 'string' ? row.failure_reason : null,
+    createdAt: typeof row.created_at === 'string' ? row.created_at : null,
   };
 }
 
@@ -423,7 +443,7 @@ export async function latestRecordedRefund(
   if (!url || !secret) throw new BillingUnavailable('SUPABASE_SERVICE_KEY is not configured.');
   const query = new URLSearchParams({
     select:
-      'stripe_refund_id,stripe_invoice_id,stripe_subscription_id,amount_cents,currency,unused_points,monthly_points,refund_ratio',
+      'stripe_refund_id,stripe_invoice_id,stripe_subscription_id,amount_cents,currency,unused_points,monthly_points,refund_ratio,status,failure_reason,created_at',
     user_id: `eq.${userId}`,
     order: 'created_at.desc',
     limit: '1',
@@ -454,7 +474,7 @@ export async function recordedRefund(
   if (!url || !secret) throw new BillingUnavailable('SUPABASE_SERVICE_KEY is not configured.');
   const query = new URLSearchParams({
     select:
-      'stripe_refund_id,stripe_invoice_id,stripe_subscription_id,amount_cents,currency,unused_points,monthly_points,refund_ratio',
+      'stripe_refund_id,stripe_invoice_id,stripe_subscription_id,amount_cents,currency,unused_points,monthly_points,refund_ratio,status,failure_reason,created_at',
     user_id: `eq.${userId}`,
     stripe_invoice_id: `eq.${invoiceId}`,
     limit: '1',
@@ -482,6 +502,7 @@ export interface FinalizeRefundInput {
   monthlyPoints: number;
   refundRatio: number;
   reason: string;
+  status: RefundStatus;
 }
 
 /**
@@ -507,6 +528,7 @@ export async function finalizeRefund(
       p_monthly_points: Math.max(0, Math.round(input.monthlyPoints)),
       p_refund_ratio: input.refundRatio,
       p_reason: input.reason,
+      p_status: input.status,
     },
     null,
     { service: true },
@@ -515,6 +537,27 @@ export async function finalizeRefund(
     already: raw?.already === true,
     balance: number(raw?.balance),
   };
+}
+
+/** Apply a `charge.refund.updated` status to the recorded refund row. */
+export async function applyRefundStatus(
+  env: Env,
+  refundId: string,
+  status: RefundStatus,
+  failureReason: string | null,
+): Promise<boolean> {
+  const raw = await rpc<Record<string, unknown>>(
+    env,
+    'billing_set_refund_status',
+    {
+      p_refund_id: refundId,
+      p_status: status,
+      p_failure_reason: failureReason,
+    },
+    null,
+    { service: true },
+  );
+  return raw?.updated === true;
 }
 
 /** Find the account that owns a Stripe customer, when metadata was not enough. */

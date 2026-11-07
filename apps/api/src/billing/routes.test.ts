@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Env } from '../env';
-import type { BillingSnapshot } from './store';
+import { isRefundStatus, type BillingSnapshot } from './store';
 import {
   cancelAtPeriodEndFrom,
   hasLiveSubscription,
@@ -94,6 +94,16 @@ describe('Stripe subscription shapes', () => {
       }),
     ).toEqual({ paymentIntentId: 'pi_new', chargeId: null });
     expect(invoicePaymentIds({})).toEqual({ paymentIntentId: null, chargeId: null });
+  });
+
+  it('only accepts Stripe refund statuses the webhook understands', () => {
+    expect(isRefundStatus('pending')).toBe(true);
+    expect(isRefundStatus('requires_action')).toBe(true);
+    expect(isRefundStatus('succeeded')).toBe(true);
+    expect(isRefundStatus('failed')).toBe(true);
+    expect(isRefundStatus('canceled')).toBe(true);
+    expect(isRefundStatus('refunded')).toBe(false);
+    expect(isRefundStatus(null)).toBe(false);
   });
 });
 

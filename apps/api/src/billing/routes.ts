@@ -16,6 +16,7 @@ import type { Env } from '../env';
 import type { AuthContext } from '../http/auth';
 import { badRequest, unconfigured } from '../errors';
 import {
+  applyRefundStatus,
   applySubscription,
   billingConfigured,
   billingEnforced,
@@ -23,6 +24,7 @@ import {
   finalizeRefund,
   finishStripeEvent,
   isBillingUnavailable,
+  isRefundStatus,
   latestRecordedRefund,
   readSnapshot,
   recordedRefund,
@@ -31,6 +33,7 @@ import {
   userIdForCustomer,
   type BillingSnapshot,
   type RefundRecord,
+  type RefundStatus,
 } from './store';
 import {
   cancelSubscriptionAtPeriodEnd,
@@ -67,6 +70,14 @@ export function billingConfig(env: Env) {
   };
 }
 
+export interface BillingRefundSummary {
+  status: RefundStatus;
+  amountCents: number;
+  currency: string;
+  failureReason: string | null;
+  createdAt: string | null;
+}
+
 export interface BillingMe {
   plan: PlanId;
   /** True when a paid plan's subscription is currently valid. */
@@ -94,6 +105,8 @@ export interface BillingMe {
   periodEnd: string | null;
   status: string | null;
   cancelAtPeriodEnd: boolean;
+  /** The latest refund for this account, if one was requested. */
+  latestRefund: BillingRefundSummary | null;
   enforced: boolean;
   stripeReady: boolean;
 }
@@ -118,6 +131,7 @@ function freeMe(stripeReady: boolean): BillingMe {
     periodEnd: null,
     status: null,
     cancelAtPeriodEnd: false,
+    latestRefund: null,
     enforced: false,
     stripeReady,
   };
@@ -133,7 +147,25 @@ export async function billingMe(env: Env, auth: AuthContext): Promise<BillingMe>
 
   try {
     const snapshot = await readSnapshot(env, auth);
-    return meFromSnapshot(snapshot, enforced, stripeReady);
+    const me = meFromSnapshot(snapshot, enforced, stripeReady);
+    try {
+      const record = await latestRecordedRefund(env, auth.userId);
+      if (record) {
+        return {
+          ...me,
+          latestRefund: {
+            status: record.status,
+            amountCents: record.amountCents,
+            currency: record.currency,
+            failureReason: record.failureReason,
+            createdAt: record.createdAt,
+          },
+        };
+      }
+    } catch {
+      // The refund table may not be migrated yet; the plan snapshot still works.
+    }
+    return me;
   } catch (error) {
     if (isBillingUnavailable(error)) {
       // The migration may not be applied yet. Show a free plan rather than
@@ -171,6 +203,7 @@ export function meFromSnapshot(
     periodEnd: snapshot.periodEnd,
     status: snapshot.status,
     cancelAtPeriodEnd: snapshot.cancelAtPeriodEnd,
+    latestRefund: null,
     enforced,
     stripeReady,
   };
@@ -587,6 +620,7 @@ export interface RefundReceipt {
   unusedRatio: number;
   refundRatio: number;
   interval: 'month' | 'year';
+  status: RefundStatus;
   subscriptionCanceled: boolean;
 }
 
@@ -615,6 +649,7 @@ export async function startRefund(
           : 0,
       refundRatio: context.record.refundRatio,
       interval: context.quote.interval,
+      status: context.record.status,
       subscriptionCanceled: false,
     };
   }
@@ -634,7 +669,8 @@ export async function startRefund(
     },
   });
 
-  if (refund.status === 'failed' || refund.status === 'canceled') {
+  const refundStatus: RefundStatus = isRefundStatus(refund.status) ? refund.status : 'pending';
+  if (refundStatus === 'failed' || refundStatus === 'canceled') {
     throw badRequest('Stripe could not complete the refund. Contact support and we will help.');
   }
 
@@ -660,6 +696,7 @@ export async function startRefund(
     monthlyPoints: context.quote.monthlyPoints,
     refundRatio: context.quote.refundRatio,
     reason: 'requested_by_customer',
+    status: refundStatus,
   });
 
   return {
@@ -674,6 +711,7 @@ export async function startRefund(
     unusedRatio: context.quote.unusedRatio,
     refundRatio: context.quote.refundRatio,
     interval: context.quote.interval,
+    status: refundStatus,
     subscriptionCanceled,
   };
 }
@@ -798,6 +836,18 @@ export async function handleWebhook(
       await applySubscriptionEvent(env, object, false);
     } else if (type === 'customer.subscription.deleted') {
       await applySubscriptionEvent(env, object, true);
+    } else if (type === 'charge.refund.updated') {
+      // A refund can move from pending to succeeded or failed after the API
+      // response. Keep the recorded row in step with Stripe.
+      const refundId = asString(object.id);
+      if (refundId && isRefundStatus(object.status)) {
+        await applyRefundStatus(
+          env,
+          refundId,
+          object.status,
+          asString(object.failure_reason) || null,
+        );
+      }
     } else if (type === 'checkout.session.completed') {
       const subscriptionId = asString(object.subscription);
       if (subscriptionId) {

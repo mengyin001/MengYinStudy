@@ -319,6 +319,10 @@ cron 或前端計時器；詳見 §7.7。
 - 退款成功後即時取消 Stripe 訂閱、清除剩餘方案點數、帳戶回到 Free；`billing_refunds`
   記錄退款，`billing_finalize_refund` 以同一交易完成降級。延遲送達的訂閱 webhook 會被
   `private.billing_keep_refunded` 擋住，不會重新發點或恢復付費方案。
+- Stripe 的 `charge.refund.updated` 會更新 `billing_refunds.status`（`pending` /
+  `succeeded` / `failed` / `canceled` / `requires_action`）及 `failure_reason`。若退款
+  非同步失敗，Account 頁會顯示「退款失敗，款項可能尚未退回」，需要人工跟進；系統不會
+  自動恢復已取消的訂閱。
 - **點數不得兌換現金**，退款以該筆實付金額為上限，避免用方案點數套利或超額退款。
 - **刪除帳號**：前端先呼叫 `POST /api/billing/cancel` 讓 Stripe 在當期結束時停止續訂，
   再刪除 Supabase 帳號；刪除帳號本身不會退款，應先跑退款流程。
@@ -466,13 +470,22 @@ Account 頁只負責顯示。前端即使改時間或 localStorage 也無法加�
   - `supabase/migrations/20261109090000_monthly_point_reset.sql`
     （`monthly_points` / `points_reset_at` / `bonus_points`、`private.billing_apply_reset`、
     惰性每月重置、加購點數獨立 bucket、年繳照樣每月發點）。已套用到目前資料庫。
+  - `supabase/migrations/20261111090000_billing_refunds.sql`
+    （`billing_refunds`、`billing_finalize_refund`、退款後計畫鎖定）。
+  - `supabase/migrations/20261111110000_refunded_subscription_guard.sql`
+    （延遲訂閱 webhook 不能恢復已退款方案）。
+  - `supabase/migrations/20261111130000_refund_status.sql`
+    （退款 `status` / `failure_reason` / `updated_at`、`billing_set_refund_status`）。
+    以上已套用到目前資料庫。
 - API：`apps/api/src/billing/`
   - `GET /api/billing/config`、`GET /api/billing/me`（含 `planPoints`、`bonusPoints`、
     `monthlyPoints`、`pointsResetAt`）
   - `POST /api/billing/checkout`、`POST /api/billing/portal`；已有有效訂閱時，
     checkout 會改走 Portal，避免開第二個訂閱
   - `POST /api/billing/cancel`（刪除帳號前停止 Stripe 自動續訂；`cancel_at_period_end=true`）
-  - `POST /api/billing/webhook`（HMAC 驗簽、事件去重、訂閱與每月點數入帳）
+  - `GET /api/billing/refund`（退款報價）、`POST /api/billing/refund`（部分退款、取消訂閱、降級）
+  - `POST /api/billing/webhook`（HMAC 驗簽、事件去重、訂閱與每月點數入帳、
+    `charge.refund.updated` 更新退款狀態）
 - 每次生成都由伺服器讀取 Supabase 的會員狀態；付費方案需 `subscription_status` 為
   `active`／`trialing` 且 `period_end` 未過期，否則即時回落免費方案，不能只改前端就解鎖。
 - 免費方案在生成前先以 RPC 保留題數，完成後按實際交付數退回；付費方案先保留點數，

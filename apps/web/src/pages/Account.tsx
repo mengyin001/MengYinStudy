@@ -422,6 +422,40 @@ export function AccountPage() {
             })}
           </Note>
         ) : null}
+        {me?.latestRefund?.status === 'failed' ||
+        me?.latestRefund?.status === 'canceled' ? (
+          <Note tone="warn">
+            {t('refund.failedNotice', {
+              amount: money(
+                me.latestRefund.amountCents,
+                me.latestRefund.currency,
+                locale,
+              ),
+            })}
+          </Note>
+        ) : null}
+        {me?.latestRefund?.status === 'pending' ? (
+          <Note>
+            {t('refund.pendingNotice', {
+              amount: money(
+                me.latestRefund.amountCents,
+                me.latestRefund.currency,
+                locale,
+              ),
+            })}
+          </Note>
+        ) : null}
+        {me?.latestRefund?.status === 'requires_action' ? (
+          <Note tone="warn">
+            {t('refund.requiresActionNotice', {
+              amount: money(
+                me.latestRefund.amountCents,
+                me.latestRefund.currency,
+                locale,
+              ),
+            })}
+          </Note>
+        ) : null}
       </section>
 
       <Note>{t('account.securityNote')}</Note>
@@ -534,13 +568,22 @@ export function AccountPage() {
             <p>
               {refundReceipt.alreadyRefunded
                 ? t('refund.doneAlready')
-                : t('refund.doneBody', {
-                    amount: money(
-                      refundReceipt.amountCents,
-                      refundReceipt.currency,
-                      locale,
-                    ),
-                  })}
+                : refundReceipt.status === 'pending' ||
+                    refundReceipt.status === 'requires_action'
+                  ? t('refund.donePending', {
+                      amount: money(
+                        refundReceipt.amountCents,
+                        refundReceipt.currency,
+                        locale,
+                      ),
+                    })
+                  : t('refund.doneBody', {
+                      amount: money(
+                        refundReceipt.amountCents,
+                        refundReceipt.currency,
+                        locale,
+                      ),
+                    })}
             </p>
             {!refundReceipt.alreadyRefunded && !refundReceipt.subscriptionCanceled ? (
               <Note tone="warn">{t('refund.cancelFallback')}</Note>

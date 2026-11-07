@@ -1495,6 +1495,22 @@ export const messages = {
     'This payment was already refunded. No new refund was made.',
     '這筆付款已經退款，沒有再次退款。',
   ),
+  'refund.donePending': m(
+    'Stripe is still processing the {amount} refund. It will appear on your original payment method when Stripe confirms it.',
+    'Stripe 仍在處理 {amount} 退款；確認後會退回原付款方式。',
+  ),
+  'refund.pendingNotice': m(
+    'Your {amount} refund is still pending with Stripe. We will update this page when Stripe reports a result.',
+    '你的 {amount} 退款仍在 Stripe 處理中；Stripe 回報結果後，此頁會更新。',
+  ),
+  'refund.failedNotice': m(
+    'Stripe reported that the {amount} refund failed, so the money may not have been returned. Contact support and we will review it.',
+    'Stripe 回報 {amount} 退款失敗，款項可能尚未退回。請聯絡我們協助處理。',
+  ),
+  'refund.requiresActionNotice': m(
+    'Stripe needs an action before the {amount} refund can complete. Contact support and we will help.',
+    'Stripe 需要進一步操作才能完成 {amount} 退款。請聯絡我們協助。',
+  ),
   'refund.cancelFallback': m(
     'Stripe has stopped the renewal. Access ends at the end of the paid period.',
     'Stripe 已停止續訂；使用權會在已付期間結束時終止。',

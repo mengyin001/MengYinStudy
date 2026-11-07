@@ -663,8 +663,8 @@ export const termsOfService: LegalDoc = {
             'Once a refund is completed the subscription ends immediately, the account returns to the free plan and the remaining plan points are cleared; you do not keep the unused paid access. A cancellation without a refund instead keeps access until the end of the period already paid for.',
           ],
           [
-            '退款經 Stripe 退回原付款方式，原則上以原交易幣別處理；實際入帳時間與當地金額可能因發卡機構、銀行或匯率而異，我們不另扣手續費。',
-            'Refunds are returned through Stripe to the original payment method, normally in the original transaction currency. The time to appear and the local amount may vary with your card issuer, bank or exchange rate; we do not deduct an additional fee.',
+            '退款經 Stripe 退回原付款方式，原則上以原交易幣別處理；實際入帳時間與當地金額可能因發卡機構、銀行或匯率而異，我們不另扣手續費。若 Stripe 回報退款失敗，帳戶頁面會顯示狀態，我們會與你跟進處理。',
+            'Refunds are returned through Stripe to the original payment method, normally in the original transaction currency. The time to appear and the local amount may vary with your card issuer, bank or exchange rate; we do not deduct an additional fee. If Stripe reports that the refund failed, the Account page shows that status and we will follow it up with you.',
           ],
           [
             '本條不限制你所在地法律賦予的強制取消或退款權利。若你已刪除帳戶、帳單不是首次訂閱付款，或系統無法自動處理，請在刪除帳戶前先來信申請退款；刪除帳戶本身不會自動退款。',

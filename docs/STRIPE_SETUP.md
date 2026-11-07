@@ -258,7 +258,7 @@ Dashboard → **Developers → Webhooks → Add an endpoint**：
   `https://mengyinstudy-preview.libingzham1.workers.dev/api/billing/webhook`；只填 origin
   會收到 404，Checkout 成功但 plan 不會更新。該 endpoint 的 `whsec_...` 也要設進 preview
   Worker 的 `STRIPE_WEBHOOK_SECRET`，不能沿用本機自簽的值。
-- 訂閱這些事件（六個都要）：
+- 訂閱這些事件（七個都要）：
 
 ```text
 checkout.session.completed
@@ -267,7 +267,11 @@ customer.subscription.updated
 customer.subscription.deleted
 invoice.paid
 invoice.payment_failed
+charge.refund.updated
 ```
+
+  `charge.refund.updated` 會把非同步退款由 `pending` 變成 `succeeded` 或 `failed` 的結果寫回
+  `billing_refunds`；缺少這個事件，Account 頁只會停留在 API 當下看到的狀態。
 
 - 建立後複製 **Signing secret**（`whsec_...`），設成 `STRIPE_WEBHOOK_SECRET`。
 - 程式已處理 Stripe 2025-03-31 之後把 `current_period_end` 移到 subscription item
@@ -554,7 +558,7 @@ REFUND_API_BASE=https://mengyinstudy-preview.libingzham1.workers.dev npm run str
 1. **啟用 Stripe 帳號**：Dashboard 依指示填公司／個人資料、銀行帳戶、稅務資訊。
 2. 關閉 Test mode，切到 **Live mode**，**重新建立**三個產品與六個價格。
    測試模式的 `price_...` 不能在正式模式使用。
-3. 建立 live webhook endpoint（同樣六個事件），複製 live 的 `whsec_...`。
+3. 建立 live webhook endpoint（同樣七個事件，包括 `charge.refund.updated`），複製 live 的 `whsec_...`。
 4. 更新 Cloudflare secrets：
 
 ```bash

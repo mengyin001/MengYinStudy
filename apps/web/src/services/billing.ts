@@ -22,6 +22,16 @@ export interface BillingConfig {
   stripeReady: boolean;
 }
 
+export type RefundStatus = 'pending' | 'requires_action' | 'succeeded' | 'failed' | 'canceled';
+
+export interface BillingRefundSummary {
+  status: RefundStatus;
+  amountCents: number;
+  currency: string;
+  failureReason: string | null;
+  createdAt: string | null;
+}
+
 export interface BillingMe {
   plan: PlanId;
   /** True when a paid plan's subscription is currently valid. */
@@ -48,6 +58,7 @@ export interface BillingMe {
   periodEnd: string | null;
   status: string | null;
   cancelAtPeriodEnd: boolean;
+  latestRefund: BillingRefundSummary | null;
   enforced: boolean;
   stripeReady: boolean;
 }
@@ -180,6 +191,7 @@ export interface RefundReceipt {
   unusedRatio: number;
   refundRatio: number;
   interval: 'month' | 'year';
+  status: RefundStatus;
   subscriptionCanceled: boolean;
 }
 

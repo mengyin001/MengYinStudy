@@ -14,6 +14,12 @@
   database guard keeps a late subscription webhook from restoring the paid plan or granting points.
   The Account page shows the calculated amount and requires explicit confirmation; a retry returns
   the recorded refund instead of refunding twice.
+- **`charge.refund.updated` keeps asynchronous refunds honest.** The Stripe webhook now writes
+  `pending`, `requires_action`, `succeeded`, `failed` or `canceled` (and `failure_reason`) back to
+  `billing_refunds`. `/api/billing/me` exposes the latest refund, and Account shows a warning when
+  a refund fails after the subscription was already cancelled. Both the preview and production
+  Stripe endpoints now subscribe to `charge.refund.updated` as their seventh event; the setup guide
+  records it.
 - **A single Help & policies page.** `#/docs` now explains the practice loop, AI labelling, plans
   and points, the refund formula, and links every longer document (billing guide, refund policy,
   privacy, terms). `#/docs/refunds` opens the same page at the refund section. It is linked from the
@@ -270,13 +276,20 @@
 
 ### Verified
 
-- **627 tests / 72 files**, typecheck clean, production build OK.
+- **628 tests / 72 files**, typecheck clean, production build OK.
 - Refund preview check against Stripe test mode and both the local API and the preview Worker
-  (`0296cb2a-1c7b-43d2-bcf8-7f80b88e6cae`): monthly US$3.99 from US$4.99 with 400/500 points
+  (`d53a8709-b88c-4875-a0fa-4f9b1ae981b4`): monthly US$3.99 from US$4.99 with 400/500 points
   left, annual US$49.06 from US$49.90 with the same unused share; the Stripe refund succeeded,
   the subscription was canceled, the account returned to Free with zero plan points, a retry
-  returned the recorded refund, and a simulated late webhook was refused. The preview UI also
-  showed the quote, confirmed the refund and displayed the Free-plan result.
+  returned the recorded refund, and a simulated late webhook was refused. `/api/billing/me`
+  reported `latestRefund.status = succeeded`.
+- Stripe delivered real test-mode `charge.refund.updated` events to the preview endpoint
+  (`evt_3UZE49...` and `evt_3UZE4L...`), both processed without error. A signed synthetic failed
+  event changed `billing_refunds.status` to `failed`, stored `failure_reason`, and surfaced the
+  failure through `/api/billing/me`.
+- Production deployed as `258a7955-4b44-4026-a40e-25f36355c575`. The live restricted key was
+  checked read-only and with an intentionally nonexistent charge for refunds write (no refund was
+  created, no money moved); both Stripe webhook endpoints now list `charge.refund.updated`.
 
 ## 0.8.0 — 2026-11-06
 
