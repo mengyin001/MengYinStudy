@@ -42,15 +42,36 @@
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
-        "@type": "SoftwareApplication",
-        "name": "MengYin Study",
-        "url": "https://study.mengyin.online/",
-        "description": "A revision and practice app for building question decks, drilling mistakes, generating study questions with the built-in AI service, and tracking progress.",
-        "applicationCategory": "EducationalApplication",
-        "operatingSystem": "Web, Windows, macOS, Linux",
-        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-        "image": "https://study.mengyin.online/icons/icon-512.png",
-        "publisher": { "@type": "Organization", "name": "MengYin Study" }
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://study.mengyin.online/#website",
+            "name": "MengYin Study",
+            "alternateName": "MengYin",
+            "url": "https://study.mengyin.online/"
+          },
+          {
+            "@type": "Organization",
+            "@id": "https://study.mengyin.online/#organization",
+            "name": "MengYin Study",
+            "url": "https://study.mengyin.online/",
+            "logo": {
+              "@type": "ImageObject",
+              "url": "https://study.mengyin.online/icons/icon-512.png"
+            }
+          },
+          {
+            "@type": "SoftwareApplication",
+            "name": "MengYin Study",
+            "url": "https://study.mengyin.online/",
+            "description": "A revision and practice app for building question decks, drilling mistakes, generating study questions with the built-in AI service, and tracking progress.",
+            "applicationCategory": "EducationalApplication",
+            "operatingSystem": "Web, Windows, macOS, Linux",
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+            "image": "https://study.mengyin.online/icons/icon-512.png",
+            "publisher": { "@id": "https://study.mengyin.online/#organization" }
+          }
+        ]
       }
     </script>
 
