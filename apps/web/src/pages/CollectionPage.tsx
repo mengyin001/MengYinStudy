@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
 import { Icon } from '@/components/Icons';
 import { CollectionEditorSheet } from '@/components/CollectionSheets';
+import { DeckEditorSheet } from '@/components/DeckEditorSheet';
 import { Empty, Meter, Note, PageHead, Sheet } from '@/components/ui';
-import { buildCollectionView } from '@/domain/collections';
+import { buildCollectionView, isOfficialPackCollection } from '@/domain/collections';
 import type { DeckView } from '@/domain/library';
 import { questionTypeLabel } from '@/domain/registry';
 import { describeBackendError } from '@/i18n/backend';
@@ -13,12 +14,13 @@ import { useApp } from '@/state/AppContext';
 import { useCollections } from '@/state/CollectionsContext';
 
 export function CollectionPage({ collectionId }: { collectionId: string }) {
-  const { t, locale, actions, deckViews, pluginNames } = useApp();
+  const { t, locale, actions, deckViews, pluginNames, editableDeckKeys } = useApp();
   const { state, authenticated, actions: collectionActions } = useCollections();
   const [addOpen, setAddOpen] = useState(false);
   const [addQuery, setAddQuery] = useState('');
   const [addSelection, setAddSelection] = useState<Set<string>>(new Set());
   const [editOpen, setEditOpen] = useState(false);
+  const [editDeckKey, setEditDeckKey] = useState<string | null>(null);
   const [previewKey, setPreviewKey] = useState<string | null>(null);
 
   const collection = useMemo(
@@ -30,7 +32,9 @@ export function CollectionPage({ collectionId }: { collectionId: string }) {
     () => (collection ? buildCollectionView(collection, viewByKey) : null),
     [collection, viewByKey],
   );
+  const official = collection ? isOfficialPackCollection(collection.id) : false;
   const previewView = previewKey ? viewByKey.get(previewKey) : undefined;
+  const editDeckView = editDeckKey ? viewByKey.get(editDeckKey) : undefined;
 
   const availableDecks = useMemo(() => {
     if (!collection) return [];
@@ -164,6 +168,18 @@ export function CollectionPage({ collectionId }: { collectionId: string }) {
         })}
       </span>
       <div className="sheet__actions">
+        {editableDeckKeys.has(previewView.deck.key) ? (
+          <button
+            type="button"
+            className="text-btn"
+            onClick={() => {
+              setEditDeckKey(previewView.deck.key);
+              setPreviewKey(null);
+            }}
+          >
+            {t('lib.editDeck')}
+          </button>
+        ) : null}
         <button type="button" className="btn btn--quiet btn--sm" onClick={() => setPreviewKey(null)}>
           {t('common.cancel')}
         </button>
@@ -185,12 +201,14 @@ export function CollectionPage({ collectionId }: { collectionId: string }) {
         })}
         actions={
           <>
-            <button type="button" className="btn btn--primary btn--sm" onClick={openAdd}>
-              <Icon name="plus" size={13} strokeWidth={1.8} />
-              {t('collections.addDecks')}
-            </button>
+            {official ? null : (
+              <button type="button" className="btn btn--primary btn--sm" onClick={openAdd}>
+                <Icon name="plus" size={13} strokeWidth={1.8} />
+                {t('collections.addDecks')}
+              </button>
+            )}
             <button type="button" className="btn btn--quiet btn--sm" onClick={() => setEditOpen(true)}>
-              {t('collections.edit')}
+              {official ? t('collections.delete') : t('collections.edit')}
             </button>
             {backButton}
           </>
@@ -240,9 +258,11 @@ export function CollectionPage({ collectionId }: { collectionId: string }) {
           {view.missing.length === 1
             ? t('collections.missingOne')
             : t('collections.missing', { n: view.missing.length })}{' '}
-          <button type="button" className="text-btn" onClick={() => void clearMissing()}>
-            {t('collections.clearMissing')}
-          </button>
+          {official ? null : (
+            <button type="button" className="text-btn" onClick={() => void clearMissing()}>
+              {t('collections.clearMissing')}
+            </button>
+          )}
         </Note>
       ) : null}
 
@@ -251,9 +271,11 @@ export function CollectionPage({ collectionId }: { collectionId: string }) {
           title={t('collections.emptyCollection')}
           body={t('collections.emptyCollectionHint')}
           action={
-            <button type="button" className="btn btn--primary btn--sm" onClick={openAdd}>
-              {t('collections.addDecks')}
-            </button>
+            official ? undefined : (
+              <button type="button" className="btn btn--primary btn--sm" onClick={openAdd}>
+                {t('collections.addDecks')}
+              </button>
+            )
           }
         />
       ) : (
@@ -321,16 +343,29 @@ export function CollectionPage({ collectionId }: { collectionId: string }) {
                   <button type="button" className="btn btn--sm" onClick={() => startDeck(deckView)}>
                     {t('common.study')}
                   </button>
-                  <button
-                    type="button"
-                    className="icon-btn"
-                    aria-label={t('collections.removeDeck')}
-                    title={t('collections.removeDeck')}
-                    disabled={state.busy}
-                    onClick={() => void removeDeck(deckView.deck.key)}
-                  >
-                    <Icon name="x" size={13} strokeWidth={1.8} />
-                  </button>
+                  {editableDeckKeys.has(deckView.deck.key) ? (
+                    <button
+                      type="button"
+                      className="icon-btn"
+                      aria-label={t('lib.editDeck')}
+                      title={t('lib.editDeck')}
+                      onClick={() => setEditDeckKey(deckView.deck.key)}
+                    >
+                      <Icon name="note" size={13} strokeWidth={1.6} />
+                    </button>
+                  ) : null}
+                  {official ? null : (
+                    <button
+                      type="button"
+                      className="icon-btn"
+                      aria-label={t('collections.removeDeck')}
+                      title={t('collections.removeDeck')}
+                      disabled={state.busy}
+                      onClick={() => void removeDeck(deckView.deck.key)}
+                    >
+                      <Icon name="x" size={13} strokeWidth={1.8} />
+                    </button>
+                  )}
                 </div>
               </li>
             ))}
@@ -452,6 +487,7 @@ export function CollectionPage({ collectionId }: { collectionId: string }) {
         open={editOpen}
         initial={collection}
         busy={state.busy}
+        readOnly={official}
         onClose={() => setEditOpen(false)}
         onSave={async (input) => {
           const result = await collectionActions.update(collection.id, input);
@@ -463,6 +499,16 @@ export function CollectionPage({ collectionId }: { collectionId: string }) {
           return true;
         }}
         onDelete={async () => {
+          // A deck shared with another collection stays there; the rest of this
+          // collection's decks leave the library with the collection.
+          const otherKeys = new Set(
+            state.collections
+              .filter((item) => item.id !== collection.id)
+              .flatMap((item) => item.deckKeys),
+          );
+          const removable = collection.deckKeys.filter((key) => !otherKeys.has(key));
+          if (removable.length > 0) await actions.deleteDecks(removable);
+
           const result = await collectionActions.remove(collection.id);
           if (!result.ok) {
             actions.notify('error', describeBackendError(result.error, t));
@@ -471,6 +517,16 @@ export function CollectionPage({ collectionId }: { collectionId: string }) {
           actions.notify('success', t('collections.deleted'));
           setEditOpen(false);
           back();
+        }}
+      />
+
+      <DeckEditorSheet
+        open={!!editDeckView}
+        deck={editDeckView?.deck ?? null}
+        onClose={() => setEditDeckKey(null)}
+        onSave={(edit) => {
+          if (!editDeckKey) return Promise.resolve(false);
+          return actions.updateDeck(editDeckKey, edit);
         }}
       />
     </div>

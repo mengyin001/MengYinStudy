@@ -24,7 +24,7 @@ import { AI_SERVICE_VERSION } from './version';
 import { corsHeaders } from './http/cors';
 import { authenticate, authRequired, type AuthContext } from './http/auth';
 import { consumeQuota } from './http/quota';
-import { parseImageRequest, parseQuestionRequest } from './http/validation';
+import { parseImageRequest, parseOwnProvider, parseQuestionRequest } from './http/validation';
 import {
   cancelGeneration,
   chargeDeckImages,
@@ -58,6 +58,8 @@ export interface AppDeps {
   createImageSearch?: (env: Env) => ImageSearcher | null;
   /** SSE keep-alive interval; exposed for tests, defaults to 15 s. */
   keepAliveMs?: number;
+  /** Upper bound for one `/api/ai/test` call; exposed for tests, defaults to 20 s. */
+  testTimeoutMs?: number;
 }
 
 interface RequestContext {
@@ -69,6 +71,7 @@ interface RequestContext {
     Pick<AppDeps, 'fetch' | 'now' | 'authenticate' | 'createChat' | 'createImages' | 'createImageSearch'>
   > & {
     keepAliveMs: number;
+    testTimeoutMs: number;
   };
 }
 
@@ -223,7 +226,17 @@ interface PreparedGeneration {
 async function prepareGeneration(context: RequestContext, auth: AuthContext): Promise<PreparedGeneration> {
   const { env } = context;
   const normalized = parseQuestionRequest(await readJson(context.request));
-  const provider = resolveProviderForModel(env, normalized.model);
+  const provider = resolveProviderForModel(
+    env,
+    normalized.model,
+    normalized.apiKey
+      ? {
+          apiKey: normalized.apiKey,
+          ...(normalized.apiBaseUrl ? { baseUrl: normalized.apiBaseUrl } : {}),
+          ...(normalized.apiContextTokens ? { contextTokens: normalized.apiContextTokens } : {}),
+        }
+      : {},
+  );
   await consumeQuota(env, auth.userId, 'questions', normalized.count, context.deps.now);
   const materialChars = normalized.materials.reduce((total, material) => total + material.text.length, 0);
   const policy = await resolveGenerationPolicy(
@@ -234,6 +247,7 @@ async function prepareGeneration(context: RequestContext, auth: AuthContext): Pr
       count: normalized.count,
       materialChars,
       imageMode: normalized.imageMode,
+      ...(normalized.apiKey ? { byoKey: true } : {}),
     },
     context.requestId,
   );
@@ -544,27 +558,92 @@ async function route(context: RequestContext, ctx?: ExecutionContextLike): Promi
     if (method !== 'POST') return methodNotAllowed(context, 'POST');
     await requireAuth(context);
     const body = await readOptionalJson(request);
+    const own = parseOwnProvider(body);
     const provider = resolveProviderForModel(
       env,
       typeof body.model === 'string' ? body.model : '',
+      own.apiKey
+        ? {
+            apiKey: own.apiKey,
+            ...(own.apiBaseUrl ? { baseUrl: own.apiBaseUrl } : {}),
+            ...(own.apiContextTokens ? { contextTokens: own.apiContextTokens } : {}),
+          }
+        : {},
     );
     const chat = context.deps.createChat(provider);
     const started = context.deps.now();
-    const reply = await chat.complete(
-      [
-        { role: 'system', content: 'You are a health check. Reply with the single word OK.' },
-        { role: 'user', content: 'Reply now.' },
-      ],
-      { maxTokens: 8, temperature: 0, jsonMode: false, retry: false },
-    );
-    const result: AiTestResult = {
-      ok: true,
-      provider: provider.id,
-      providerLabel: provider.label,
-      model: reply.model ?? provider.model,
-      latencyMs: Math.max(0, context.deps.now() - started),
-    };
-    return json(context, result);
+
+    // A key test is a health check, not a generation: it must resolve quickly
+    // and must never look like a button stuck on "Testing…". The chat model
+    // receives the abort signal, and the race is a hard bound even if a
+    // provider holds an SSE connection open.
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), context.deps.testTimeoutMs);
+    const onClientAbort = () => controller.abort();
+    request.signal.addEventListener('abort', onClientAbort, { once: true });
+    const timedOut = new Promise<never>((_, reject) => {
+      controller.signal.addEventListener(
+        'abort',
+        () =>
+          reject(
+            new AiError(
+              'timeout',
+              `The provider did not answer the key test within ${Math.round(
+                context.deps.testTimeoutMs / 1000,
+              )} s.`,
+            ),
+          ),
+        { once: true },
+      );
+    });
+    if (request.signal.aborted) controller.abort();
+
+    try {
+      const reply = await Promise.race([
+        chat.complete(
+          [
+            { role: 'system', content: 'You are a health check. Reply with the single word OK.' },
+            { role: 'user', content: 'Reply now.' },
+          ],
+          {
+            maxTokens: 32,
+            temperature: 0,
+            jsonMode: false,
+            retry: false,
+            stream: false,
+            signal: controller.signal,
+          },
+        ),
+        timedOut,
+      ]);
+      const result: AiTestResult = {
+        ok: true,
+        provider: provider.id,
+        providerLabel: provider.label,
+        model: reply.model ?? provider.model,
+        latencyMs: Math.max(0, context.deps.now() - started),
+      };
+      return json(context, result);
+    } catch (error) {
+      // Reasoning models may spend a tiny health-check budget on hidden
+      // reasoning and stop at the output limit before writing the word OK.
+      // The endpoint and key still accepted the request, which is what this
+      // check is for; a real generation uses the full output budget.
+      if (error instanceof AiError && error.code === 'truncated') {
+        const result: AiTestResult = {
+          ok: true,
+          provider: provider.id,
+          providerLabel: provider.label,
+          model: provider.model,
+          latencyMs: Math.max(0, context.deps.now() - started),
+        };
+        return json(context, result);
+      }
+      throw error;
+    } finally {
+      clearTimeout(timer);
+      request.signal.removeEventListener('abort', onClientAbort);
+    }
   }
 
   if (pathname === '/api/ai/questions') {
@@ -736,6 +815,7 @@ export function createApp(deps: AppDeps = {}) {
       deps.createImages ?? ((env, model) => createImageGenerator(env, fetchImpl, model)),
     createImageSearch: deps.createImageSearch ?? ((env) => createImageSearcher(env, fetchImpl)),
     keepAliveMs: Math.max(1, Math.round(deps.keepAliveMs ?? 15_000)),
+    testTimeoutMs: Math.max(1, Math.round(deps.testTimeoutMs ?? 20_000)),
   };
 
   return {

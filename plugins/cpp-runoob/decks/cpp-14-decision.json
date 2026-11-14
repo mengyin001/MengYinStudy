@@ -1,0 +1,454 @@
+{
+  "id": "cpp-14-decision",
+  "title": "C++ Decision Making",
+  "titleI18n": {
+    "zh-Hant": "C++ 判斷"
+  },
+  "description": "if/else, the ternary operator and switch, including fall-through and the classic assignment-in-condition trap.",
+  "descriptionI18n": {
+    "zh-Hant": "if/else、三元運算子與 switch，包括 fall-through 及在條件中誤用賦值的經典陷阱。"
+  },
+  "tags": [
+    "C++",
+    "Control flow"
+  ],
+  "examMinutes": 15,
+  "questions": [
+    {
+      "id": "cpp-14-q01",
+      "type": "single",
+      "prompt": "What does `if (x = 5)` do?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "`if (x = 5)` 會做甚麼？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "把 5 賦值給 x，然後測試 5（永遠為真）"
+          },
+          "b": {
+            "zh-Hant": "比較 x 是否等於 5"
+          },
+          "c": {
+            "zh-Hant": "編譯錯誤"
+          },
+          "d": {
+            "zh-Hant": "把 x 與 5 相加"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "`=` 是賦值而非比較；整個賦值運算式的值是 5，非零即為真，所以分支永遠進入。應寫 `x == 5`。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "Assign 5 to x and then test 5, which is always true"
+        },
+        {
+          "id": "b",
+          "text": "Compare whether x equals 5"
+        },
+        {
+          "id": "c",
+          "text": "It is a compile error"
+        },
+        {
+          "id": "d",
+          "text": "Add x and 5"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "= is assignment, not comparison. The whole assignment expression has the value 5, which is non-zero and therefore true, so the branch always runs. Use `x == 5`.",
+      "tags": [
+        "if",
+        "Pitfalls"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-14-q02",
+      "type": "single",
+      "prompt": "In a `switch`, what happens when a `case` block has no `break`?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "在 `switch` 中，若某個 `case` 區塊沒有 `break`，會發生甚麼？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "執行會繼續「落入」下一個 case"
+          },
+          "b": {
+            "zh-Hant": "編譯器自動補上 break"
+          },
+          "c": {
+            "zh-Hant": "程式立即結束"
+          },
+          "d": {
+            "zh-Hant": "回到 switch 開頭重新判斷"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "沒有 break 時會 fall through，繼續執行下一個 case 的敘述，直到遇到 break 或 switch 結束。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "Execution falls through into the next case"
+        },
+        {
+          "id": "b",
+          "text": "The compiler inserts a break automatically"
+        },
+        {
+          "id": "c",
+          "text": "The program terminates immediately"
+        },
+        {
+          "id": "d",
+          "text": "The switch restarts from the top"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "Without break, control falls through to the next case label and keeps executing until a break or the end of the switch.",
+      "tags": [
+        "switch"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-14-q03",
+      "type": "single",
+      "prompt": "Which expression yields the larger of a and b using the conditional operator?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "哪一個運算式用條件運算子取得 a 與 b 中較大者？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "`a > b ? a : b`"
+          },
+          "b": {
+            "zh-Hant": "`a > b ? b : a`"
+          },
+          "c": {
+            "zh-Hant": "`a ? b : a > b`"
+          },
+          "d": {
+            "zh-Hant": "`a : b ? a > b`"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "條件成立（a > b）時回傳 a，否則回傳 b；其餘選項的語法或邏輯都不正確。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "`a > b ? a : b`"
+        },
+        {
+          "id": "b",
+          "text": "`a > b ? b : a`"
+        },
+        {
+          "id": "c",
+          "text": "`a ? b : a > b`"
+        },
+        {
+          "id": "d",
+          "text": "`a : b ? a > b`"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "If a > b the operator yields a, otherwise b. The other options have invalid syntax or return the smaller value.",
+      "tags": [
+        "Ternary"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-14-q04",
+      "type": "single",
+      "prompt": "Which value makes `if (value)` take the false branch?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "哪一個值會讓 `if (value)` 進入 false 分支？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "1"
+          },
+          "b": {
+            "zh-Hant": "-1"
+          },
+          "c": {
+            "zh-Hant": "0"
+          },
+          "d": {
+            "zh-Hant": "\"0\"（字串字面值）"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "數值 0 轉為 bool 是 false；1 與 -1 都是 true，而字串字面值 \"0\" 的指標非空，也是 true。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "1"
+        },
+        {
+          "id": "b",
+          "text": "-1"
+        },
+        {
+          "id": "c",
+          "text": "0"
+        },
+        {
+          "id": "d",
+          "text": "\"0\" (a string literal)"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "c"
+      },
+      "explanation": "The integer 0 converts to false. Both 1 and -1 are true, and the string literal \"0\" decays to a non-null pointer, which is also true.",
+      "tags": [
+        "Boolean conversion"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-14-q05",
+      "type": "multi",
+      "prompt": "Which types may be used as the controlling expression of a `switch`? Select all that apply.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "哪些型別可以作為 `switch` 的控制運算式？可多選。"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "`int`"
+          },
+          "b": {
+            "zh-Hant": "`char`"
+          },
+          "c": {
+            "zh-Hant": "列舉型別（enum）"
+          },
+          "d": {
+            "zh-Hant": "`std::string`"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "switch 需要整數或列舉型別（可隱式轉為整數）；std::string 不是整數型別，不能直接用於 switch。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "`int`"
+        },
+        {
+          "id": "b",
+          "text": "`char`"
+        },
+        {
+          "id": "c",
+          "text": "An enum type"
+        },
+        {
+          "id": "d",
+          "text": "`std::string`"
+        }
+      ],
+      "answer": {
+        "kind": "multi",
+        "optionIds": [
+          "a",
+          "b",
+          "c"
+        ]
+      },
+      "explanation": "A switch needs an integral or enumeration type (something implicitly convertible to an integer). std::string is not integral and cannot be switched on directly.",
+      "tags": [
+        "switch"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-14-q06",
+      "type": "multi",
+      "prompt": "Which statements about an `if / else if / else` chain are correct? Select all that apply.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "關於 `if / else if / else` 鏈，下列敘述何者正確？可多選。"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "只有第一個成立的條件分支會執行。"
+          },
+          "b": {
+            "zh-Hant": "`else` 在沒有任何條件成立時執行。"
+          },
+          "c": {
+            "zh-Hant": "條件的先後次序會影響結果。"
+          },
+          "d": {
+            "zh-Hant": "所有成立的條件分支都會依序執行。"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "if/else if 鏈從上到下檢查，第一個成立的分支執行後便跳過其餘分支；因此把較具體或較常見的條件放在前面很重要。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "Only the first matching branch runs."
+        },
+        {
+          "id": "b",
+          "text": "`else` runs when no condition matched."
+        },
+        {
+          "id": "c",
+          "text": "The order of the conditions can change the result."
+        },
+        {
+          "id": "d",
+          "text": "Every matching branch runs in order."
+        }
+      ],
+      "answer": {
+        "kind": "multi",
+        "optionIds": [
+          "a",
+          "b",
+          "c"
+        ]
+      },
+      "explanation": "The chain is checked top to bottom; the first true condition runs and the rest are skipped. That is why ordering specific conditions before general ones matters.",
+      "tags": [
+        "if-else"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-14-q07",
+      "type": "boolean",
+      "prompt": "Each `case` label in a switch must be a compile-time constant expression.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "switch 中的每個 `case` 標籤都必須是編譯期常數運算式。"
+        },
+        "explanation": {
+          "zh-Hant": "case 標籤必須在編譯時已知且互不重複；執行期變數不能當作 case 值。"
+        }
+      },
+      "answer": {
+        "kind": "boolean",
+        "value": true
+      },
+      "explanation": "Case labels must be known at compile time and must not duplicate each other. A run-time variable cannot be a case value.",
+      "tags": [
+        "switch"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-14-q08",
+      "type": "boolean",
+      "prompt": "In `if (a) if (b) x(); else y();`, the `else` belongs to the inner `if`.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "在 `if (a) if (b) x(); else y();` 中，`else` 屬於內層的 `if`。"
+        },
+        "explanation": {
+          "zh-Hant": "else 會與最近一個尚未配對的 if 結合，也就是內層 if (b)；用大括號可避免這種懸空 else 的混淆。"
+        }
+      },
+      "answer": {
+        "kind": "boolean",
+        "value": true
+      },
+      "explanation": "An else binds to the nearest unmatched if, which is the inner `if (b)`. Braces make the intended pairing explicit and avoid the dangling-else trap.",
+      "tags": [
+        "Dangling else"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-14-q09",
+      "type": "fill",
+      "prompt": "The `?:` operator is also called the ____ operator because it takes three operands.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "`?:` 運算子因為接受三個運算元，又稱為 ____ 運算子。"
+        },
+        "explanation": {
+          "zh-Hant": "條件運算子是 C++ 唯一的三元運算子，形式為 condition ? a : b。"
+        }
+      },
+      "answer": {
+        "kind": "fill",
+        "accept": [
+          "ternary",
+          "三元"
+        ],
+        "ignoreCase": true,
+        "ignoreSpaces": true
+      },
+      "explanation": "The conditional operator is C++'s only ternary operator: condition ? a : b.",
+      "tags": [
+        "Ternary"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-14-q10",
+      "type": "short",
+      "prompt": "Why is it recommended to put braces around every if/else body, even a single statement?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "為何建議每個 if/else 本體都加大括號，即使只有一句？"
+        },
+        "explanation": {
+          "zh-Hant": "大括號讓分支範圍明確，避免日後加句子時意外跑到分支外，也避免懸空 else 的誤讀。"
+        },
+        "model": {
+          "zh-Hant": "大括號清楚界定分支的範圍。日後在分支中加一行時，不會因為忘記加括號而讓新句子跑到分支外；同時也讓懸空 else 的配對一目了然。"
+        }
+      },
+      "answer": {
+        "kind": "short",
+        "model": "Braces make the extent of the branch explicit. If a statement is added later without braces, it can silently fall outside the branch, and the dangling-else pairing becomes harder to read.",
+        "keywords": [
+          "braces",
+          "scope",
+          "maintenance",
+          "dangling else"
+        ]
+      },
+      "explanation": "Braces prevent a later edit from changing control flow by accident and make the branch boundaries obvious.",
+      "tags": [
+        "Style",
+        "if"
+      ],
+      "difficulty": 1
+    }
+  ]
+}

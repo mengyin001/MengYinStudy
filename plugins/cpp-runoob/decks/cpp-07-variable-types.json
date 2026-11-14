@@ -1,0 +1,251 @@
+{
+  "id": "cpp-07-variable-types",
+  "title": "C++ Variable Types",
+  "titleI18n": { "zh-Hant": "C++ 變數類型" },
+  "description": "How C++ variables are declared, defined and initialised, from extern declarations and lvalue/rvalue categories to auto, decltype and storage duration.",
+  "descriptionI18n": {
+    "zh-Hant": "C++ 變數如何宣告、定義與初始化：從 extern 宣告、左值與右值，到 auto、decltype 與儲存期。"
+  },
+  "tags": ["C++", "Variables"],
+  "examMinutes": 15,
+  "questions": [
+    {
+      "id": "cpp-07-q01",
+      "type": "single",
+      "prompt": "Which statement about a declaration and a definition of a variable is correct?",
+      "i18n": {
+        "prompt": { "zh-Hant": "關於變數的「宣告」與「定義」，下列哪一項敘述正確？" },
+        "options": {
+          "a": { "zh-Hant": "定義會配置儲存空間（或使實體可用），本身也是一種宣告。" },
+          "b": { "zh-Hant": "宣告一定會為變數配置儲存空間。" },
+          "c": { "zh-Hant": "在命名空間範圍的 `extern int x;` 是一種定義。" },
+          "d": { "zh-Hant": "定義絕對不可以出現在標頭檔中。" }
+        },
+        "explanation": {
+          "zh-Hant": "定義會提供實體所需的全部內容：儲存空間、初始值或函式本體；宣告只引入名稱與型別。`extern int x;` 只是宣告；定義也可以放在標頭檔，例如 `inline` 變數。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "A definition allocates storage (or otherwise makes the entity usable) and is also a declaration."
+        },
+        { "id": "b", "text": "A declaration always allocates storage for the variable." },
+        { "id": "c", "text": "`extern int x;` at namespace scope is a definition." },
+        { "id": "d", "text": "A definition may never appear in a header file." }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "A definition provides everything the entity needs — storage, an initialiser or a function body — while a declaration only introduces the name and its type. `extern int x;` is a declaration, and definitions can live in headers (for example `inline` variables).",
+      "tags": ["Declarations", "Definitions"],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-07-q02",
+      "type": "single",
+      "prompt": "What does `extern int counter;` at namespace scope do?",
+      "i18n": {
+        "prompt": { "zh-Hant": "在命名空間範圍的 `extern int counter;` 有甚麼作用？" },
+        "options": {
+          "a": { "zh-Hant": "宣告 `counter` 但不定義它，定義必須存在於另一個編譯單元。" },
+          "b": { "zh-Hant": "定義 `counter` 並將其清零。" },
+          "c": { "zh-Hant": "建立一個名為 `counter` 的區域變數。" },
+          "d": { "zh-Hant": "不符語法，因為 `extern` 只能搭配函式使用。" }
+        },
+        "explanation": {
+          "zh-Hant": "沒有初始值的 `extern` 是宣告：它告訴編譯器這個物件存在於別處，唯一的定義必須出現在某一個編譯單元，否則連結器會回報未定義符號。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "It declares `counter` without defining it; the definition must exist in another translation unit."
+        },
+        { "id": "b", "text": "It defines `counter` and zero-initialises it." },
+        { "id": "c", "text": "It creates a function-local variable named `counter`." },
+        { "id": "d", "text": "It is ill-formed, because `extern` may only be used with functions." }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "`extern` without an initialiser is a declaration: it tells the compiler the object exists somewhere else. The single definition must appear in exactly one translation unit, or the linker reports an undefined symbol.",
+      "tags": ["Declarations", "extern"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-07-q03",
+      "type": "single",
+      "prompt": "Which of the following expressions is an lvalue?",
+      "i18n": {
+        "prompt": { "zh-Hant": "下列哪一個運算式是左值（lvalue）？" },
+        "options": {
+          "a": { "zh-Hant": "`x`，其中 `x` 是一個非 const 的 `int` 變數" },
+          "b": { "zh-Hant": "`42`" },
+          "c": { "zh-Hant": "`x + 1`" },
+          "d": { "zh-Hant": "`std::move(x)`" }
+        },
+        "explanation": {
+          "zh-Hant": "左值代表具有位址的物件，所以 `x` 可以放在賦值運算子的左邊。`42` 與 `x + 1` 是沒有身分的純右值（prvalue），`std::move(x)` 產生的是將亡值（xvalue），屬於右值。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "`x`, where `x` is a non-const `int` variable" },
+        { "id": "b", "text": "`42`" },
+        { "id": "c", "text": "`x + 1`" },
+        { "id": "d", "text": "`std::move(x)`" }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "An lvalue designates an object with an address, so `x` can appear on the left of an assignment. `42` and `x + 1` are prvalues with no identity, and `std::move(x)` produces an xvalue, which is an rvalue.",
+      "tags": ["Value categories"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-07-q04",
+      "type": "single",
+      "prompt": "After `const int limit = 10;`, what are the types of `auto a = limit;` and `decltype(limit) b = limit;`?",
+      "i18n": {
+        "prompt": { "zh-Hant": "在 `const int limit = 10;` 之後，`auto a = limit;` 與 `decltype(limit) b = limit;` 中 `a`、`b` 的型別分別是甚麼？" },
+        "options": {
+          "a": { "zh-Hant": "`int` 與 `const int`" },
+          "b": { "zh-Hant": "`const int` 與 `const int`" },
+          "c": { "zh-Hant": "`int` 與 `int`" },
+          "d": { "zh-Hant": "`const int` 與 `int`" }
+        },
+        "explanation": {
+          "zh-Hant": "`auto` 依樣板引數推導規則從初始值推導，會去掉頂層的 `const`，所以 `a` 是 `int`。`decltype` 回報運算元宣告時的型別，所以 `b` 是 `const int`。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "`int` and `const int`" },
+        { "id": "b", "text": "`const int` and `const int`" },
+        { "id": "c", "text": "`int` and `int`" },
+        { "id": "d", "text": "`const int` and `int`" }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "`auto` deduces from the initialiser using template deduction rules, which drop top-level `const`, so `a` is `int`. `decltype` reports the declared type of its operand, so `b` is `const int`.",
+      "tags": ["auto", "decltype"],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-07-q05",
+      "type": "multi",
+      "prompt": "Which statements about `auto` since C++11 are true? Select all that apply.",
+      "i18n": {
+        "prompt": { "zh-Hant": "關於 C++11 以後的 `auto`，下列敘述何者正確？可多選。" },
+        "options": {
+          "a": { "zh-Hant": "`auto` 必須有初始值，因為型別是由初始值推導而來。" },
+          "b": { "zh-Hant": "`auto` 會從推導出的型別去掉頂層的 `const` 與參考。" },
+          "c": { "zh-Hant": "`auto` 讓變數的型別在執行時隨著新賦值而改變。" },
+          "d": { "zh-Hant": "`auto&` 可以綁定參考，並保留被參考物件的 `const`。" }
+        },
+        "explanation": {
+          "zh-Hant": "`auto` 是編譯期的佔位符：一定要初始化，並依樣板推導規則去掉頂層 `const` 與參考，除非寫成 `auto&` 或 `const auto&`。變數的靜態型別在執行時不會改變。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "`auto` requires an initialiser, because the type is deduced from it." },
+        { "id": "b", "text": "`auto` drops top-level `const` and references from the deduced type." },
+        {
+          "id": "c",
+          "text": "`auto` lets the variable's type change at run time when a new value is assigned."
+        },
+        { "id": "d", "text": "`auto&` can bind a reference and keeps the referred-to `const`." }
+      ],
+      "answer": { "kind": "multi", "optionIds": ["a", "b", "d"] },
+      "explanation": "`auto` is a compile-time placeholder: it must be initialised, and it follows template deduction rules, so top-level `const` and references are dropped unless you write `auto&` or `const auto&`. The static type never changes at run time.",
+      "tags": ["auto", "Type deduction"],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-07-q06",
+      "type": "multi",
+      "prompt": "Which of these variables have static storage duration? Select all that apply.",
+      "i18n": {
+        "prompt": { "zh-Hant": "下列哪些變數具有靜態儲存期？可多選。" },
+        "options": {
+          "a": { "zh-Hant": "在命名空間範圍宣告的變數，例如 `int g;`" },
+          "b": { "zh-Hant": "在函式內以 `static` 宣告的變數" },
+          "c": { "zh-Hant": "未加 `static` 的一般區域變數" },
+          "d": { "zh-Hant": "在命名空間範圍宣告的 `const int k = 3;`" }
+        },
+        "explanation": {
+          "zh-Hant": "命名空間範圍的變數（包含那裡的常數）與函式內的 `static` 變數都存活整個程式執行期間。一般區域變數是自動儲存期，離開區塊就被銷毀。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "A variable declared at namespace scope, such as `int g;`" },
+        { "id": "b", "text": "A variable declared `static` inside a function" },
+        { "id": "c", "text": "An ordinary local variable declared without `static`" },
+        { "id": "d", "text": "A `const int k = 3;` declared at namespace scope" }
+      ],
+      "answer": { "kind": "multi", "optionIds": ["a", "b", "d"] },
+      "explanation": "Namespace-scope variables — including namespace-scope constants — and function-local `static` variables live for the whole program. An ordinary local has automatic storage duration and is destroyed when its block exits.",
+      "tags": ["Storage duration", "static"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-07-q07",
+      "type": "boolean",
+      "prompt": "A `const` variable of scalar type must be initialised where it is defined, because it cannot be assigned later.",
+      "i18n": {
+        "prompt": { "zh-Hant": "純量型別的 `const` 變數必須在定義處初始化，因為之後不能再對它賦值。" },
+        "explanation": {
+          "zh-Hant": "純量 `const` 物件在定義時就需要初始值，`const int x;` 不符語法。類別型別的 const 物件可以用預設建構初始化，那仍然算是一種初始化。"
+        }
+      },
+      "answer": { "kind": "boolean", "value": true },
+      "explanation": "A scalar `const` object needs an initialiser at its definition; `const int x;` is ill-formed. A class-type const object may be default-initialised, which still counts as initialisation.",
+      "tags": ["const", "Initialisation"],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-07-q08",
+      "type": "boolean",
+      "prompt": "Reading an uninitialised automatic `int` variable is undefined behaviour, even though it sometimes appears to print 0.",
+      "i18n": {
+        "prompt": { "zh-Hant": "讀取未初始化的自動（區域）`int` 變數是未定義行為，即使它有時看起來會印出 0。" },
+        "explanation": {
+          "zh-Hant": "未初始化的自動純量變數具有不確定值，讀取它是未定義行為。偶爾看到的 0 只是堆疊或除錯組建的巧合，不是語言保證。"
+        }
+      },
+      "answer": { "kind": "boolean", "value": true },
+      "explanation": "An uninitialised automatic scalar has an indeterminate value, and reading it is undefined behaviour. The zero you sometimes see is an accident of the stack or of a debug build, not a language guarantee.",
+      "tags": ["Initialisation", "Undefined behaviour"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-07-q09",
+      "type": "fill",
+      "prompt": "The keyword used at namespace scope to declare a variable without defining it is ____.",
+      "i18n": {
+        "prompt": { "zh-Hant": "在命名空間範圍宣告變數而不加以定義，需使用關鍵字 ____。" },
+        "explanation": {
+          "zh-Hant": "`extern int x;` 只宣告 `x`，把定義留給另一個編譯單元；連結時再由連結器把兩邊接起來。"
+        }
+      },
+      "answer": { "kind": "fill", "accept": ["extern"], "ignoreCase": true },
+      "explanation": "`extern int x;` declares `x` and defers the definition to another translation unit.",
+      "tags": ["Declarations", "extern"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-07-q10",
+      "type": "short",
+      "prompt": "In one or two sentences, explain how a local variable differs from a global variable, mentioning lifetime and default initialisation.",
+      "i18n": {
+        "prompt": { "zh-Hant": "用一至兩句說明區域變數與全域變數的差別，並提到存活期與預設初始化。" },
+        "model": {
+          "zh-Hant": "區域變數宣告在區塊內，控制流程到達定義時才建立、離開區塊時銷毀，純量型別的區域變數預設不會初始化；全域（命名空間範圍）變數從宣告處可見到編譯單元結尾，存活整個程式執行期間，並在任何其他初始化之前先被清零。"
+        },
+        "explanation": {
+          "zh-Hant": "作用域、存活期與初始化三者都不同：區域變數是自動儲存期且常未初始化，全域變數是靜態儲存期且會先被清零。"
+        }
+      },
+      "answer": {
+        "kind": "short",
+        "model": "A local variable is declared inside a block, is created when control reaches its definition and destroyed when the block exits, and an automatic local of scalar type is left uninitialised. A global (namespace-scope) variable is visible from its declaration to the end of the translation unit, lives for the whole program, and is zero-initialised before any other initialisation.",
+        "keywords": ["local", "global", "lifetime", "zero-initialised", "block"]
+      },
+      "explanation": "Scope, lifetime and initialisation all differ: locals are automatic and often uninitialised, while globals have static storage duration and are zero-initialised first.",
+      "tags": ["Scope", "Lifetime"],
+      "difficulty": 3
+    }
+  ]
+}

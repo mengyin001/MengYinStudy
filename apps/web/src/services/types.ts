@@ -5,7 +5,7 @@
  * (`services/supabase/*`); tests and any future backend can supply another
  * without touching a page or component.
  */
-import type { Question } from '@mengyin/core';
+import type { LocalizedText, Question } from '@mengyin/core';
 import type { BackendConfigStatus } from './config';
 import type { ServiceResult } from './errors';
 
@@ -111,7 +111,10 @@ export interface OfficialManifest {
 export interface OfficialDeckPayload {
   id: string;
   title: string;
+  /** Per-language title overrides, when the catalogue provides them. */
+  titleI18n?: LocalizedText;
   description?: string;
+  descriptionI18n?: LocalizedText;
   tags: string[];
   /** Raw question JSON; validated with the same zod schema as plugin decks. */
   questions: unknown;

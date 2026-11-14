@@ -1,0 +1,242 @@
+{
+  "id": "cpp-25-data-structures",
+  "title": "C++ Data Structures",
+  "titleI18n": { "zh-Hant": "C++ 資料結構" },
+  "description": "Classic data structures built from structs and pointers: the LIFO stack, the FIFO queue and the singly linked list, their core operations and complexity, plus the std::stack, std::queue and std::list containers.",
+  "descriptionI18n": {
+    "zh-Hant": "以結構體與指標實作的經典資料結構：後進先出的堆疊、先進先出的佇列、單向鏈結串列，以及它們的核心操作、時間複雜度，還有 std::stack、std::queue 與 std::list 容器。"
+  },
+  "tags": ["C++", "Data Structures"],
+  "examMinutes": 15,
+  "questions": [
+    {
+      "id": "cpp-25-q01",
+      "type": "single",
+      "prompt": "Which structure removes the most recently added element first?",
+      "i18n": {
+        "prompt": { "zh-Hant": "哪一種結構會優先移除最後加入的元素？" },
+        "options": {
+          "a": { "zh-Hant": "stack（堆疊）" },
+          "b": { "zh-Hant": "queue（佇列）" },
+          "c": { "zh-Hant": "deque（雙向佇列）" },
+          "d": { "zh-Hant": "priority_queue（優先佇列）" }
+        },
+        "explanation": {
+          "zh-Hant": "stack 是後進先出（LIFO）：最後推入的元素最先彈出；queue 是先進先出，priority_queue 則依優先權取出。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "stack" },
+        { "id": "b", "text": "queue" },
+        { "id": "c", "text": "deque" },
+        { "id": "d", "text": "priority_queue" }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "A stack is last-in, first-out: the element pushed most recently is popped first. A queue is first-in, first-out, and a priority_queue removes by priority instead of insertion order.",
+      "tags": ["Stack", "LIFO"],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-25-q02",
+      "type": "single",
+      "prompt": "In a queue, where are new elements added and where are elements removed?",
+      "i18n": {
+        "prompt": { "zh-Hant": "在佇列中，新元素從何處加入，元素又從何處移除？" },
+        "options": {
+          "a": { "zh-Hant": "從尾端加入，從前端移除" },
+          "b": { "zh-Hant": "兩者都在前端" },
+          "c": { "zh-Hant": "從前端加入，從尾端移除" },
+          "d": { "zh-Hant": "兩者都在尾端" }
+        },
+        "explanation": {
+          "zh-Hant": "佇列是 FIFO：enqueue（push）在尾端加入，dequeue（pop）從前端移除，因此最早進入的元素最先離開。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "Added at the back and removed from the front." },
+        { "id": "b", "text": "Both happen at the front." },
+        { "id": "c", "text": "Added at the front and removed from the back." },
+        { "id": "d", "text": "Both happen at the back." }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "A queue is FIFO: enqueue (push) adds at the back and dequeue (pop) removes from the front, so the element that has waited longest leaves first.",
+      "tags": ["Queue", "FIFO"],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-25-q03",
+      "type": "single",
+      "prompt": "For a singly linked list with a pointer to the head node, what is the time complexity of inserting a new node at the head?",
+      "i18n": {
+        "prompt": { "zh-Hant": "對一個保有頭節點指標的單向鏈結串列，在頭部插入新節點的時間複雜度是多少？" },
+        "options": {
+          "a": { "zh-Hant": "O(1)" },
+          "b": { "zh-Hant": "O(log n)" },
+          "c": { "zh-Hant": "O(n)" },
+          "d": { "zh-Hant": "O(n log n)" }
+        },
+        "explanation": {
+          "zh-Hant": "在頭部插入只需把新節點的 next 指向舊的 head，再更新 head，不必走訪任何節點，所以是 O(1)。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "O(1)" },
+        { "id": "b", "text": "O(log n)" },
+        { "id": "c", "text": "O(n)" },
+        { "id": "d", "text": "O(n log n)" }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "Inserting at the head only redirects the new node's next pointer to the old head and updates the head pointer, so no traversal is needed: O(1).",
+      "tags": ["Linked list", "Complexity"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-25-q04",
+      "type": "single",
+      "prompt": "Which standard container adaptor provides first-in, first-out behaviour?",
+      "i18n": {
+        "prompt": { "zh-Hant": "哪一個標準容器配接器提供先進先出的行為？" },
+        "options": {
+          "a": { "zh-Hant": "std::stack" },
+          "b": { "zh-Hant": "std::queue" },
+          "c": { "zh-Hant": "std::vector" },
+          "d": { "zh-Hant": "std::list" }
+        },
+        "explanation": {
+          "zh-Hant": "std::queue 是配接器，預設以 std::deque 實作，提供 push、pop、front、back 的 FIFO 介面；std::vector 與 std::list 是序列容器。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "std::stack" },
+        { "id": "b", "text": "std::queue" },
+        { "id": "c", "text": "std::vector" },
+        { "id": "d", "text": "std::list" }
+      ],
+      "answer": { "kind": "single", "optionId": "b" },
+      "explanation": "std::queue is a container adaptor, implemented on std::deque by default, exposing push, pop, front and back with FIFO behaviour. std::vector and std::list are sequence containers, not adaptors.",
+      "tags": ["Queue", "STL"],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-25-q05",
+      "type": "multi",
+      "prompt": "Which operations on a std::stack are O(1)? Select all that apply.",
+      "i18n": {
+        "prompt": { "zh-Hant": "下列哪些 std::stack 的操作是 O(1)？可多選。" },
+        "options": {
+          "a": { "zh-Hant": "push" },
+          "b": { "zh-Hant": "pop" },
+          "c": { "zh-Hant": "top" },
+          "d": { "zh-Hant": "隨機存取中間的元素" }
+        },
+        "explanation": {
+          "zh-Hant": "stack 只允許在頂端操作，push、pop、top 都只碰頂端元素，皆為 O(1)；它也不提供隨機存取。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "push" },
+        { "id": "b", "text": "pop" },
+        { "id": "c", "text": "top" },
+        { "id": "d", "text": "random access to an element in the middle" }
+      ],
+      "answer": { "kind": "multi", "optionIds": ["a", "b", "c"] },
+      "explanation": "A stack exposes only the top, so push, pop and top all run in O(1). It deliberately offers no random access to elements below the top.",
+      "tags": ["Stack", "Complexity"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-25-q06",
+      "type": "multi",
+      "prompt": "Which statements about a singly linked list built from nodes are true? Select all that apply.",
+      "i18n": {
+        "prompt": { "zh-Hant": "下列關於以節點建立的單向鏈結串列的敘述，哪些是正確的？可多選。" },
+        "options": {
+          "a": { "zh-Hant": "每個節點儲存一個值和一個指向下一節點的指標" },
+          "b": { "zh-Hant": "若已持有某節點的指標，在它之後插入新節點是 O(1)" },
+          "c": { "zh-Hant": "讀取第 k 個元素只需 O(1) 時間" },
+          "d": { "zh-Hant": "所有節點都存放在同一塊連續記憶體中" }
+        },
+        "explanation": {
+          "zh-Hant": "節點通常以 struct 定義，包含 value 與 next；插入靠調整指標，但讀取第 k 個元素必須從頭走訪，是 O(n)，且節點是分散配置的。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "Each node stores a value and a pointer to the next node." },
+        { "id": "b", "text": "Given a pointer to a node, inserting a new node after it is O(1)." },
+        { "id": "c", "text": "Reading the k-th element takes O(1) time." },
+        { "id": "d", "text": "All nodes are stored in one contiguous block of memory." }
+      ],
+      "answer": { "kind": "multi", "optionIds": ["a", "b"] },
+      "explanation": "A node is typically a struct holding a value and a next pointer, which makes insertion after a known node O(1). There is no random access, so reaching the k-th element needs a walk from the head, and the nodes are allocated separately rather than contiguously.",
+      "tags": ["Linked list", "Pointers"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-25-q07",
+      "type": "boolean",
+      "prompt": "A queue serves the element that has been waiting the longest first.",
+      "i18n": {
+        "prompt": { "zh-Hant": "佇列會先服務等待最久的元素。" },
+        "explanation": {
+          "zh-Hant": "佇列是先進先出，最早加入的元素位於前端，因此最先被移除。"
+        }
+      },
+      "answer": { "kind": "boolean", "value": true },
+      "explanation": "A queue is first-in, first-out: the element that entered first sits at the front and is removed first.",
+      "tags": ["Queue", "FIFO"],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-25-q08",
+      "type": "boolean",
+      "prompt": "std::stack and std::queue are container adaptors that wrap another container, std::deque by default.",
+      "i18n": {
+        "prompt": { "zh-Hant": "std::stack 與 std::queue 是容器配接器，包裝另一個容器，預設為 std::deque。" },
+        "explanation": {
+          "zh-Hant": "兩者都提供受限介面，底層預設用 std::deque；也可指定 std::vector 或 std::list 作為底層容器（須符合各自需求）。"
+        }
+      },
+      "answer": { "kind": "boolean", "value": true },
+      "explanation": "Both are adaptors with a restricted interface over an underlying container, std::deque by default. You can name a different container, such as std::vector for a stack, as long as it supports the required operations.",
+      "tags": ["Stack", "Queue"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-25-q09",
+      "type": "fill",
+      "prompt": "The operation that adds an element to a stack is usually called ____.",
+      "i18n": {
+        "prompt": { "zh-Hant": "把元素加入堆疊的操作通常稱為 ____。" },
+        "explanation": {
+          "zh-Hant": "加入稱為 push（推入），移除稱為 pop（彈出）；std::stack 的成員函式正是 push 與 pop。"
+        }
+      },
+      "answer": { "kind": "fill", "accept": ["push", "push()", "推入"], "ignoreCase": true, "ignoreSpaces": true },
+      "explanation": "Adding is called push and removing is called pop; std::stack names its member functions exactly push and pop.",
+      "tags": ["Stack", "Operations"],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-25-q10",
+      "type": "short",
+      "prompt": "In two or three sentences, explain when you would choose std::list over std::vector, and what you give up by doing so.",
+      "i18n": {
+        "prompt": { "zh-Hant": "用兩至三句說明：何時會選擇 std::list 而不是 std::vector，以及這樣做要放棄甚麼。" },
+        "model": {
+          "zh-Hant": "當需要在容器中間頻繁插入或刪除，而且已持有該位置的迭代器時，std::list 只需調整指標，操作為 O(1)，迭代器也不會因其他插入而失效。代價是失去隨機存取（走訪第 k 個元素為 O(n)），節點分散配置使快取效率較差，且每個節點都有額外的指標與配置成本。"
+        },
+        "explanation": {
+          "zh-Hant": "選擇取決於操作模式：中間插入刪除多選 list，需要隨機存取與快取友善的連續記憶體則選 vector。"
+        }
+      },
+      "answer": {
+        "kind": "short",
+        "model": "Choose std::list when you insert and erase in the middle of the container often and already hold an iterator to that position: the list relinks pointers in O(1) and its iterators stay valid across other insertions. The price is losing random access, so reaching the k-th element is O(n), and the separately allocated nodes hurt cache locality and add per-node pointer and allocation overhead.",
+        "keywords": ["list", "insert", "O(1)", "random access", "cache", "iterator"]
+      },
+      "explanation": "The choice follows the access pattern: frequent middle insertion and erasure favour std::list, while random access and cache-friendly contiguous storage favour std::vector.",
+      "tags": ["Linked list", "STL"],
+      "difficulty": 3
+    }
+  ]
+}

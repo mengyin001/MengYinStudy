@@ -19,6 +19,7 @@ import {
 import { backend, backendConfig } from '@/services';
 import { BackendError, fail, ok, toBackendError, type ServiceResult } from '@/services/errors';
 import {
+  OFFICIAL_CACHE_SCHEMA_VERSION,
   cacheToLoadedPlugins,
   readOfficialCache,
   writeOfficialCache,
@@ -166,7 +167,7 @@ export function OfficialContentProvider({ children }: { children: ReactNode }) {
         const catalog = await backend.official.getCatalog(manifest.version);
         const built = buildOfficialPacks(catalog);
         const cache: OfficialCache = {
-          schemaVersion: 1,
+          schemaVersion: OFFICIAL_CACHE_SCHEMA_VERSION,
           sourceUrl: backend.url,
           version: catalog.version,
           syncedAt: Date.now(),

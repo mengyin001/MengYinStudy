@@ -1,0 +1,250 @@
+{
+  "id": "cpp-21-date-time",
+  "title": "C++ Date and Time",
+  "titleI18n": { "zh-Hant": "C++ 日期與時間" },
+  "description": "Dates and times in C++: <ctime>, time_t and struct tm, time(), localtime and gmtime, strftime formatting, clock() and difftime, the Unix epoch, and the basics of <chrono>.",
+  "descriptionI18n": {
+    "zh-Hant": "C++ 的日期與時間：<ctime>、time_t 與 struct tm、time()、localtime 與 gmtime、strftime 格式化、clock() 與 difftime、Unix 紀元，以及 <chrono> 的基礎。"
+  },
+  "tags": ["C++", "Date and time"],
+  "examMinutes": 15,
+  "questions": [
+    {
+      "id": "cpp-21-q01",
+      "type": "single",
+      "prompt": "Which header declares `time_t`, `struct tm` and the function `std::time`?",
+      "i18n": {
+        "prompt": { "zh-Hant": "哪一個標頭檔宣告了 `time_t`、`struct tm` 與函式 `std::time`？" },
+        "options": {
+          "a": { "zh-Hant": "<ctime>" },
+          "b": { "zh-Hant": "<chrono>" },
+          "c": { "zh-Hant": "<datetime>" },
+          "d": { "zh-Hant": "<date>" }
+        },
+        "explanation": {
+          "zh-Hant": "<ctime> 是 C 標準 <time.h> 的 C++ 版本，提供 time_t、tm、time、localtime、strftime 等；<chrono> 則是另一套型別安全的時間程式庫。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "<ctime>" },
+        { "id": "b", "text": "<chrono>" },
+        { "id": "c", "text": "<datetime>" },
+        { "id": "d", "text": "<date>" }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "`<ctime>` is the C++ wrapper around C's `<time.h>` and declares `time_t`, `struct tm`, `time`, `localtime`, `strftime` and friends. `<chrono>` is a separate, type-safe time library.",
+      "tags": ["ctime", "Headers"],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-21-q02",
+      "type": "single",
+      "prompt": "A `time_t` value obtained from `std::time` typically counts what, and from which instant?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "由 `std::time` 取得的 `time_t` 值通常計算甚麼，並以哪個時刻為起點？"
+        },
+        "options": {
+          "a": { "zh-Hant": "自 Unix 紀元（1970-01-01 00:00:00 UTC）以來的秒數" },
+          "b": { "zh-Hant": "自 Unix 紀元以來的毫秒數" },
+          "c": { "zh-Hant": "自 1900 年以來的奈秒數" },
+          "d": { "zh-Hant": "自開機以來的時鐘滴答數" }
+        },
+        "explanation": {
+          "zh-Hant": "time_t 通常是以秒為單位的 Unix 時間戳，起點是 1970-01-01 00:00:00 UTC；實際型別由實作決定，但語意是日曆時間。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "Seconds since the Unix epoch, 1970-01-01 00:00:00 UTC" },
+        { "id": "b", "text": "Milliseconds since the Unix epoch" },
+        { "id": "c", "text": "Nanoseconds since 1900" },
+        { "id": "d", "text": "Clock ticks since the machine booted" }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "A `time_t` from `std::time` is normally a Unix timestamp in seconds since 1970-01-01 00:00:00 UTC. The exact underlying type is implementation-defined, but the meaning is calendar time.",
+      "tags": ["time_t", "Unix epoch"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-21-q03",
+      "type": "single",
+      "prompt": "What does `std::time(nullptr)` return?",
+      "i18n": {
+        "prompt": { "zh-Hant": "`std::time(nullptr)` 會傳回甚麼？" },
+        "options": {
+          "a": { "zh-Hant": "目前的日曆時間，型別為 time_t" },
+          "b": { "zh-Hant": "目前的時間，型別為 struct tm" },
+          "c": { "zh-Hant": "程式已使用的處理器時間" },
+          "d": { "zh-Hant": "目前時區與 UTC 的秒差" }
+        },
+        "explanation": {
+          "zh-Hant": "time() 傳回 time_t；傳 nullptr 表示不另外儲存結果。要得到 tm 必須再呼叫 localtime 或 gmtime。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "The current calendar time as a `time_t`" },
+        { "id": "b", "text": "The current time as a `struct tm`" },
+        { "id": "c", "text": "The processor time the program has used" },
+        { "id": "d", "text": "The offset in seconds between the local zone and UTC" }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "`time` returns a `time_t`; passing `nullptr` means the result is not also stored through the pointer. You must call `localtime` or `gmtime` to obtain a `tm`.",
+      "tags": ["time", "time_t"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-21-q04",
+      "type": "single",
+      "prompt": "What does `std::strftime` do?",
+      "i18n": {
+        "prompt": { "zh-Hant": "`std::strftime` 的作用是甚麼？" },
+        "options": {
+          "a": { "zh-Hant": "依格式字串把 struct tm 格式化到呼叫端提供的字元緩衝區" },
+          "b": { "zh-Hant": "讀取系統時鐘並傳回 time_t" },
+          "c": { "zh-Hant": "把 time_t 轉成本地時間並傳回 tm 指標" },
+          "d": { "zh-Hant": "測量程式消耗的處理器時間" }
+        },
+        "explanation": {
+          "zh-Hant": "strftime(buffer, size, \"%Y-%m-%d\", &tm) 依格式規格輸出；b、c 分別是 time 與 localtime，d 是 clock。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "Format a `struct tm` into a caller-supplied character buffer using a format string" },
+        { "id": "b", "text": "Read the system clock and return a `time_t`" },
+        { "id": "c", "text": "Convert a `time_t` to local time and return a `tm` pointer" },
+        { "id": "d", "text": "Measure the processor time consumed by the program" }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "`strftime(buffer, size, \"%Y-%m-%d\", &tm)` writes a formatted string into your buffer; b is `time`, c is `localtime`, and d is `clock`.",
+      "tags": ["strftime", "Formatting"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-21-q05",
+      "type": "multi",
+      "prompt": "Which of these are members of `struct tm`? Select all that apply.",
+      "i18n": {
+        "prompt": { "zh-Hant": "下列哪些是 `struct tm` 的成員？可多選。" },
+        "options": {
+          "a": { "zh-Hant": "`tm_year`：自 1900 年起的年數" },
+          "b": { "zh-Hant": "`tm_mon`：月份，0 代表一月" },
+          "c": { "zh-Hant": "`tm_mday`：月內日期，1 到 31" },
+          "d": { "zh-Hant": "`tm_seconds`：秒數，0 到 59" }
+        },
+        "explanation": {
+          "zh-Hant": "tm 的成員是 tm_year（自 1900 起）、tm_mon（0–11）、tm_mday（1–31）、tm_hour、tm_min、tm_sec；沒有 tm_seconds 這個成員。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "`tm_year`, the years since 1900" },
+        { "id": "b", "text": "`tm_mon`, the month where 0 means January" },
+        { "id": "c", "text": "`tm_mday`, the day of the month from 1 to 31" },
+        { "id": "d", "text": "`tm_seconds`, the seconds from 0 to 59" }
+      ],
+      "answer": { "kind": "multi", "optionIds": ["a", "b", "c"] },
+      "explanation": "`struct tm` has `tm_year` (years since 1900), `tm_mon` (0–11), `tm_mday` (1–31), `tm_hour`, `tm_min` and `tm_sec`. There is no member called `tm_seconds`.",
+      "tags": ["tm", "struct"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-21-q06",
+      "type": "multi",
+      "prompt": "Which statements about `std::localtime` and `std::gmtime` are true? Select all that apply.",
+      "i18n": {
+        "prompt": { "zh-Hant": "關於 `std::localtime` 與 `std::gmtime`，下列哪些敘述正確？可多選。" },
+        "options": {
+          "a": { "zh-Hant": "兩者都傳回指向靜態 tm 物件的指標，內容可能被下一次呼叫覆寫" },
+          "b": { "zh-Hant": "localtime 套用本地時區，gmtime 傳回 UTC" },
+          "c": { "zh-Hant": "兩者都是執行緒安全，每次呼叫都傳回全新的緩衝區" },
+          "d": { "zh-Hant": "轉換失敗時可能傳回空指標" }
+        },
+        "explanation": {
+          "zh-Hant": "標準版本共用一個靜態 tm，後續呼叫會覆寫它（執行緒安全版本是 localtime_r、gmtime_r）；localtime 依時區換算，gmtime 為 UTC，失敗時傳回 nullptr。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "Both return a pointer to a static `tm` that a later call may overwrite" },
+        { "id": "b", "text": "`localtime` applies the local time zone; `gmtime` returns UTC" },
+        { "id": "c", "text": "Both are thread-safe and return a fresh buffer on every call" },
+        { "id": "d", "text": "They may return a null pointer if the conversion fails" }
+      ],
+      "answer": { "kind": "multi", "optionIds": ["a", "b", "d"] },
+      "explanation": "The standard functions share a static `tm` that subsequent calls may overwrite; the reentrant variants are `localtime_r` and `gmtime_r`. `localtime` converts to the local zone, `gmtime` to UTC, and both may return `nullptr` on failure.",
+      "tags": ["localtime", "gmtime", "Time zones"],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-21-q07",
+      "type": "boolean",
+      "prompt": "`std::asctime` formats a `struct tm` with a caller-supplied format string such as \"%Y-%m-%d\".",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "`std::asctime` 會用呼叫端提供的格式字串（例如 \"%Y-%m-%d\"）來格式化 `struct tm`。"
+        },
+        "explanation": {
+          "zh-Hant": "asctime 使用固定的 \"Www Mmm dd hh:mm:ss yyyy\\n\" 格式並回傳靜態緩衝區；自訂格式要用 strftime。ctime 則是 asctime(localtime(&t)) 的簡便形式。"
+        }
+      },
+      "answer": { "kind": "boolean", "value": false },
+      "explanation": "`asctime` always uses the fixed `\"Www Mmm dd hh:mm:ss yyyy\\n\"` form and returns a pointer to a static buffer; custom formats belong to `strftime`. `ctime` is shorthand for `asctime(localtime(&t))`.",
+      "tags": ["asctime", "ctime"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-21-q08",
+      "type": "boolean",
+      "prompt": "`std::clock()` measures the processor time consumed by the program, not wall-clock elapsed time.",
+      "i18n": {
+        "prompt": { "zh-Hant": "`std::clock()` 測量的是程式消耗的處理器時間，而不是牆鐘經過的時間。" },
+        "explanation": {
+          "zh-Hant": "clock 傳回 CPU 時間的滴答數，除以 CLOCKS_PER_SEC 得到秒數；若要牆鐘時間應使用 <chrono> 的 steady_clock。"
+        }
+      },
+      "answer": { "kind": "boolean", "value": true },
+      "explanation": "`clock` returns processor-time ticks; divide by `CLOCKS_PER_SEC` for seconds. For wall-clock elapsed time use `std::chrono::steady_clock`.",
+      "tags": ["clock", "Timing"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-21-q09",
+      "type": "fill",
+      "prompt": "The standard function that returns the difference in seconds between two `time_t` values as a `double` is `std::____`.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "計算兩個 `time_t` 之間相差秒數（以 `double` 傳回）的標準函式是 `std::____`。"
+        },
+        "explanation": {
+          "zh-Hant": "difftime(end, begin) 傳回 double 秒數；直接相減雖然也可行，但 difftime 是可攜且語意清楚的寫法。"
+        }
+      },
+      "answer": { "kind": "fill", "accept": ["difftime", "std::difftime", "difftime()"], "ignoreCase": true, "ignoreSpaces": true },
+      "explanation": "`difftime(end, begin)` returns the difference in seconds as a `double`. Subtracting the values directly usually works too, but `difftime` states the intent and is portable.",
+      "tags": ["difftime", "time_t"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-21-q10",
+      "type": "short",
+      "prompt": "Define the Unix epoch, and explain the difference between `std::chrono::system_clock` and `std::chrono::steady_clock`.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "說明甚麼是 Unix 紀元，並解釋 `std::chrono::system_clock` 與 `std::chrono::steady_clock` 的差別。"
+        },
+        "model": {
+          "zh-Hant": "Unix 紀元是 1970-01-01 00:00:00 UTC，Unix 時間戳就是自此之後經過的秒數（不含閏秒）。system_clock 對應系統的日曆時間，可以轉成 time_t、顯示日期，但可能被校時或使用者調整而跳動；steady_clock 則是單調遞增、不會倒退的時鐘，適合量測經過時間。因此「現在幾點」用 system_clock，「計時」用 steady_clock。"
+        },
+        "explanation": {
+          "zh-Hant": "關鍵在於兩種時鐘的用途：日曆時間可被調整，單調時鐘只保證往前走的穩定性。"
+        }
+      },
+      "answer": {
+        "kind": "short",
+        "model": "The Unix epoch is 1970-01-01 00:00:00 UTC; a Unix timestamp counts the seconds elapsed since then (ignoring leap seconds). `system_clock` tracks calendar time, converts to `time_t` and can display dates, but it may jump when the system clock is corrected or changed. `steady_clock` is monotonic and never goes backwards, so it is the right choice for measuring elapsed time.",
+        "keywords": ["1970", "UTC", "calendar", "monotonic", "elapsed"]
+      },
+      "explanation": "The distinction is purpose: calendar time can be adjusted, while a monotonic clock only guarantees forward progress.",
+      "tags": ["Unix epoch", "chrono"],
+      "difficulty": 3
+    }
+  ]
+}

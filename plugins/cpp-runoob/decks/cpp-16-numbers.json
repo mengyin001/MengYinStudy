@@ -1,0 +1,453 @@
+{
+  "id": "cpp-16-numbers",
+  "title": "C++ Numbers",
+  "titleI18n": {
+    "zh-Hant": "C++ 數字"
+  },
+  "description": "Doing arithmetic with C++ numbers: <cmath>, limits, integer overflow, floating-point precision and the modern random library.",
+  "descriptionI18n": {
+    "zh-Hant": "用 C++ 數字做運算：<cmath>、數值極限、整數溢位、浮點精度與現代隨機數程式庫。"
+  },
+  "tags": [
+    "C++",
+    "Numbers"
+  ],
+  "examMinutes": 15,
+  "questions": [
+    {
+      "id": "cpp-16-q01",
+      "type": "single",
+      "prompt": "Which function returns the square root of a number?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "哪一個函式會回傳數字的平方根？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "`std::sqrt`"
+          },
+          "b": {
+            "zh-Hant": "`std::pow`"
+          },
+          "c": {
+            "zh-Hant": "`std::abs`"
+          },
+          "d": {
+            "zh-Hant": "`std::floor`"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "std::sqrt(x) 回傳平方根；pow 是次方，abs 是絕對值，floor 是向下取整。三者都在 <cmath>。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "`std::sqrt`"
+        },
+        {
+          "id": "b",
+          "text": "`std::pow`"
+        },
+        {
+          "id": "c",
+          "text": "`std::abs`"
+        },
+        {
+          "id": "d",
+          "text": "`std::floor`"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "std::sqrt(x) returns the square root. pow raises to a power, abs returns the absolute value and floor rounds down; all are in <cmath>.",
+      "tags": [
+        "cmath"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-16-q02",
+      "type": "single",
+      "prompt": "What range of values does `rand() % 10` produce on a typical implementation?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "在典型實作中，`rand() % 10` 會產生哪個範圍的值？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "0 到 9"
+          },
+          "b": {
+            "zh-Hant": "1 到 10"
+          },
+          "c": {
+            "zh-Hant": "0 到 10"
+          },
+          "d": {
+            "zh-Hant": "1 到 9"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "非負整數對 10 取餘數的結果是 0 到 9；若要 1 到 10，需寫 `rand() % 10 + 1`。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "0 through 9"
+        },
+        {
+          "id": "b",
+          "text": "1 through 10"
+        },
+        {
+          "id": "c",
+          "text": "0 through 10"
+        },
+        {
+          "id": "d",
+          "text": "1 through 9"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "The remainder of a non-negative integer modulo 10 is 0..9. For 1..10 use `rand() % 10 + 1`.",
+      "tags": [
+        "Random"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-16-q03",
+      "type": "single",
+      "prompt": "What does `std::numeric_limits<int>::max()` return?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "`std::numeric_limits<int>::max()` 會回傳甚麼？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "`int` 能表示的最大值"
+          },
+          "b": {
+            "zh-Hant": "目前程式中最大的整數變數"
+          },
+          "c": {
+            "zh-Hant": "編譯器的最大記憶體用量"
+          },
+          "d": {
+            "zh-Hant": "`int` 的位元組數"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "numeric_limits 提供該型別的極限值；max() 是最大值，min() 是最小值，sizeof 才是位元組數。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "The largest value an `int` can represent"
+        },
+        {
+          "id": "b",
+          "text": "The largest integer variable currently in the program"
+        },
+        {
+          "id": "c",
+          "text": "The compiler's maximum memory usage"
+        },
+        {
+          "id": "d",
+          "text": "The size of an int in bytes"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "numeric_limits reports limits for a type: max() is its largest value and min() its smallest. The byte size comes from sizeof.",
+      "tags": [
+        "Limits"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-16-q04",
+      "type": "single",
+      "prompt": "In IEEE-754 double arithmetic, what is the result of `0.1 + 0.2 == 0.3`?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "在 IEEE-754 double 運算中，`0.1 + 0.2 == 0.3` 的結果是甚麼？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "通常為 false，因為二進位無法精確表示 0.1"
+          },
+          "b": {
+            "zh-Hant": "一定為 true"
+          },
+          "c": {
+            "zh-Hant": "編譯錯誤"
+          },
+          "d": {
+            "zh-Hant": "未定義行為"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "0.1 與 0.2 在二進位浮點中是循環小數，儲存時已四捨五入；相加結果與 0.3 的表示可能相差一個極小量，因此直接比較通常不成立。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "Usually false, because 0.1 has no exact binary representation"
+        },
+        {
+          "id": "b",
+          "text": "Always true"
+        },
+        {
+          "id": "c",
+          "text": "A compile error"
+        },
+        {
+          "id": "d",
+          "text": "Undefined behaviour"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "0.1 and 0.2 are repeating fractions in binary and are rounded when stored. Their sum can differ from the stored 0.3 by a tiny amount, so a direct equality test is usually false.",
+      "tags": [
+        "Floating point"
+      ],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-16-q05",
+      "type": "multi",
+      "prompt": "Which of these functions are declared in `<cmath>`? Select all that apply.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "下列哪些函式宣告在 `<cmath>` 中？可多選。"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "`std::sqrt`"
+          },
+          "b": {
+            "zh-Hant": "`std::pow`"
+          },
+          "c": {
+            "zh-Hant": "`std::floor`"
+          },
+          "d": {
+            "zh-Hant": "`std::strlen`"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "sqrt、pow、floor 都在 <cmath>；strlen 屬於 <cstring>。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "`std::sqrt`"
+        },
+        {
+          "id": "b",
+          "text": "`std::pow`"
+        },
+        {
+          "id": "c",
+          "text": "`std::floor`"
+        },
+        {
+          "id": "d",
+          "text": "`std::strlen`"
+        }
+      ],
+      "answer": {
+        "kind": "multi",
+        "optionIds": [
+          "a",
+          "b",
+          "c"
+        ]
+      },
+      "explanation": "sqrt, pow and floor are in <cmath>. strlen is declared in <cstring>.",
+      "tags": [
+        "cmath",
+        "Headers"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-16-q06",
+      "type": "multi",
+      "prompt": "Which of these belong to the `<random>` library? Select all that apply.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "下列哪些屬於 `<random>` 程式庫？可多選。"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "`std::mt19937`"
+          },
+          "b": {
+            "zh-Hant": "`std::uniform_int_distribution`"
+          },
+          "c": {
+            "zh-Hant": "`std::random_device`"
+          },
+          "d": {
+            "zh-Hant": "`std::rand`"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "mt19937、uniform_int_distribution、random_device 都是 <random> 的組件；std::rand 來自 <cstdlib>，是較舊的 C 介面。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "`std::mt19937`"
+        },
+        {
+          "id": "b",
+          "text": "`std::uniform_int_distribution`"
+        },
+        {
+          "id": "c",
+          "text": "`std::random_device`"
+        },
+        {
+          "id": "d",
+          "text": "`std::rand`"
+        }
+      ],
+      "answer": {
+        "kind": "multi",
+        "optionIds": [
+          "a",
+          "b",
+          "c"
+        ]
+      },
+      "explanation": "mt19937, uniform_int_distribution and random_device are all part of <random>. std::rand comes from <cstdlib> and is the older C interface.",
+      "tags": [
+        "Random"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-16-q07",
+      "type": "boolean",
+      "prompt": "Integer division in C++ truncates toward zero.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "C++ 的整數除法會向零截斷。"
+        },
+        "explanation": {
+          "zh-Hant": "C++11 起，整數除法的商向零截斷：-7 / 2 是 -3，而不是 -4；餘數的符號跟隨被除數。"
+        }
+      },
+      "answer": {
+        "kind": "boolean",
+        "value": true
+      },
+      "explanation": "Since C++11 integer division truncates toward zero: -7 / 2 is -3, not -4, and the remainder takes the sign of the dividend.",
+      "tags": [
+        "Arithmetic"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-16-q08",
+      "type": "boolean",
+      "prompt": "A `float` usually stores more precision than a `double`.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "`float` 通常比 `double` 儲存更高的精度。"
+        },
+        "explanation": {
+          "zh-Hant": "double 通常有 53 位有效位元，float 約 24 位；double 精度較高但佔用較多記憶體。"
+        }
+      },
+      "answer": {
+        "kind": "boolean",
+        "value": false
+      },
+      "explanation": "A double usually has 53 bits of precision and a float about 24. double is more precise but uses more memory.",
+      "tags": [
+        "Floating point"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-16-q09",
+      "type": "fill",
+      "prompt": "The class template that reports the limits of a numeric type is std::numeric____.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "用來查詢數值型別極限的類別樣板是 std::numeric____。"
+        },
+        "explanation": {
+          "zh-Hant": "std::numeric_limits<T>::max() 與 ::min() 會回傳 T 的極限值。"
+        }
+      },
+      "answer": {
+        "kind": "fill",
+        "accept": [
+          "limits",
+          "_limits"
+        ],
+        "ignoreCase": true,
+        "ignoreSpaces": true
+      },
+      "explanation": "std::numeric_limits<T>::max() and ::min() report the range of T.",
+      "tags": [
+        "Limits"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-16-q10",
+      "type": "short",
+      "prompt": "Why should floating-point values usually be compared with a tolerance instead of `==`?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "為何浮點數通常應以容差比較，而不是直接用 `==`？"
+        },
+        "model": {
+          "zh-Hant": "浮點數以有限位元近似表示，運算過程會累積捨入誤差，兩個數學上相等的值在記憶體中可能相差極小量。應以 `std::abs(a - b) < epsilon` 之類的容差判斷，epsilon 依數量級選取。"
+        },
+        "explanation": {
+          "zh-Hant": "關鍵是浮點表示與運算的捨入誤差，而非數學上的精確相等。"
+        }
+      },
+      "answer": {
+        "kind": "short",
+        "model": "Floating-point values are stored as finite-precision approximations, and arithmetic accumulates rounding error. Two mathematically equal results can differ by a tiny amount in memory, so compare with a tolerance such as `std::abs(a - b) < epsilon`, choosing epsilon for the expected magnitude.",
+        "keywords": [
+          "rounding",
+          "tolerance",
+          "epsilon",
+          "precision"
+        ]
+      },
+      "explanation": "The issue is representation and rounding error, not mathematical equality.",
+      "tags": [
+        "Floating point"
+      ],
+      "difficulty": 3
+    }
+  ]
+}

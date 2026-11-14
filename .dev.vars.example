@@ -7,14 +7,6 @@
 # ---------------------------------------------------------------------------
 
 # Text providers (official APIs). Configure at least one.
-GLM_API_KEY=
-GLM_MODEL=glm-4.7-flash
-GLM_MODELS=glm-4.7-flash
-# Base URL only; the server appends /chat/completions.
-GLM_BASE_URL=https://open.bigmodel.cn/api/paas/v4
-# Optional: enabled / disabled / auto. Question generation uses disabled.
-GLM_THINKING=disabled
-
 DEEPSEEK_API_KEY=
 DEEPSEEK_MODEL=deepseek-flash
 DEEPSEEK_MODELS=deepseek-flash,deepseek-v4-pro
@@ -67,6 +59,7 @@ SUPABASE_PUBLISHABLE_KEY=sb_publishable_bl2gRxOO8EgNOQMlQR3dYQ_ZBbOvhaE
 # ALLOWED_ORIGINS=*
 
 # Optional generation tuning. 0 / blank = automatic.
+# AI_GENERATION=off       # switch question generation off without deleting a key
 # AI_TEMPERATURE=0.4
 # AI_MAX_TOKENS=0          # auto: 32K for GLM (up to 128K) and DeepSeek (up to 64K)
 # AI_TIMEOUT_MS=300000    # inactivity gap; every streamed chunk resets it

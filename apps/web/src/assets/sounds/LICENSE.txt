@@ -1,0 +1,12 @@
+applause.mp3
+============
+
+"A small round of applause" (preview copy), downloaded from:
+https://directory.audio/sound-effects/human/19593-a-small-round-of-applause
+
+License: Creative Commons Zero (CC0 1.0 Universal, public domain dedication)
+https://creativecommons.org/share-your-work/public-domain/cc0/
+
+Used for the 100-point result sound. The app plays the first few seconds and
+keeps the rest of the recording untouched. A synthesised fallback is used if
+the file cannot be fetched or decoded.

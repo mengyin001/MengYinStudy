@@ -1,21 +1,31 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { currentItem, isAnswered, type Answer, type SelfGrade } from '@mengyin/core';
+import { currentItem, isAnswerStreakMilestone, isAnswered, type Answer, type SelfGrade } from '@mengyin/core';
 import { AnswerInput } from '@/components/AnswerInput';
+import { AnswerStreakBadge, AnswerStreakBurst, type AnswerStreakBurstState } from '@/components/AnswerStreak';
 import { FeedbackPanel } from '@/components/FeedbackPanel';
 import { Icon } from '@/components/Icons';
 import { QuestionImage } from '@/components/QuestionImage';
 import { SessionResults } from '@/components/SessionResults';
 import { Sheet } from '@/components/ui';
 import { createEmptyAnswer } from '@/domain/answers';
+import { localizeQuestion } from '@/domain/localize';
 import { questionTypeLabel } from '@/domain/registry';
 import { canRunCode } from '@/sandbox/codeRun';
 import type { MessageKey } from '@/i18n/messages';
+import { streakBurstKey } from '@/lib/answerStreak';
+import {
+  playAnswerFeedbackSound,
+  playAnswerStreakChime,
+  preloadApplause,
+  primeAnswerStreakAudio,
+  setAnswerAudioEnabled,
+} from '@/lib/answerStreakAudio';
 import { formatClock } from '@/lib/format';
 import { navigate } from '@/lib/router';
 import { useApp } from '@/state/AppContext';
 
 export function PracticePage() {
-  const { state, t, actions } = useApp();
+  const { state, t, actions, locale } = useApp();
   const session = state.session;
   const [draft, setDraft] = useState<Answer | null>(null);
   const [hintOpen, setHintOpen] = useState(false);
@@ -26,11 +36,16 @@ export function PracticePage() {
   const [pendingAuto, setPendingAuto] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [codeRunning, setCodeRunning] = useState(false);
+  const [burst, setBurst] = useState<AnswerStreakBurstState | null>(null);
   const startRef = useRef(Date.now());
   const autoDoneRef = useRef<Set<string>>(new Set());
+  const celebratedRef = useRef<Set<string>>(new Set());
+  const burstIdRef = useRef(0);
 
   const item = session && !session.finished ? currentItem(session) : null;
-  const question = item?.entry.question ?? null;
+  // Localise on every render so switching language mid-session updates the
+  // question immediately; the canonical text is kept in `i18n`.
+  const question = item ? localizeQuestion(item.entry.question, locale) : null;
   const answered = !!item?.result;
   const reveal = !!session?.reveal;
   const drillMode = session?.mode === 'drill';
@@ -56,6 +71,76 @@ export function PracticePage() {
     if (item?.result && item.answer) setDraft(item.answer);
   }, [item?.result, item?.answer]);
 
+  const clearBurst = useCallback(() => setBurst(null), []);
+
+  // Fetch the applause recording while the learner is answering so the 100
+  // result can play it without waiting for the network.
+  useEffect(() => {
+    preloadApplause();
+  }, []);
+
+  // Audio may only start after a gesture. The first tap or key press in a
+  // practice session is enough, and the listener removes itself afterwards.
+  useEffect(() => {
+    if (!session || session.mode === 'exam') return undefined;
+    const prime = () => primeAnswerStreakAudio();
+    window.addEventListener('pointerdown', prime, { once: true });
+    window.addEventListener('keydown', prime, { once: true });
+    return () => {
+      window.removeEventListener('pointerdown', prime);
+      window.removeEventListener('keydown', prime);
+    };
+  }, [session?.id, session?.mode]);
+
+  // On mount (or a new session) mark everything already answered as seen, so
+  // reopening a question never replays its chime. During a session the id does
+  // not change, so newly submitted answers are not marked here.
+  useEffect(() => {
+    celebratedRef.current.clear();
+    setBurst(null);
+    if (!session) return;
+    session.items.forEach((entry, index) => {
+      if (entry.result) celebratedRef.current.add(`${session.id}:${index}`);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.id]);
+
+  // Reward a graded answer exactly once. A wholly correct answer always has a
+  // sound: the base rising fifth on its own, or the longer streak chime from
+  // two in a row onwards. A partly correct answer gets the softer encouraging
+  // motif. The card and confetti still wait for a milestone (3, 5, 10, 15…).
+  useEffect(() => {
+    if (!session || session.mode === 'exam' || !item?.result) return;
+    const key = `${session.id}:${session.index}`;
+    if (celebratedRef.current.has(key)) return;
+    if (item.result.status === 'pending') return;
+    celebratedRef.current.add(key);
+
+    const settings = state.progress.settings;
+    const status = item.result.status;
+    const streak = session.answerStreak;
+    const milestone = status === 'correct' && isAnswerStreakMilestone(streak);
+
+    if (settings.soundEffects) {
+      if (status === 'correct') {
+        if (streak >= 2) playAnswerStreakChime(streak, milestone);
+        else playAnswerFeedbackSound('correct');
+      } else if (status === 'partial') {
+        playAnswerFeedbackSound('partial');
+      }
+    }
+
+    if (settings.streakEffects && milestone) {
+      burstIdRef.current += 1;
+      setBurst({ id: burstIdRef.current, streak });
+    }
+  }, [
+    item?.result,
+    session,
+    state.progress.settings.soundEffects,
+    state.progress.settings.streakEffects,
+  ]);
+
   useEffect(() => {
     if (!session || session.finished) return;
     const id = window.setInterval(() => setNowTick(Date.now()), 1000);
@@ -80,6 +165,9 @@ export function PracticePage() {
 
   const submit = useCallback(async () => {
     if (!draft || !canSubmit) return;
+    // Submitting is a user gesture; make sure the audio context is awake even
+    // if the pointerdown priming listener did not run for this click.
+    primeAnswerStreakAudio();
     setSubmitting(true);
     try {
       await actions.submit(draft, Date.now() - startRef.current);
@@ -91,6 +179,7 @@ export function PracticePage() {
   const submitShort = useCallback(
     (selfGrade: SelfGrade) => {
       if (!draft || draft.kind !== 'short') return;
+      primeAnswerStreakAudio();
       actions.submit({ ...draft, selfGrade }, Date.now() - startRef.current);
     },
     [actions, draft],
@@ -254,8 +343,38 @@ export function PracticePage() {
             {t(modeKey)} · {t('practice.questionOf', { index: session.index + 1, total })}
           </span>
         </div>
+        {session.mode !== 'exam' ? (
+          <AnswerStreakBadge
+            streak={session.answerStreak}
+            label={t('streak.answerLabel', { n: session.answerStreak })}
+          />
+        ) : null}
         {remaining !== null && state.progress.settings.showTimer ? (
           <span className={`session__timer ${remaining <= 60_000 ? 'is-urgent' : ''}`}>{formatClock(remaining)}</span>
+        ) : null}
+        {session.mode !== 'exam' ? (
+          <button
+            type="button"
+            className={`icon-btn sound-toggle ${state.progress.settings.soundEffects ? '' : 'is-off'}`}
+            onClick={() => {
+              const next = !state.progress.settings.soundEffects;
+              actions.updateSettings({ soundEffects: next });
+              setAnswerAudioEnabled(next);
+            }}
+            aria-label={t(
+              state.progress.settings.soundEffects ? 'practice.muteSound' : 'practice.unmuteSound',
+            )}
+            title={t(
+              state.progress.settings.soundEffects ? 'practice.muteSound' : 'practice.unmuteSound',
+            )}
+            aria-pressed={state.progress.settings.soundEffects}
+          >
+            <Icon
+              name={state.progress.settings.soundEffects ? 'volume' : 'volumeOff'}
+              size={16}
+              strokeWidth={1.7}
+            />
+          </button>
         ) : null}
         <button
           type="button"
@@ -504,6 +623,15 @@ export function PracticePage() {
           </p>
         ) : null}
       </Sheet>
+
+      {burst ? (
+        <AnswerStreakBurst
+          key={burst.id}
+          burst={burst}
+          message={t(streakBurstKey(burst.streak), { n: burst.streak })}
+          onDone={clearBurst}
+        />
+      ) : null}
     </div>
   );
 }

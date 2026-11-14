@@ -6,7 +6,7 @@ same origin, keeps provider keys on the server, and streams generation progress 
 ```
 Browser (React)                         Cloudflare Worker                      Providers
 ─────────────────                       ─────────────────                      ─────────
-POST /api/ai/questions  ──────────────▶  auth (Supabase JWT)                    GLM  (official API)
+POST /api/ai/questions  ──────────────▶  auth (Supabase JWT)                 DeepSeek (official API)
   topic, settings,                        provider registry                      DeepSeek (official API)
   300k-char excerpt                       batching + validation
         ◀──────── SSE progress ─────────  illustration pipeline  ─────────────▶ Cloudflare Workers AI
@@ -35,13 +35,6 @@ Set `AUTH_REQUIRED=false` only for local development.
 ```json
 {
   "providers": [
-    {
-      "id": "glm",
-      "label": "GLM (Zhipu)",
-      "models": ["glm-4.7-flash"],
-      "configured": true,
-      "demo": false
-    },
     {
       "id": "deepseek",
       "label": "DeepSeek",
@@ -93,16 +86,30 @@ ceiling; the 30 MB per-account storage budget and the provider's own limits stil
   "focus": "chapter 4 only",
   "description": "An introductory data structures course.",
   "materials": [{ "name": "week3.pdf", "text": "…extracted text…" }],
-  "model": "glm-4.7-flash",
+  "model": "deepseek-flash",
   "imageMode": "auto",
   "imageModel": "@cf/black-forest-labs/flux-1-schnell"
 }
 ```
 
-- `model` is **required** and must be one of the catalogue ids (`glm-4.7-flash`,
-  `deepseek-flash`, `deepseek-v4-pro`). There is no server default and no provider
+- `model` is **required** and must be one of the catalogue ids (`deepseek-flash`,
+  `deepseek-v4-pro`). There is no server default and no provider
   default: omission or `"auto"` is a `400`. The server derives the provider from the model.
 - `provider` is accepted for an older client but ignored; send `model` only.
+- `apiKey` is optional and is the learner's own provider key. When present the
+  server uses it for that request instead of its own key, charges no points and
+  does not consult the plan's model list, so a free account can generate at its
+  own cost. The key is never stored server-side and never appears in a response
+  or a log line; the plan still decides whether AI photos are allowed.
+- `apiBaseUrl` is optional and goes with `apiKey`: an OpenAI-compatible base URL
+  for the learner's own provider (any vendor). With it, `model` is that
+  provider's id and is not checked against our catalogue. Only `https` to a
+  public host is accepted — the Worker fetches this URL, so loopback, private
+  ranges and link-local targets are rejected.
+- `apiContextTokens` is optional and goes with `apiBaseUrl`: the model's context
+  window in tokens (1,024–2,000,000). The server keeps the completion budget at
+  a quarter of it, capped at 32K, so a small-context model is not asked for more
+  than it can deliver.
 - `imageModel` is optional; `"auto"` or omission uses `/config`'s image default.
 - `types` may be omitted (all six) but not empty.
 - `imageMode`: `off`, `auto` (the planner decides per finished question; roughly one visual per three
@@ -129,7 +136,7 @@ ceiling; the 30 MB per-account storage budget and the provider's own limits stil
     "id": "generated-…",
     "pluginId": "ai.stacks-…",
     "title": "Stacks and queues",
-    "description": "Generated from the topic brief · GLM (Zhipu) · glm-4.7-flash",
+    "description": "Generated from the topic brief · DeepSeek · deepseek-flash",
     "tags": ["Stacks and queues"],
     "questions": [
       {
@@ -161,7 +168,7 @@ ceiling; the 30 MB per-account storage budget and the provider's own limits stil
   },
   "warnings": [{ "code": "brief", "message": "…" }],
   "usage": { "promptTokens": 0, "completionTokens": 0, "totalTokens": 0 },
-  "engine": { "provider": "glm", "providerLabel": "GLM (Zhipu)", "model": "glm-4.7-flash" },
+  "engine": { "provider": "deepseek", "providerLabel": "DeepSeek", "model": "deepseek-flash" },
   "images": { "requested": 2, "generated": 2, "searched": 1, "failed": 0, "diagrams": 1 }
 }
 ```
@@ -250,7 +257,7 @@ default. The image provider itself (Cloudflare Workers AI) is still a server set
 
 ## `POST /api/ai/test`
 
-Body `{ "model": "glm-4.7-flash" }` (required; `provider` is ignored). Sends an eight-token
+Body `{ "model": "deepseek-flash" }` (required; `provider` is ignored). Sends an eight-token
 completion and returns `{ ok, provider, providerLabel, model, latencyMs }`. It does not consume the
 question quota.
 
@@ -260,11 +267,6 @@ Worker secrets (`npx wrangler secret put NAME`) and local `.dev.vars` / `.env` v
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `GLM_API_KEY` | — | Zhipu API key. Enables the GLM provider |
-| `GLM_MODEL` | `glm-4.7-flash` | Preferred GLM model; the browser still sends an explicit id |
-| `GLM_MODELS` | built-in list | Comma-separated model list shown to the browser |
-| `GLM_BASE_URL` | `https://open.bigmodel.cn/api/paas/v4` | Official OpenAI-compatible endpoint; a full `/chat/completions` URL is also accepted |
-| `GLM_THINKING` | provider default | `enabled` / `disabled` / `auto` |
 | `DEEPSEEK_API_KEY` | — | DeepSeek API key. Enables the DeepSeek provider |
 | `DEEPSEEK_MODEL` | `deepseek-flash` | Preferred DeepSeek model; the browser still sends an explicit id |
 | `DEEPSEEK_MODELS` | built-in list | Comma-separated model list |
@@ -272,9 +274,10 @@ Worker secrets (`npx wrangler secret put NAME`) and local `.dev.vars` / `.env` v
 | `DEEPSEEK_THINKING` | `disabled` | DeepSeek thinking mode; `auto` sends nothing |
 | `DEEPSEEK_REASONING_EFFORT` | `high` | `low` / `high` / `max` when thinking is enabled |
 | `AI_TEMPERATURE` | `0.4` | 0–2 |
-| `AI_MAX_TOKENS` | `0` (auto) | `0` picks 32K for both GLM (ceiling 128K) and DeepSeek (ceiling 64K); an explicit 256–ceiling value overrides it |
+| `AI_MAX_TOKENS` | `0` (auto) | `0` picks 32K for DeepSeek (ceiling 64K); an explicit 256–ceiling value overrides it |
 | `AI_TIMEOUT_MS` | `300000` | Inactivity gap while streaming; each chunk resets it. 10–600 s |
 | `AI_JSON_MODE` | `true` | `false` disables `response_format` |
+| `AI_GENERATION` | on | `off` switches question generation off: `/config` returns no providers and every generation call fails with `ai_unconfigured` before a key is used. Images keep their own switches |
 | `AI_ALLOW_CUSTOM_MODELS` | `false` | Allow a model id outside the list |
 | `AI_MOCK` | off | `1` adds a demo provider and images; **never in production** |
 | `IMAGE_PROVIDER` | `cloudflare` | `cloudflare`, `demo` or `none` |
@@ -286,7 +289,6 @@ Worker secrets (`npx wrangler secret put NAME`) and local `.dev.vars` / `.env` v
 | `IMAGE_SEARCH` | `wikimedia` | `wikimedia` or `off`; real reference photos for scene questions |
 | `IMAGE_SEARCH_LIMIT` | `8` | Results requested per search, 1–12 |
 | `IMAGE_SEARCH_TIMEOUT_MS` | `12000` | Search and download timeout, 3–30 s |
-| `GLM_VISION_MODEL` | — | Optional vision model (e.g. `glm-4v-flash`) for the photo check |
 | `DEEPSEEK_VISION_MODEL` | — | Optional vision model for the photo check |
 | `AI_VERIFY_IMAGES` | on when a vision model is set | `off` disables the multimodal check |
 | `CLOUDFLARE_ACCOUNT_ID` / `CLOUDFLARE_AI_TOKEN` | — | REST fallback when the `AI` binding is unavailable |
@@ -300,9 +302,11 @@ Worker secrets (`npx wrangler secret put NAME`) and local `.dev.vars` / `.env` v
 ### Model names
 
 The defaults reflect the official documentation at release time, but provider catalogues change.
-Set `GLM_MODEL` / `GLM_MODELS` and `DEEPSEEK_MODEL` / `DEEPSEEK_MODELS` to the exact ids your account
-can call; the browser reads the resulting list from `/config`. `AI_ALLOW_CUSTOM_MODELS=1` lets a
-request name an id that is not listed, which is useful while testing a new model.
+Set `DEEPSEEK_MODEL` / `DEEPSEEK_MODELS` to the exact ids your account
+can call; the browser reads the resulting list from `/config`. Only catalogue ids survive the filter:
+a provider list that names a retired model is trimmed, and an id outside
+`packages/core/src/billing.ts` never reaches the browser. `AI_ALLOW_CUSTOM_MODELS=1` lets a request
+name an id that is not listed, which is useful while testing a new model.
 
 ### Adding another provider
 
@@ -329,7 +333,7 @@ npm run dev:web
 
 With no provider key, `dev:api` starts the demo provider (`AI_MOCK=1`) and `AUTH_REQUIRED=false`.
 The demo returns placeholder questions and a deterministic SVG illustration, so the full stream,
-validation and image path can be exercised without spending a token. Set `GLM_API_KEY` or
+validation and image path can be exercised without spending a token. Set `DEEPSEEK_API_KEY` or
 `DEEPSEEK_API_KEY` in `.env` for real output; `AUTH_REQUIRED` stays false locally but the web app
 still asks the learner to sign in.
 
@@ -343,7 +347,6 @@ AI binding. One deployment serves both the app and the API, so `/api/ai` is same
 
 ```bash
 # once per secret
-npx wrangler secret put GLM_API_KEY
 npx wrangler secret put DEEPSEEK_API_KEY
 
 # build the web app, then upload the Worker and assets

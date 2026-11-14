@@ -1,0 +1,454 @@
+{
+  "id": "cpp-12-operators",
+  "title": "C++ Operators",
+  "titleI18n": {
+    "zh-Hant": "C++ 運算子"
+  },
+  "description": "Arithmetic, comparison, logic, bit manipulation and the precedence rules that decide what a C++ expression actually means.",
+  "descriptionI18n": {
+    "zh-Hant": "算術、比較、邏輯、位元運算，以及決定 C++ 運算式真正意思的優先順序規則。"
+  },
+  "tags": [
+    "C++",
+    "Operators"
+  ],
+  "examMinutes": 15,
+  "questions": [
+    {
+      "id": "cpp-12-q01",
+      "type": "single",
+      "prompt": "What is the value of `7 / 2` when both operands are `int`?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "當兩個運算元都是 `int` 時，`7 / 2` 的值是多少？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "3"
+          },
+          "b": {
+            "zh-Hant": "3.5"
+          },
+          "c": {
+            "zh-Hant": "4"
+          },
+          "d": {
+            "zh-Hant": "2"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "整數除法會丟棄小數部分（向零截斷），所以 7 / 2 是 3；要得到 3.5 必須至少一個運算元是浮點數。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "3"
+        },
+        {
+          "id": "b",
+          "text": "3.5"
+        },
+        {
+          "id": "c",
+          "text": "4"
+        },
+        {
+          "id": "d",
+          "text": "2"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "Integer division discards the fractional part (truncates toward zero), so 7 / 2 is 3. At least one operand must be floating point to get 3.5.",
+      "tags": [
+        "Arithmetic"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-12-q02",
+      "type": "single",
+      "prompt": "In `a + b * c`, which operation is performed first?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "在 `a + b * c` 中，哪一個運算會先執行？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "b * c，因為 * 的優先順序高於 +"
+          },
+          "b": {
+            "zh-Hant": "a + b，因為由左至右"
+          },
+          "c": {
+            "zh-Hant": "兩者同時執行"
+          },
+          "d": {
+            "zh-Hant": "編譯器可任意選擇"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "* 的優先順序高於 +，所以先算 b * c，再把結果加 a；同級運算子才由左至右。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "b * c, because * has higher precedence than +"
+        },
+        {
+          "id": "b",
+          "text": "a + b, because evaluation is left to right"
+        },
+        {
+          "id": "c",
+          "text": "Both at the same time"
+        },
+        {
+          "id": "d",
+          "text": "The compiler may choose either"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "* binds tighter than +, so b * c is evaluated first and the result is added to a. Left-to-right applies only among operators of the same precedence.",
+      "tags": [
+        "Precedence"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-12-q03",
+      "type": "single",
+      "prompt": "Given `int x = 5;`, what does the expression `x++` evaluate to?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "已知 `int x = 5;`，運算式 `x++` 的值是多少？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "5，之後 x 變成 6"
+          },
+          "b": {
+            "zh-Hant": "6，x 之後仍是 5"
+          },
+          "c": {
+            "zh-Hant": "6，x 也變成 6"
+          },
+          "d": {
+            "zh-Hant": "未定義"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "後置 ++ 會先回傳舊值 5，再把 x 遞增為 6；前置 ++x 則先遞增再回傳 6。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "5, and then x becomes 6"
+        },
+        {
+          "id": "b",
+          "text": "6, and x stays 5"
+        },
+        {
+          "id": "c",
+          "text": "6, and x also becomes 6"
+        },
+        {
+          "id": "d",
+          "text": "Undefined"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "Postfix ++ yields the old value (5) and then increments x to 6. Prefix ++x increments first and yields 6.",
+      "tags": [
+        "Increment"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-12-q04",
+      "type": "single",
+      "prompt": "What is the value of `5 & 3`?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "`5 & 3` 的值是多少？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "1"
+          },
+          "b": {
+            "zh-Hant": "7"
+          },
+          "c": {
+            "zh-Hant": "8"
+          },
+          "d": {
+            "zh-Hant": "2"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "5 是二進位 101，3 是 011；逐位元 AND 得 001，即十進位 1。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "1"
+        },
+        {
+          "id": "b",
+          "text": "7"
+        },
+        {
+          "id": "c",
+          "text": "8"
+        },
+        {
+          "id": "d",
+          "text": "2"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "5 is 101 in binary and 3 is 011. Bitwise AND gives 001, which is 1.",
+      "tags": [
+        "Bitwise"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-12-q05",
+      "type": "multi",
+      "prompt": "Which of these are logical operators in C++? Select all that apply.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "下列哪些是 C++ 的邏輯運算子？可多選。"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "&& 邏輯 AND"
+          },
+          "b": {
+            "zh-Hant": "|| 邏輯 OR"
+          },
+          "c": {
+            "zh-Hant": "! 邏輯 NOT"
+          },
+          "d": {
+            "zh-Hant": "& 位元 AND"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "&&、||、! 是邏輯運算子；& 是位元 AND，作用在整數的每個位元上。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "&& logical AND"
+        },
+        {
+          "id": "b",
+          "text": "|| logical OR"
+        },
+        {
+          "id": "c",
+          "text": "! logical NOT"
+        },
+        {
+          "id": "d",
+          "text": "& bitwise AND"
+        }
+      ],
+      "answer": {
+        "kind": "multi",
+        "optionIds": [
+          "a",
+          "b",
+          "c"
+        ]
+      },
+      "explanation": "&&, || and ! are the logical operators. & is bitwise AND and works on each bit of an integer.",
+      "tags": [
+        "Logical"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-12-q06",
+      "type": "multi",
+      "prompt": "Which statements about short-circuit evaluation are correct? Select all that apply.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "關於短路求值，下列敘述何者正確？可多選。"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "`a && b` 在 a 為假時不會評估 b。"
+          },
+          "b": {
+            "zh-Hant": "`a || b` 在 a 為真時不會評估 b。"
+          },
+          "c": {
+            "zh-Hant": "短路可以避免對空指標解引用。"
+          },
+          "d": {
+            "zh-Hant": "`&&` 與 `||` 一定會評估兩個運算元。"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "&& 左邊為假就整體為假，|| 左邊為真就整體為真，因此右邊可能不被評估；常用於 `p != nullptr && p->ok()`。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "`a && b` does not evaluate b when a is false."
+        },
+        {
+          "id": "b",
+          "text": "`a || b` does not evaluate b when a is true."
+        },
+        {
+          "id": "c",
+          "text": "Short-circuiting can prevent dereferencing a null pointer."
+        },
+        {
+          "id": "d",
+          "text": "`&&` and `||` always evaluate both operands."
+        }
+      ],
+      "answer": {
+        "kind": "multi",
+        "optionIds": [
+          "a",
+          "b",
+          "c"
+        ]
+      },
+      "explanation": "&& stops when the left side is false and || stops when the left side is true, so the right side may never run. That is why `p != nullptr && p->ok()` is safe.",
+      "tags": [
+        "Logical",
+        "Evaluation"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-12-q07",
+      "type": "boolean",
+      "prompt": "In C++, `=` and `==` can be used interchangeably inside an `if` condition.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "在 C++ 中，`=` 與 `==` 可以在 `if` 條件中互換使用。"
+        },
+        "explanation": {
+          "zh-Hant": "`=` 是賦值，`==` 是比較；`if (x = 5)` 會把 5 賦值給 x 並測試 5，幾乎總是錯誤。"
+        }
+      },
+      "answer": {
+        "kind": "boolean",
+        "value": false
+      },
+      "explanation": "= assigns and == compares. `if (x = 5)` assigns 5 to x and then tests 5, which is almost always a bug.",
+      "tags": [
+        "Comparison",
+        "Pitfalls"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-12-q08",
+      "type": "boolean",
+      "prompt": "For an unsigned integer without overflow, `x << 1` is equivalent to multiplying x by 2.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "在沒有溢出的情況下，對無號整數而言 `x << 1` 等同於把 x 乘以 2。"
+        },
+        "explanation": {
+          "zh-Hant": "左移一位會把每個位元往高位移動，數值變成兩倍；若移出的高位超出型別範圍則會丟失。"
+        }
+      },
+      "answer": {
+        "kind": "boolean",
+        "value": true
+      },
+      "explanation": "Shifting left by one moves every bit to a higher position, doubling the value. Bits shifted past the type's width are lost.",
+      "tags": [
+        "Bitwise"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-12-q09",
+      "type": "fill",
+      "prompt": "The `%` operator returns the ____ of an integer division.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "`%` 運算子會回傳整數除法的 ____。"
+        },
+        "explanation": {
+          "zh-Hant": "% 是取餘數運算子：17 % 5 的結果是 2。"
+        }
+      },
+      "answer": {
+        "kind": "fill",
+        "accept": [
+          "remainder",
+          "餘數"
+        ],
+        "ignoreCase": true,
+        "ignoreSpaces": true
+      },
+      "explanation": "% is the remainder operator: 17 % 5 evaluates to 2.",
+      "tags": [
+        "Arithmetic"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-12-q10",
+      "type": "short",
+      "prompt": "Explain the difference between prefix `++x` and postfix `x++`.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "說明前置 `++x` 與後置 `x++` 的分別。"
+        },
+        "model": {
+          "zh-Hant": "前置 ++x 先遞增再回傳新值；後置 x++ 先回傳舊值再遞增。若只是把 x 加一而不使用運算式的值，兩者效果相同；前置版本通常可避免額外複製。"
+        },
+        "explanation": {
+          "zh-Hant": "關鍵在於運算式的值是何時的 x，以及副作用發生的先後。"
+        }
+      },
+      "answer": {
+        "kind": "short",
+        "model": "Prefix ++x increments x first and yields the new value. Postfix x++ yields the old value first and then increments x. When the result is discarded, both have the same effect, but prefix avoids the extra copy in some cases.",
+        "keywords": [
+          "prefix",
+          "postfix",
+          "increment",
+          "value"
+        ]
+      },
+      "explanation": "The difference is when the value is read relative to the increment side effect.",
+      "tags": [
+        "Increment"
+      ],
+      "difficulty": 2
+    }
+  ]
+}

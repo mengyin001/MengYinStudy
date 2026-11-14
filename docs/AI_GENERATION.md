@@ -26,7 +26,9 @@ Sign in first: AI generation is available to signed-in learners. A guest sees a 
    grow without a per-deck question cap. Use the trash button on a question, or **Delete all
    questions**, to trim the draft; **Save as deck** saves the selected questions. A short reply is
    topped up automatically, and a remaining shortfall is shown as a warning instead of silently
-   saving fewer questions.
+   saving fewer questions. After saving, the deck can still be renamed and pruned from **Decks**
+   (the pencil on its row, or **Edit deck** in the preview); kept question ids keep their practice
+   history.
 6. The draft lives in this tab's `sessionStorage`: it survives switching pages and reloading, and is
    cleared when the tab or browser closes or after the deck is saved. If inline images are too large
    for the storage quota, the questions are kept, the pictures are dropped, and a warning explains

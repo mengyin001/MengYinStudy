@@ -10,6 +10,7 @@ export * from './session';
 export * from './exam';
 export * from './stats';
 export * from './streak';
+export * from './answerStreak';
 export * from './billing';
 export * from './progress';
 export * from './sync';

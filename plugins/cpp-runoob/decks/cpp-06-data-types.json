@@ -1,0 +1,463 @@
+{
+  "id": "cpp-06-data-types",
+  "title": "C++ Data Types",
+  "titleI18n": {
+    "zh-Hant": "C++ 資料類型"
+  },
+  "description": "The fundamental types, what the standard actually guarantees about their sizes, and the conversions that can silently lose data.",
+  "descriptionI18n": {
+    "zh-Hant": "基本資料類型、標準對其大小的實際保證，以及可能悄悄遺失資料的型別轉換。"
+  },
+  "tags": [
+    "C++",
+    "Types"
+  ],
+  "examMinutes": 14,
+  "questions": [
+    {
+      "id": "cpp-06-q01",
+      "type": "single",
+      "prompt": "Which type is designed to hold a single UTF-16 code unit?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "哪一個型別專門用來存放單一 UTF-16 碼元？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "char16_t"
+          },
+          "b": {
+            "zh-Hant": "wchar_t"
+          },
+          "c": {
+            "zh-Hant": "char"
+          },
+          "d": {
+            "zh-Hant": "unsigned char"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "char16_t 與 char32_t 是 C++11 為 UTF-16 與 UTF-32 碼元新增的型別；wchar_t 的寬度由實作決定，char 只存放一個窄碼元。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "char16_t"
+        },
+        {
+          "id": "b",
+          "text": "wchar_t"
+        },
+        {
+          "id": "c",
+          "text": "char"
+        },
+        {
+          "id": "d",
+          "text": "unsigned char"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "char16_t and char32_t were added in C++11 for UTF-16 and UTF-32 code units. wchar_t has an implementation-defined width, and char holds one narrow code unit.",
+      "tags": [
+        "Character types",
+        "Unicode"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-06-q02",
+      "type": "single",
+      "prompt": "Which type does the literal 3.14 have?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "常值 3.14 的型別是哪一個？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "double"
+          },
+          "b": {
+            "zh-Hant": "float"
+          },
+          "c": {
+            "zh-Hant": "long double"
+          },
+          "d": {
+            "zh-Hant": "int"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "沒有後綴的浮點常值是 double；3.14f 是 float，3.14L 是 long double。double 通常提供約 15 位有效十進位數字，float 約 6 至 7 位。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "double"
+        },
+        {
+          "id": "b",
+          "text": "float"
+        },
+        {
+          "id": "c",
+          "text": "long double"
+        },
+        {
+          "id": "d",
+          "text": "int"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "A floating-point literal without a suffix has type double; 3.14f is a float and 3.14L is a long double. double usually gives about 15 significant decimal digits, float about 6 or 7.",
+      "tags": [
+        "Floating point",
+        "Literals"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-06-q03",
+      "type": "boolean",
+      "prompt": "`sizeof(char)` is 1 on every conforming C++ implementation.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "在每一個符合標準的 C++ 實作上，`sizeof(char)` 都等於 1。"
+        },
+        "explanation": {
+          "zh-Hant": "sizeof 以 char 為單位計算，而 sizeof(char) 依定義就是 1；但這不代表一個位元組一定是 8 位元，實際位數由 CHAR_BIT 決定。"
+        }
+      },
+      "answer": {
+        "kind": "boolean",
+        "value": true
+      },
+      "explanation": "sizeof counts in units of char, and sizeof(char) is defined as 1. That does not mean 8 bits: a byte in C++ is whatever CHAR_BIT says, although it is 8 on almost every platform.",
+      "tags": [
+        "sizeof",
+        "Types"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-06-q04",
+      "type": "boolean",
+      "prompt": "In the expression `-1 < 1u`, the signed value is converted to unsigned, so the comparison is false.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "在運算式 `-1 < 1u` 中，有號值會被轉成無號，因此比較結果為 false。"
+        },
+        "explanation": {
+          "zh-Hant": "一般算術轉換會把 int 轉成 unsigned int，-1 因而變成最大的無號值，所以 -1 < 1u 為 false；這是典型的符號性陷阱。"
+        }
+      },
+      "answer": {
+        "kind": "boolean",
+        "value": true
+      },
+      "explanation": "The usual arithmetic conversions turn the int into unsigned int, so -1 becomes the largest unsigned value and the comparison is false. This is a classic signedness bug.",
+      "tags": [
+        "Signedness",
+        "Conversions"
+      ],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-06-q05",
+      "type": "multi",
+      "prompt": "Which of these are fundamental C++ types? Select all that apply.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "下列哪些是 C++ 的基本（內建）型別？可多選。"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "bool"
+          },
+          "b": {
+            "zh-Hant": "wchar_t"
+          },
+          "c": {
+            "zh-Hant": "void"
+          },
+          "d": {
+            "zh-Hant": "std::string"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "bool、wchar_t、void 都是基本型別（void 是不完整型別，不帶值）；std::string 是標準程式庫中的類別樣板，不是內建型別。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "bool"
+        },
+        {
+          "id": "b",
+          "text": "wchar_t"
+        },
+        {
+          "id": "c",
+          "text": "void"
+        },
+        {
+          "id": "d",
+          "text": "std::string"
+        }
+      ],
+      "answer": {
+        "kind": "multi",
+        "optionIds": [
+          "a",
+          "b",
+          "c"
+        ]
+      },
+      "explanation": "bool, wchar_t and void are fundamental types; void is an incomplete type with no values. std::string is a library class template built on top of those types.",
+      "tags": [
+        "Types"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-06-q06",
+      "type": "multi",
+      "prompt": "Which statements about type aliases are correct? Select all that apply.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "下列關於型別別名的敘述，哪些正確？可多選。"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "`using Int = int;` 為 int 宣告了一個別名。"
+          },
+          "b": {
+            "zh-Hant": "`typedef int Int;` 是同一件事的舊語法。"
+          },
+          "c": {
+            "zh-Hant": "別名會建立一個全新的型別，因此 Int 與 int 不能互換。"
+          },
+          "d": {
+            "zh-Hant": "別名適合用在冗長的樣板型別，例如 `std::map<std::string, std::vector<int>>`。"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "using 與 typedef 都只是為同一個型別取另一個名字，不會產生新型別；C++11 之後一般偏好 using，因為它對樣板別名更易讀。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "`using Int = int;` declares an alias for int."
+        },
+        {
+          "id": "b",
+          "text": "`typedef int Int;` is the older syntax for the same thing."
+        },
+        {
+          "id": "c",
+          "text": "An alias creates a distinct type, so Int and int are not interchangeable."
+        },
+        {
+          "id": "d",
+          "text": "Aliases are convenient for long template types such as `std::map<std::string, std::vector<int>>`."
+        }
+      ],
+      "answer": {
+        "kind": "multi",
+        "optionIds": [
+          "a",
+          "b",
+          "d"
+        ]
+      },
+      "explanation": "using and typedef only give an existing type another name, so no new type is created. Since C++11, using is generally preferred because it also reads well for template aliases.",
+      "tags": [
+        "Aliases",
+        "Types"
+      ],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-06-q07",
+      "type": "single",
+      "prompt": "Given `enum class Color { Red, Green };`, which expression names the first enumerator?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "給定 `enum class Color { Red, Green };`，哪一個運算式可以指到第一個列舉值？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "Color::Red"
+          },
+          "b": {
+            "zh-Hant": "Red"
+          },
+          "c": {
+            "zh-Hant": "Color.Red"
+          },
+          "d": {
+            "zh-Hant": "enum::Red"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "enum class 是作用域列舉：列舉值必須以列舉名稱限定，而且不會隱式轉成 int；不加限定的 Red 不會被找到。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "Color::Red"
+        },
+        {
+          "id": "b",
+          "text": "Red"
+        },
+        {
+          "id": "c",
+          "text": "Color.Red"
+        },
+        {
+          "id": "d",
+          "text": "enum::Red"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "enum class is scoped: enumerators must be qualified with the enumeration name and do not convert implicitly to int. An unqualified Red is simply not found.",
+      "tags": [
+        "Enums",
+        "Types"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-06-q08",
+      "type": "single",
+      "prompt": "Which declaration is ill-formed because of narrowing?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "下列哪一個宣告因為窄化轉換而不合法？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "int x{3.5};"
+          },
+          "b": {
+            "zh-Hant": "int x = 3.5;"
+          },
+          "c": {
+            "zh-Hant": "double d = 3;"
+          },
+          "d": {
+            "zh-Hant": "int x{3};"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "大括號初始化禁止窄化轉換，所以 int x{3.5}; 是編譯錯誤；int x = 3.5; 則可編譯但會截斷成 3，通常伴隨警告。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "int x{3.5};"
+        },
+        {
+          "id": "b",
+          "text": "int x = 3.5;"
+        },
+        {
+          "id": "c",
+          "text": "double d = 3;"
+        },
+        {
+          "id": "d",
+          "text": "int x{3};"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "Brace initialisation forbids narrowing, so int x{3.5}; is a compile error. int x = 3.5; compiles and truncates to 3, usually with a warning.",
+      "tags": [
+        "Narrowing",
+        "Initialisation"
+      ],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-06-q09",
+      "type": "fill",
+      "prompt": "The operator that yields the size of a type or object in bytes is ____.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "取得型別或物件大小（以位元組計）的運算子（運算子）是 ____。"
+        },
+        "explanation": {
+          "zh-Hant": "sizeof 產生 std::size_t，對完整型別在編譯期就能求得；依定義 sizeof(char) 為 1。"
+        }
+      },
+      "answer": {
+        "kind": "fill",
+        "accept": [
+          "sizeof",
+          "sizeof()",
+          "sizeof 運算子"
+        ],
+        "ignoreCase": true,
+        "ignoreSpaces": true
+      },
+      "explanation": "sizeof yields a std::size_t and is computed at compile time for complete types. sizeof(char) is 1 by definition.",
+      "tags": [
+        "sizeof"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-06-q10",
+      "type": "short",
+      "prompt": "Explain what the C++ standard guarantees about the sizes of `char`, `int`, `long` and `long long`, and why `int` is not always 32 bits.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "說明 C++ 標準對 `char`、`int`、`long`、`long long` 的大小有甚麼保證，以及為何 `int` 不一定總是 32 位元。"
+        },
+        "model": {
+          "zh-Hant": "標準規定的是最小範圍而非確切位寬：sizeof(char) 為 1，int 至少 16 位元，long 至少 32 位元，long long 至少 64 位元，且後面的型別不得比前面的窄。實作可以更寬，所以 int 在幾乎所有現代平台是 32 位元，而 long 在 32 位元與 64 位元系統上則不相同。"
+        },
+        "explanation": {
+          "zh-Hant": "需要固定寬度時應改用 <cstdint> 的 int32_t、uint64_t 等，或直接以 sizeof 檢查，而不要假設 int 一定是 32 位元。"
+        }
+      },
+      "answer": {
+        "kind": "short",
+        "model": "The standard fixes minimum ranges rather than exact widths: sizeof(char) is 1, int has at least 16 bits, long at least 32 and long long at least 64, and each type must be at least as wide as the one before it. An implementation may use more bits, which is why int is 32 bits on nearly all modern platforms while long differs between 32-bit and 64-bit systems.",
+        "keywords": [
+          "minimum",
+          "char",
+          "int",
+          "long long",
+          "implementation-defined",
+          "sizeof"
+        ]
+      },
+      "explanation": "When a fixed width matters, use the int32_t and uint64_t aliases from <cstdint> or check sizeof instead of assuming int is 32 bits.",
+      "tags": [
+        "Types",
+        "Portability"
+      ],
+      "difficulty": 3
+    }
+  ]
+}

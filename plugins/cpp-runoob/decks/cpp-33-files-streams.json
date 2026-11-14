@@ -1,0 +1,461 @@
+{
+  "id": "cpp-33-files-streams",
+  "title": "C++ Files and Streams",
+  "titleI18n": {
+    "zh-Hant": "C++ 檔案與串流"
+  },
+  "description": "Reading and writing files with <fstream>: open modes, formatted and unformatted I/O, positioning, error states and RAII cleanup.",
+  "descriptionI18n": {
+    "zh-Hant": "使用 <fstream> 讀寫檔案：開啟模式、格式化與非格式化輸入輸出、檔案定位、錯誤狀態，以及 RAII 資源清理。"
+  },
+  "tags": [
+    "C++",
+    "File I/O"
+  ],
+  "examMinutes": 15,
+  "questions": [
+    {
+      "id": "cpp-33-q01",
+      "type": "single",
+      "prompt": "Which standard header declares std::ifstream and std::ofstream?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "哪一個標準標頭檔宣告了 std::ifstream 與 std::ofstream？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "<fstream>"
+          },
+          "b": {
+            "zh-Hant": "<iostream>"
+          },
+          "c": {
+            "zh-Hant": "<cstdio>"
+          },
+          "d": {
+            "zh-Hant": "<filesystem>"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "<fstream> 定義檔案串流型別；<iostream> 只提供主控台串流，<cstdio> 是 C 的檔案 API，<filesystem> 處理路徑與目錄。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "<fstream>"
+        },
+        {
+          "id": "b",
+          "text": "<iostream>"
+        },
+        {
+          "id": "c",
+          "text": "<cstdio>"
+        },
+        {
+          "id": "d",
+          "text": "<filesystem>"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "<fstream> defines the file stream types. <iostream> only provides the console streams, <cstdio> the C file API, and <filesystem> path and directory utilities.",
+      "tags": [
+        "Headers",
+        "fstream"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-33-q02",
+      "type": "single",
+      "prompt": "You construct `std::ofstream out(\"log.txt\");` for a file that already contains text. What happens by default?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "對一個已有內容的檔案建構 `std::ofstream out(\"log.txt\");`，預設會怎樣？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "檔案被截斷，原有內容被捨棄"
+          },
+          "b": {
+            "zh-Hant": "新內容附加在原有內容之後"
+          },
+          "c": {
+            "zh-Hant": "建構失敗，因為檔案已存在"
+          },
+          "d": {
+            "zh-Hant": "檔案以唯讀方式開啟"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "ofstream 的單一參數建構函式等於 `ios::out | ios::trunc`，會清空既有檔案；若要附加內容，需加上 `std::ios::app`。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "The file is truncated: existing contents are discarded."
+        },
+        {
+          "id": "b",
+          "text": "New text is appended after the existing contents."
+        },
+        {
+          "id": "c",
+          "text": "The constructor fails because the file exists."
+        },
+        {
+          "id": "d",
+          "text": "The file is opened read-only."
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "The single-argument ofstream constructor opens with `ios::out | ios::trunc`, so an existing file is emptied. Add `std::ios::app` to append instead.",
+      "tags": [
+        "Open modes",
+        "ofstream"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-33-q03",
+      "type": "boolean",
+      "prompt": "A newly constructed std::ifstream does not throw by default when the file is missing, so you should test `is_open()` or the stream state.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "新建構的 std::ifstream 在檔案不存在時預設不會拋出例外，因此應檢查 `is_open()` 或串流狀態。"
+        },
+        "explanation": {
+          "zh-Hant": "預設建構的 ifstream 不會因開檔失敗而拋出例外，只會設定 `failbit`。讀取前應檢查 `is_open()`（或 `if (!in)`），或呼叫 `in.exceptions(std::ios::failbit)` 要求拋出。"
+        }
+      },
+      "answer": {
+        "kind": "boolean",
+        "value": true
+      },
+      "explanation": "The default constructor opens with exceptions disabled; failure only sets failbit. Check `is_open()` (or `if (!in)`) before reading, or call `in.exceptions(std::ios::failbit)` to opt into throwing.",
+      "tags": [
+        "Error states",
+        "ifstream"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-33-q04",
+      "type": "boolean",
+      "prompt": "The `>>` operator reads whitespace-delimited tokens, while std::getline reads an entire line including spaces.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "`>>` 運算子讀取以空白分隔的單元，而 std::getline 讀取包含空白的整行。"
+        },
+        "explanation": {
+          "zh-Hant": "`in >> word` 會略過前導空白並在下一個空白停止；`std::getline(in, line)` 讀到換行字元為止（並移除它）。兩者混用時常會留下未處理的換行字元。"
+        }
+      },
+      "answer": {
+        "kind": "boolean",
+        "value": true
+      },
+      "explanation": "`in >> word` skips leading whitespace and stops at the next whitespace character, while `std::getline(in, line)` consumes everything up to '\\n' and removes it. Mixing the two often leaves a newline behind.",
+      "tags": [
+        "getline",
+        "Formatted input"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-33-q05",
+      "type": "multi",
+      "prompt": "Which of these are valid std::ios open-mode flags? Select all that apply.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "下列哪些是有效的 std::ios 開啟模式旗標？可多選。"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "std::ios::app"
+          },
+          "b": {
+            "zh-Hant": "std::ios::trunc"
+          },
+          "c": {
+            "zh-Hant": "std::ios::binary"
+          },
+          "d": {
+            "zh-Hant": "std::ios::append"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "標準旗標是 `in`、`out`、`app`、`ate`、`trunc`、`binary`。沒有 `append` 這個旗標，附加要用 `std::ios::app`。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "std::ios::app"
+        },
+        {
+          "id": "b",
+          "text": "std::ios::trunc"
+        },
+        {
+          "id": "c",
+          "text": "std::ios::binary"
+        },
+        {
+          "id": "d",
+          "text": "std::ios::append"
+        }
+      ],
+      "answer": {
+        "kind": "multi",
+        "optionIds": [
+          "a",
+          "b",
+          "c"
+        ]
+      },
+      "explanation": "The standard open-mode flags are in, out, app, ate, trunc and binary. There is no `append` flag; the correct name for appending is `std::ios::app`.",
+      "tags": [
+        "Open modes"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-33-q06",
+      "type": "multi",
+      "prompt": "Which statements about RAII and file streams are correct? Select all that apply.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "下列關於 RAII 與檔案串流的敘述，哪些正確？可多選。"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "區域的 std::ofstream 會在解構函式中關閉檔案，即使例外展開堆疊也一樣"
+          },
+          "b": {
+            "zh-Hant": "明確呼叫 close() 可提早關閉，並檢查最後一次沖刷是否失敗"
+          },
+          "c": {
+            "zh-Hant": "讓串流在程式結束時才關閉，是沖刷緩衝資料的唯一方法"
+          },
+          "d": {
+            "zh-Hant": "兩個執行緒可以安全地同時寫入同一個 std::ofstream，不需同步"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "解構函式會先沖刷再關閉檔案，因此作用域結束或堆疊展開都會釋放檔案；若想在作用域結束前得知最後一次沖刷失敗，仍應主動呼叫 close()。串流物件本身不是執行緒安全的，多執行緒寫入需自行加鎖。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "A local std::ofstream closes its file in its destructor, even when an exception unwinds the stack."
+        },
+        {
+          "id": "b",
+          "text": "Calling close() explicitly lets you close early and check whether the final flush failed."
+        },
+        {
+          "id": "c",
+          "text": "Leaving the stream to close at process exit is the only way to flush buffered data."
+        },
+        {
+          "id": "d",
+          "text": "Two threads may safely write to the same std::ofstream without synchronization."
+        }
+      ],
+      "answer": {
+        "kind": "multi",
+        "optionIds": [
+          "a",
+          "b"
+        ]
+      },
+      "explanation": "The destructor flushes and then closes, so scope exit and stack unwinding both release the file; call close() when you want to detect a failed final flush before the scope ends. Stream objects are not thread-safe, so concurrent writes need external locking.",
+      "tags": [
+        "RAII",
+        "close"
+      ],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-33-q07",
+      "type": "fill",
+      "prompt": "To open a file for binary I/O, combine std::ios::out with std::ios::____.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "要以二進位方式開啟檔案，需把 std::ios::out 與 std::ios::____ 結合。"
+        },
+        "explanation": {
+          "zh-Hant": "`std::ios::binary` 會關閉部分平台在文字模式下做的換行轉換，使位元組原樣保留。"
+        }
+      },
+      "answer": {
+        "kind": "fill",
+        "accept": [
+          "binary",
+          "Binary"
+        ],
+        "ignoreCase": true,
+        "ignoreSpaces": true
+      },
+      "explanation": "`std::ios::binary` disables the newline translation that text mode performs on some platforms, so bytes round-trip unchanged.",
+      "tags": [
+        "Open modes",
+        "Binary files"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-33-q08",
+      "type": "short",
+      "prompt": "A std::fstream is used for both reading and writing. Which function moves the read position, which moves the write position, and how do you read the current read position?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "std::fstream 同時用於讀與寫。哪個函式移動讀取位置、哪個移動寫入位置？又如何取得目前的讀取位置？"
+        },
+        "model": {
+          "zh-Hant": "seekg 移動 get（讀取）位置，seekp 移動 put（寫入）位置。tellg 與 tellp 分別回傳目前位置（型別為 std::streampos），例如 `in.seekg(0, std::ios::end); auto size = in.tellg();` 可取得檔案大小。"
+        },
+        "explanation": {
+          "zh-Hant": "get 代表輸入、put 代表輸出；tell 系列回報位置，狀態不良時回傳 -1。"
+        }
+      },
+      "answer": {
+        "kind": "short",
+        "model": "seekg moves the get (read) position and seekp moves the put (write) position. tellg and tellp return the corresponding positions as std::streampos, so `in.seekg(0, std::ios::end); auto size = in.tellg();` gives the file size.",
+        "keywords": [
+          "seekg",
+          "seekp",
+          "tellg",
+          "tellp",
+          "streampos"
+        ]
+      },
+      "explanation": "get means input and put means output; the tell functions report positions and return -1 when the stream state is not good.",
+      "tags": [
+        "File positioning",
+        "seekg"
+      ],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-33-q09",
+      "type": "single",
+      "prompt": "Which call correctly performs an unformatted binary read of one object into `value`?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "哪一個呼叫能正確地把一個物件以非格式化二進位方式讀入 `value`？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "`in.read(reinterpret_cast<char*>(&value), sizeof value)`"
+          },
+          "b": {
+            "zh-Hant": "`in.read(&value, sizeof value)`"
+          },
+          "c": {
+            "zh-Hant": "`in >> value` 會讀取原始二進位內容"
+          },
+          "d": {
+            "zh-Hant": "`in.read(value, sizeof value)`"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "`read` 需要 `char*` 與位元組數，因此要把物件位址轉型為 `char*`；格式化的 `>>` 解析的是文字，不是原始位元組。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "`in.read(reinterpret_cast<char*>(&value), sizeof value)`"
+        },
+        {
+          "id": "b",
+          "text": "`in.read(&value, sizeof value)`"
+        },
+        {
+          "id": "c",
+          "text": "`in >> value` reads the raw binary representation."
+        },
+        {
+          "id": "d",
+          "text": "`in.read(value, sizeof value)`"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "`read` takes a `char*` plus a byte count, so the object's address must be cast to `char*`. Formatted `>>` parses text, not raw bytes, and no implicit conversion exists from `T*` to `char*`.",
+      "tags": [
+        "read",
+        "Binary files"
+      ],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-33-q10",
+      "type": "single",
+      "prompt": "After a read hits end-of-file and sets failbit and eofbit, which call makes the same stream usable again?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "讀取遇到檔尾並設定了 failbit 與 eofbit 之後，呼叫哪個函式才能讓同一個串流再次使用？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "`in.clear()`"
+          },
+          "b": {
+            "zh-Hant": "`in.flush()`"
+          },
+          "c": {
+            "zh-Hant": "`in.close()`"
+          },
+          "d": {
+            "zh-Hant": "直接 `in.seekg(0)` 即可"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "`clear()` 會重設狀態旗標；在失敗狀態下 `seekg` 與後續讀取都會被忽略。呼叫 `clear()` 後再 `seekg(0)` 才能重新讀取。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "`in.clear()`"
+        },
+        {
+          "id": "b",
+          "text": "`in.flush()`"
+        },
+        {
+          "id": "c",
+          "text": "`in.close()`"
+        },
+        {
+          "id": "d",
+          "text": "Calling `in.seekg(0)` directly is enough."
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "`clear()` resets the state flags. While the stream is in a failed state, `seekg` and further reads are ignored, so you must clear the state before seeking back and reading again.",
+      "tags": [
+        "Error states",
+        "clear"
+      ],
+      "difficulty": 3
+    }
+  ]
+}

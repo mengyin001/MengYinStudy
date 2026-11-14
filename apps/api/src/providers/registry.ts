@@ -30,20 +30,9 @@ export interface ProviderSpec {
 }
 
 export const PROVIDER_SPECS: readonly ProviderSpec[] = [
-  {
-    id: 'glm',
-    label: 'GLM (Zhipu)',
-    keyVar: 'GLM_API_KEY',
-    modelVar: 'GLM_MODEL',
-    modelsVar: 'GLM_MODELS',
-    baseUrlVar: 'GLM_BASE_URL',
-    defaultBaseUrl: 'https://open.bigmodel.cn/api/paas/v4',
-    fallbackModels: ['glm-4.7-flash'],
-    thinkingVar: 'GLM_THINKING',
-    defaultOutputTokens: 32_768,
-    maxOutputTokens: 131_072,
-    docsUrl: 'https://docs.bigmodel.cn/',
-  },
+  // GLM (Zhipu) is not offered while the catalogue has no commercially usable
+  // GLM model: its non-paid models are restricted to non-commercial personal
+  // use. Re-add the spec with a paid model to bring the provider back.
   {
     id: 'deepseek',
     label: 'DeepSeek',
@@ -103,6 +92,25 @@ function parseList(value: string): string[] {
         .filter(Boolean),
     ),
   ].slice(0, 20);
+}
+
+/**
+ * `AI_GENERATION=off` switches text generation off without deleting a key.
+ *
+ * The browser reads an empty provider list, so Generate shows its normal "no
+ * provider configured" state instead of a broken form, and every generation
+ * call fails before a provider is contacted. Images have their own switch
+ * (`IMAGE_PROVIDER=none`, `IMAGE_SEARCH=off`).
+ */
+export function generationEnabled(env: Env): boolean {
+  return envString(env, 'AI_GENERATION').toLowerCase() !== 'off';
+}
+
+/** The error every generation entry point raises while the switch is off. */
+function generationOffError(): ApiError {
+  return unconfigured(
+    'AI question generation is switched off on this server (AI_GENERATION=off).',
+  );
 }
 
 export function modelsFor(spec: ProviderSpec, env: Env): string[] {
@@ -175,17 +183,13 @@ export interface ProviderCatalog {
 /** True when this provider has a vision model for the photo check. */
 function hasVision(env: Env, providerId: string): boolean {
   if ((env.AI_VERIFY_IMAGES ?? '').trim().toLowerCase() === 'off') return false;
-  const value =
-    providerId === 'glm'
-      ? env.GLM_VISION_MODEL
-      : providerId === 'deepseek'
-        ? env.DEEPSEEK_VISION_MODEL
-        : '';
+  const value = providerId === 'deepseek' ? env.DEEPSEEK_VISION_MODEL : '';
   return Boolean((value ?? '').trim());
 }
 
 /** The browser-facing catalogue. It never contains a key or a base URL. */
 export function providerCatalog(env: Env): ProviderCatalog {
+  if (!generationEnabled(env)) return { providers: [] };
   const providers: AiProviderInfo[] = PROVIDER_SPECS.map((spec) => ({
     id: spec.id,
     label: spec.label,
@@ -206,9 +210,9 @@ function findSpec(id: string): ProviderSpec | undefined {
       id: DEMO_PROVIDER_ID,
       label: 'Demo (no provider key)',
       keyVar: 'AI_MOCK',
-      modelVar: 'GLM_MODEL',
-      modelsVar: 'GLM_MODELS',
-      baseUrlVar: 'GLM_BASE_URL',
+      modelVar: 'DEEPSEEK_MODEL',
+      modelsVar: 'DEEPSEEK_MODELS',
+      baseUrlVar: 'DEEPSEEK_BASE_URL',
       defaultBaseUrl: 'demo://local',
       fallbackModels: ['demo'],
       defaultOutputTokens: 8_192,
@@ -220,6 +224,7 @@ function findSpec(id: string): ProviderSpec | undefined {
 }
 
 export function resolveProvider(env: Env, requestedProvider?: string, requestedModel?: string): ResolvedProvider {
+  if (!generationEnabled(env)) throw generationOffError();
   const providerId = (requestedProvider ?? '').trim();
   const modelId = (requestedModel ?? '').trim();
   const configured = PROVIDER_SPECS.filter((spec) => isConfigured(spec, env));
@@ -272,10 +277,60 @@ export function resolveProvider(env: Env, requestedProvider?: string, requestedM
  * send the model the learner saw, and an unknown id is an error rather than a
  * silent fallback to a different (possibly more expensive) model.
  */
-export function resolveProviderForModel(env: Env, requestedModel: string): ResolvedProvider {
+export function resolveProviderForModel(
+  env: Env,
+  requestedModel: string,
+  options: { apiKey?: string; baseUrl?: string; contextTokens?: number } = {},
+): ResolvedProvider {
+  if (!generationEnabled(env)) throw generationOffError();
   const modelId = (requestedModel ?? '').trim();
   if (!modelId || modelId === 'auto') {
     throw badRequest('Choose a model for this generation.');
+  }
+
+  // A learner's own key replaces the server's for this request. It still has to
+  // name a catalogue model, but the provider does not need a server key.
+  const ownKey = (options.apiKey ?? '').trim();
+  const ownBase = (options.baseUrl ?? '').trim();
+  if (ownKey && ownBase) {
+    // Any OpenAI-compatible endpoint: the learner's account, the learner's model
+    // id. The URL was checked for https and a public host by the validator.
+    const custom: ProviderSpec = {
+      id: 'byo',
+      label: 'Your provider',
+      keyVar: 'DEEPSEEK_API_KEY',
+      modelVar: 'DEEPSEEK_MODEL',
+      modelsVar: 'DEEPSEEK_MODELS',
+      baseUrlVar: 'DEEPSEEK_BASE_URL',
+      defaultBaseUrl: ownBase,
+      fallbackModels: [modelId],
+      defaultOutputTokens: 32_768,
+      maxOutputTokens: 65_536,
+      docsUrl: '',
+    };
+    return {
+      ...providerFrom(custom, env, modelId, [modelId]),
+      id: 'byo',
+      label: 'Your provider',
+      baseUrl: ownBase,
+      apiKey: ownKey,
+      // Keep the completion budget inside the window the learner declared.
+      ...(options.contextTokens && options.contextTokens > 0
+        ? { maxTokens: Math.max(256, Math.min(32_768, Math.floor(options.contextTokens / 4))) }
+        : {}),
+    };
+  }
+  if (ownKey) {
+    const spec = PROVIDER_SPECS.find((candidate) =>
+      catalogueModels(candidate, env).includes(modelId),
+    );
+    if (!spec) {
+      const available = PROVIDER_SPECS.flatMap((candidate) => catalogueModels(candidate, env));
+      throw badRequest(
+        `The model "${modelId}" is not available on this server. Available models: ${available.join(', ')}.`,
+      );
+    }
+    return { ...providerFrom(spec, env, modelId, catalogueModels(spec, env)), apiKey: ownKey };
   }
 
   const configured = PROVIDER_SPECS.filter((spec) => isConfigured(spec, env));

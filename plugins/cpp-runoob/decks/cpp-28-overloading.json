@@ -1,0 +1,466 @@
+{
+  "id": "cpp-28-overloading",
+  "title": "C++ Overloading",
+  "titleI18n": {
+    "zh-Hant": "C++ 重載"
+  },
+  "description": "Function overloading and its rules, why the return type alone cannot distinguish overloads, ambiguity caused by default arguments, member versus non-member operator overloading, and conversion operators.",
+  "descriptionI18n": {
+    "zh-Hant": "函式重載的規則、為何單靠回傳型別不足以區分多載、預設引數造成的呼叫不明確、成員與非成員運算子重載，以及轉換運算子。"
+  },
+  "tags": [
+    "C++",
+    "Overloading"
+  ],
+  "examMinutes": 15,
+  "questions": [
+    {
+      "id": "cpp-28-overloading-q01",
+      "type": "single",
+      "prompt": "Which pair of declarations forms a valid overload set?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "下列哪一組宣告可以構成合法的函式重載？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "`int f(int);` 與 `double f(int);`"
+          },
+          "b": {
+            "zh-Hant": "`int f(int);` 與 `int f(double);`"
+          },
+          "c": {
+            "zh-Hant": "`int f(int);` 與 `int f(int);`"
+          },
+          "d": {
+            "zh-Hant": "`double f(int);` 與 `double f(int);`"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "多載必須在參數列表上不同。a 只有回傳型別不同，不算多載；c 與 d 是同一函式的重複宣告（重新定義）。只有 b 的參數型別不同，是合法多載。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "`int f(int);` and `double f(int);`"
+        },
+        {
+          "id": "b",
+          "text": "`int f(int);` and `int f(double);`"
+        },
+        {
+          "id": "c",
+          "text": "`int f(int);` and `int f(int);`"
+        },
+        {
+          "id": "d",
+          "text": "`double f(int);` and `double f(int);`"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "b"
+      },
+      "explanation": "Overloads must differ in their parameter list. Option a differs only in return type; c and d are redefinitions of the same function. Only b changes a parameter type, so it is a valid overload.",
+      "tags": [
+        "Overloading",
+        "Functions"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-28-overloading-q02",
+      "type": "single",
+      "prompt": "A programmer writes `int parse(int);` and `double parse(int);` in the same scope. What is the result?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "在同一個作用域寫下 `int parse(int);` 與 `double parse(int);`，結果會如何？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "編譯錯誤：不能只靠回傳型別區分多載"
+          },
+          "b": {
+            "zh-Hant": "合法多載，編譯器依使用情境挑選回傳型別"
+          },
+          "c": {
+            "zh-Hant": "合法，但必須兩個都宣告為 inline"
+          },
+          "d": {
+            "zh-Hant": "自動變成一個函式模板"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "回傳型別不是函式簽章的一部分。呼叫端只看得到函式名稱與引數，無法據此挑選回傳型別，因此這種宣告被視為同一函式的重新定義。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "A compile error: overloads cannot differ only in return type"
+        },
+        {
+          "id": "b",
+          "text": "A valid overload chosen by the return type at the call site"
+        },
+        {
+          "id": "c",
+          "text": "Valid, but both functions must be declared inline"
+        },
+        {
+          "id": "d",
+          "text": "It silently becomes a function template"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "The return type is not part of a function's signature. A call site sees only the name and arguments, so it cannot pick a return type; the two declarations are treated as a redefinition.",
+      "tags": [
+        "Overloading",
+        "Signature"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-28-overloading-q03",
+      "type": "single",
+      "prompt": "Given `void show(int a);` and `void show(int a, int b = 0);`, what happens at the call `show(5);`?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "有 `void show(int a);` 與 `void show(int a, int b = 0);` 兩個宣告，呼叫 `show(5);` 會怎樣？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "呼叫不明確（ambiguous），編譯失敗"
+          },
+          "b": {
+            "zh-Hant": "呼叫只有一個參數的版本"
+          },
+          "c": {
+            "zh-Hant": "呼叫有預設引數的版本"
+          },
+          "d": {
+            "zh-Hant": "編譯失敗，因為 C++ 不允許預設引數"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "`show(5)` 對兩個多載都只差在預設引數，兩者同樣符合，沒有任何一個更佳，因此多載解析失敗。這是預設引數造成不明確的典型例子。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "The call is ambiguous and fails to compile"
+        },
+        {
+          "id": "b",
+          "text": "It calls the one-parameter version"
+        },
+        {
+          "id": "c",
+          "text": "It calls the version with the default argument"
+        },
+        {
+          "id": "d",
+          "text": "It fails because C++ does not allow default arguments"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "For `show(5)` both overloads are viable and neither is better: the default argument simply supplies the missing second parameter. Overload resolution therefore fails as ambiguous, a classic pitfall of combining default arguments with overloading.",
+      "tags": [
+        "Overloading",
+        "Default arguments",
+        "Ambiguity"
+      ],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-28-overloading-q04",
+      "type": "single",
+      "prompt": "Which operator must be overloaded as a non-static member function?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "哪一個運算子重載時必須是非靜態成員函式？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "`=` 賦值"
+          },
+          "b": {
+            "zh-Hant": "`+` 加法"
+          },
+          "c": {
+            "zh-Hant": "`==` 相等比較"
+          },
+          "d": {
+            "zh-Hant": "`<<` 串流插入"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "`=`、`[]`、`()`、`->` 與轉型運算子必須是成員函式；`+`、`==`、`<<` 則可以寫成非成員（自由）函式。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "`=` assignment"
+        },
+        {
+          "id": "b",
+          "text": "`+` addition"
+        },
+        {
+          "id": "c",
+          "text": "`==` equality"
+        },
+        {
+          "id": "d",
+          "text": "`<<` stream insertion"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "`=`, `[]`, `()`, `->` and the conversion operators must be non-static members. `+`, `==` and `<<` may be free functions.",
+      "tags": [
+        "Overloading",
+        "Operators"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-28-overloading-q05",
+      "type": "multi",
+      "prompt": "Which of these operators cannot be overloaded? Select all that apply.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "下列哪些運算子不能重載？可多選。"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "`.`（成員存取）"
+          },
+          "b": {
+            "zh-Hant": "`?:`（條件運算子）"
+          },
+          "c": {
+            "zh-Hant": "`sizeof`"
+          },
+          "d": {
+            "zh-Hant": "`[]`（註標）"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "`.`、`?:`、`sizeof` 都不可重載；`[]` 可以，而且必須是成員函式。不可重載的清單還包含 `::`、`.*`、`typeid` 與前置處理用的 `#`、`##`。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "`.` (member access)"
+        },
+        {
+          "id": "b",
+          "text": "`?:` (conditional operator)"
+        },
+        {
+          "id": "c",
+          "text": "`sizeof`"
+        },
+        {
+          "id": "d",
+          "text": "`[]` (subscript)"
+        }
+      ],
+      "answer": {
+        "kind": "multi",
+        "optionIds": [
+          "a",
+          "b",
+          "c"
+        ]
+      },
+      "explanation": "`.`, `?:` and `sizeof` cannot be overloaded. `[]` can be, and it must be a member function. The forbidden set also includes `::`, `.*` and `typeid`.",
+      "tags": [
+        "Overloading",
+        "Operators"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-28-overloading-q06",
+      "type": "multi",
+      "prompt": "Which operators must be implemented as non-static member functions? Select all that apply.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "下列哪些運算子必須以非靜態成員函式實作？可多選。"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "`=`（指定）"
+          },
+          "b": {
+            "zh-Hant": "`[]`（註標）"
+          },
+          "c": {
+            "zh-Hant": "`()`（函式呼叫）"
+          },
+          "d": {
+            "zh-Hant": "`<<`（輸出串流插入）"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "`=`、`[]`、`()`、`->` 依語言規則必須是成員函式。`<<` 用來輸出時左運算元是 `std::ostream`，不能寫成你自己類別的成員，只能是非成員函式（通常搭配 friend）。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "`=` (assignment)"
+        },
+        {
+          "id": "b",
+          "text": "`[]` (subscript)"
+        },
+        {
+          "id": "c",
+          "text": "`()` (function call)"
+        },
+        {
+          "id": "d",
+          "text": "`<<` (stream insertion for output)"
+        }
+      ],
+      "answer": {
+        "kind": "multi",
+        "optionIds": [
+          "a",
+          "b",
+          "c"
+        ]
+      },
+      "explanation": "The language requires `=`, `[]`, `()` and `->` to be non-static member functions. Stream insertion cannot be a member of your class because its left operand is a `std::ostream`, so it is written as a non-member, often a friend.",
+      "tags": [
+        "Overloading",
+        "Operators",
+        "Member vs non-member"
+      ],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-28-overloading-q07",
+      "type": "boolean",
+      "prompt": "A class can define `operator bool() const` so that its objects convert to `bool` in a condition such as `if (obj)`.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "類別可以定義 `operator bool() const`，讓物件在 `if (obj)` 這類情境中轉換成 `bool`。"
+        },
+        "explanation": {
+          "zh-Hant": "轉換運算子是可重載的成員函式，名稱形如 `operator T()`，沒有回傳型別（T 就是目標型別）。加上 `explicit` 可避免意外的隱式轉換。"
+        }
+      },
+      "answer": {
+        "kind": "boolean",
+        "value": true
+      },
+      "explanation": "Conversion operators are member functions named `operator T()` with no declared return type: T is the target type. Marking one `explicit` prevents unintended implicit conversions.",
+      "tags": [
+        "Overloading",
+        "Conversion operators"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-28-overloading-q08",
+      "type": "boolean",
+      "prompt": "You can overload `operator+` so that it adds two built-in `int` values.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "可以重載 `operator+`，讓它相加兩個內建的 `int` 值。"
+        },
+        "explanation": {
+          "zh-Hant": "運算子重載至少需要一個運算元是使用者自訂型別（類別或列舉）。兩個 `int` 都是內建型別，不能為它們定義新的 `operator+`。"
+        }
+      },
+      "answer": {
+        "kind": "boolean",
+        "value": false
+      },
+      "explanation": "At least one operand of an overloaded operator must be a class or enumeration type. Both `int` operands are built-in, so no new `operator+` may be defined for them.",
+      "tags": [
+        "Overloading",
+        "Operators"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-28-overloading-q09",
+      "type": "fill",
+      "prompt": "A user-defined conversion is declared with the keyword ____, as in `____ double() const;`.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "使用者自訂轉換要以關鍵字 ____ 宣告，例如 `____ double() const;`。"
+        },
+        "explanation": {
+          "zh-Hant": "轉換運算子寫成 `operator 目標型別()`，例如 `operator double() const`；它沒有回傳型別，因為目標型別已經寫在名稱裡。"
+        }
+      },
+      "answer": {
+        "kind": "fill",
+        "accept": [
+          "operator",
+          "運算子",
+          "運算子"
+        ],
+        "ignoreCase": true,
+        "ignoreSpaces": true
+      },
+      "explanation": "A conversion operator is written as `operator target-type()`, for example `operator double() const`. It declares no return type because the target type is part of its name.",
+      "tags": [
+        "Overloading",
+        "Conversion operators"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-28-overloading-q10",
+      "type": "short",
+      "prompt": "Explain why combining default arguments with overloading can make a call ambiguous, and give a short example.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "說明為何把預設引數與重載混用可能造成呼叫不明確，並舉一個簡短例子。"
+        },
+        "model": {
+          "zh-Hant": "預設引數讓一個多載可以用更少的引數被呼叫，於是同一個呼叫可能同時符合多個多載，而編譯器沒有理由偏好其中一個。例如 `void f(int);` 與 `void f(int, int = 0);`，呼叫 `f(1)` 時兩者都可行且一樣好，因此 ambiguous。解法是拿掉預設引數、改名，或調整參數列表讓可行集合只剩一個。"
+        },
+        "explanation": {
+          "zh-Hant": "重點是「可行函式集合」變成多於一個，且沒有任何一個在轉換序列上更佳。"
+        }
+      },
+      "answer": {
+        "kind": "short",
+        "model": "Default arguments let an overload accept fewer arguments, so one call can be viable for several overloads with no winner. With `void f(int);` and `void f(int, int = 0);`, the call `f(1)` matches both equally well and is ambiguous. Remove the default argument, rename one function, or change the parameter lists so only one candidate remains viable.",
+        "keywords": [
+          "default argument",
+          "ambiguous",
+          "viable",
+          "overload resolution"
+        ]
+      },
+      "explanation": "The key point is that the viable set contains more than one function and none has a better conversion sequence.",
+      "tags": [
+        "Overloading",
+        "Default arguments",
+        "Ambiguity"
+      ],
+      "difficulty": 4
+    }
+  ]
+}

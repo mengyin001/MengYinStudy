@@ -23,7 +23,7 @@ describe('plans', () => {
     expect(PLANS.map((plan) => plan.monthlyCents)).toEqual([0, 499, 999, 1999]);
     expect(PLANS.map((plan) => plan.annualCents)).toEqual([0, 4_990, 9_990, 19_990]);
     expect(PLANS.map((plan) => plan.monthlyPoints)).toEqual([0, 500, 1_100, 2_500]);
-    expect(PLANS.map((plan) => plan.monthlyQuestions)).toEqual([200, 0, 0, 0]);
+    expect(PLANS.map((plan) => plan.monthlyQuestions)).toEqual([0, 0, 0, 0]);
   });
 
   it('prices the year at ten months', () => {
@@ -45,18 +45,19 @@ describe('plans', () => {
 });
 
 describe('model permissions', () => {
-  it('offers exactly three models, cheapest first', () => {
-    expect(SUPPORTED_MODELS).toEqual(['glm-4.7-flash', 'deepseek-flash', 'deepseek-v4-pro']);
+  it('offers the two DeepSeek models', () => {
+    expect(SUPPORTED_MODELS).toEqual(['deepseek-flash', 'deepseek-v4-pro']);
     expect(Object.keys(MODEL_POINT_COSTS)).toEqual([...SUPPORTED_MODELS]);
     for (const plan of PLANS) {
       for (const model of plan.models) expect(SUPPORTED_MODELS).toContain(model);
     }
   });
 
-  it('keeps the free plan on the free model only', () => {
-    expect(planAllowsModel('free', 'glm-4.7-flash')).toBe(true);
-    expect(planAllowsModel('free', 'glm-5.3-flash')).toBe(false);
+  it('gives the free plan no AI model while the free tier is off', () => {
+    expect(PLANS[0]?.models).toEqual([]);
+    expect(PLANS[0]?.monthlyQuestions).toBe(0);
     expect(planAllowsModel('free', 'deepseek-flash')).toBe(false);
+    expect(planAllowsModel('free', 'glm-4.7-flash')).toBe(false);
     expect(planAllowsPhotos('free')).toBe(false);
   });
 
@@ -71,13 +72,12 @@ describe('model permissions', () => {
 
 describe('estimatePoints', () => {
   it('charges one point per DeepSeek Flash question and four per Pro question', () => {
-    expect(pointsPerQuestion('glm-4.7-flash')).toBe(0);
     expect(pointsPerQuestion('deepseek-flash')).toBe(1);
     expect(pointsPerQuestion('deepseek-v4-pro')).toBe(DEEPSEEK_PRO_MULTIPLIER);
   });
 
   it('matches the worked examples in the design doc', () => {
-    expect(estimatePoints({ model: 'glm-4.7-flash', count: 10 }).total).toBe(0);
+    expect(estimatePoints({ model: 'deepseek-flash', count: 10 }).total).toBe(10);
     expect(
       estimatePoints({ model: 'deepseek-flash', count: 10, materialChars: 30_000 }).total,
     ).toBe(25);
@@ -96,16 +96,16 @@ describe('estimatePoints', () => {
     expect(estimate.total).toBe(1);
   });
 
-  it('charges nothing for a free-model request without images', () => {
+  it('charges the full rate for an id outside the catalogue', () => {
+    // Unknown ids are priced at the ceiling, never at the free rate.
     const estimate = estimatePoints({ model: 'glm-4.7-flash', count: 10 });
-    expect(estimate.total).toBe(0);
+    expect(estimate.total).toBe(40);
   });
 
   it('converts a point balance into whole questions', () => {
     expect(questionsForPoints(500, 'deepseek-flash')).toBe(500);
     expect(questionsForPoints(500, 'deepseek-v4-pro')).toBe(125);
     expect(questionsForPoints(3, 'deepseek-v4-pro')).toBe(0);
-    expect(questionsForPoints(500, 'glm-4.7-flash')).toBeNull();
   });
 });
 

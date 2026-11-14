@@ -7,6 +7,7 @@ import {
   currentItem,
   EMPTY_PROGRESS_FINGERPRINT,
   emptyProgress,
+  examMinutesForQuestions,
   examTimeLimitMsForEntries,
   finishSession as engineFinish,
   goTo,
@@ -61,6 +62,7 @@ import {
   canSeeLocalPlugin,
   isGeneratedLocalPlugin,
   removeDeckFromLocalPlugins,
+  updateDeckInLocalPlugins,
   type LocalImportResult,
   type LocalPluginRecord,
   type PluginIssue,
@@ -75,6 +77,7 @@ import { createTranslator, type Translate } from '@/i18n/messages';
 import {
   buildEntries,
   deckViews as buildDeckViews,
+  editableDeckKeys as buildEditableDeckKeys,
   pluginViews as buildPluginViews,
   selectOfficialDecks,
   type DeckView,
@@ -82,6 +85,7 @@ import {
 } from '@/domain/library';
 import { buildCloudPlugins } from '@/domain/cloud';
 import { buildGuestPlugin, GUEST_PLUGIN_ID, isGuestDeckKey } from '@/domain/guest';
+import { localizeDeck } from '@/domain/localize';
 import { importers, questionTypes, registerBuiltinQuestionTypes } from '@/domain/registry';
 import { appStore, downloadJson } from '@/lib/storage';
 import { migrateLegacyProgress } from '@/lib/legacy';
@@ -232,10 +236,20 @@ export interface AppActions {
   /** Delete every uploaded material after a successful generation. */
   clearMaterials(): Promise<void>;
   saveGeneratedDeck(deck: Deck): Promise<string | null>;
+  /**
+   * Rename an AI-generated deck and/or drop some of its questions. Kept
+   * questions keep their ids, so their practice history stays attached.
+   */
+  updateDeck(
+    key: string,
+    edit: { title?: string; keepQuestionIds?: readonly string[] },
+  ): Promise<boolean>;
   importPluginFiles(files: FileList | File[]): Promise<void>;
   removeLocalPlugin(id: string): Promise<void>;
   /** Remove one deck from wherever it lives: local, cloud or official library. */
-  deleteDeck(key: string): Promise<void>;
+  deleteDeck(key: string): Promise<boolean>;
+  /** Remove several decks with one summary toast; used when deleting a collection. */
+  deleteDecks(keys: readonly string[]): Promise<{ removed: number; failed: number }>;
   /** Remove a generated local copy after its cloud row is deleted. */
   forgetLocalDeck(key: string): Promise<void>;
   exportData(): void;
@@ -263,6 +277,8 @@ interface AppContextValue {
   officialDeckKeys: ReadonlySet<string>;
   /** Deck keys backed by a private cloud row. */
   cloudDeckKeys: ReadonlySet<string>;
+  /** Deck keys the learner may rename or prune (AI-generated decks only). */
+  editableDeckKeys: ReadonlySet<string>;
   /** State of the automatic progress sync for the signed-in account. */
   sync: ProgressSyncStatus;
   findDeck(key: string): Deck | undefined;
@@ -331,6 +347,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const { state: cloudState, sources: cloudSources, actions: cloudActions } = useUserDecks();
   const { state: libraryState, actions: libraryActions } = useUserLibrary();
   const { state: authState, actions: authActions } = useAuth();
+  const locale = state.progress.settings.locale;
   const guestPlugin = useMemo(() => buildGuestPlugin(), []);
   const cloudPlugins = useMemo(
     () => (authState.user ? buildCloudPlugins(cloudState.decks) : []),
@@ -340,9 +357,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
     () => new Set(cloudPlugins.flatMap((plugin) => plugin.decks.map((deck) => deck.key))),
     [cloudPlugins],
   );
+  const editableDeckKeys = useMemo(
+    () =>
+      buildEditableDeckKeys(
+        state.local,
+        cloudPlugins.flatMap((plugin) => plugin.decks),
+      ),
+    [cloudPlugins, state.local],
+  );
+  // Official decks carry both languages; select the one the interface uses.
+  // Re-localising from the canonical catalogue keeps switching idempotent.
   const officialDecks = useMemo(
-    () => selectOfficialDecks(officialState.packs, libraryState.refs),
-    [officialState.packs, libraryState.refs],
+    () =>
+      selectOfficialDecks(officialState.packs, libraryState.refs).map((deck) =>
+        localizeDeck(deck, locale),
+      ),
+    [officialState.packs, libraryState.refs, locale],
   );
   const officialDeckKeys = useMemo(
     () => new Set(officialDecks.map((deck) => deck.key)),
@@ -413,7 +443,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     materialsRef.current = state.materials;
   }, [state.materials]);
 
-  const locale = state.progress.settings.locale;
   const t = useMemo(() => createTranslator(locale), [locale]);
 
   const cancelPendingWrite = useCallback(() => {
@@ -1018,7 +1047,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         status: result.status,
         ratio: result.ratio,
         skipped: false,
-        given: describeGiven(question, finalAnswer),
+        given: describeGiven(question, finalAnswer, t),
       };
       const card = reviewCard(progressRef.current.cards[item.entry.key], qualityFromStatus(result.status, msSpent), now);
       commitProgress(recordAttempt(progressRef.current, { attempt, card }, now));
@@ -1069,7 +1098,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           status: item.result.status,
           ratio: item.result.ratio,
           skipped: item.skipped,
-          given: describeGiven(item.entry.question, item.answer),
+          given: describeGiven(item.entry.question, item.answer, t),
         };
         const card = reviewCard(progress.cards[item.entry.key], qualityFromStatus(item.result.status, item.msSpent), now);
         progress = recordAttempt(progress, { attempt, card }, now);
@@ -1515,19 +1544,107 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const findDeck = useCallback((key: string) => decks.find((deck) => deck.key === key), [decks]);
 
+  const updateDeck = useCallback(
+    async (
+      key: string,
+      edit: { title?: string; keepQuestionIds?: readonly string[] },
+    ): Promise<boolean> => {
+      const deck = decks.find((candidate) => candidate.key === key);
+      if (!deck) {
+        notify('info', t('toast.deckNotFound'));
+        return false;
+      }
+      if (!authState.user || !editableDeckKeys.has(key)) {
+        notify('info', t('toast.deckNotEditable'));
+        return false;
+      }
+
+      const title = (edit.title ?? deck.title).trim();
+      if (!title) {
+        notify('error', t('toast.deckTitleRequired'));
+        return false;
+      }
+      // A generated plugin's manifest name is capped at 80 characters by the
+      // plugin schema, so the deck name stays inside the same budget.
+      if (title.length > 80) {
+        notify('error', t('toast.deckTitleTooLong'));
+        return false;
+      }
+
+      const keepIds = [
+        ...new Set(edit.keepQuestionIds ?? deck.questions.map((question) => question.id)),
+      ];
+      const byId = new Map(deck.questions.map((question) => [question.id, question]));
+      const questions = keepIds
+        .map((id) => byId.get(id))
+        .filter((question): question is Deck['questions'][number] => Boolean(question));
+      if (questions.length === 0) {
+        notify('error', t('toast.deckNeedsQuestion'));
+        return false;
+      }
+
+      const unchanged =
+        title === deck.title &&
+        questions.length === deck.questions.length &&
+        questions.every((question, index) => question.id === deck.questions[index]?.id);
+      if (unchanged) return true;
+
+      const nextDeck: Deck = {
+        ...deck,
+        title,
+        questions,
+        examMinutes: examMinutesForQuestions(questions),
+      };
+
+      // The cloud row is the authoritative copy for a signed-in learner. Write
+      // it first so a failure leaves the old deck visible instead of a local
+      // edit that the cloud copy would immediately hide again.
+      let cloudSaved = false;
+      if (backend.configured) {
+        const saved = await cloudActions.update(nextDeck);
+        if (!saved.ok) {
+          notify('error', describeBackendError(saved.error, t));
+          return false;
+        }
+        cloudSaved = true;
+      }
+
+      const local = updateDeckInLocalPlugins(state.local, key, {
+        title,
+        questionIds: questions.map((question) => question.id),
+      });
+      if (local.updated) {
+        // The local write is already on the server. Claim the record so the
+        // automatic uploader does not race a second copy of the same edit out
+        // before the refreshed cloud list notices the row.
+        if (cloudSaved) {
+          const record = local.records.find((item) => item.decks.some((deck) => deck.key === key));
+          if (record) autoUploaded.current.add(record.id);
+        }
+        dispatch({ type: 'local', local: local.records });
+        // The cloud copy is already updated and shown; a failed local cache
+        // write must not turn a successful edit into an error.
+        await persistLocalPlugins(local.records).catch(() => undefined);
+      }
+      notify('success', t('toast.deckUpdated', { name: title }));
+      return true;
+    },
+    [authState.user, cloudActions, decks, editableDeckKeys, notify, state.local, t],
+  );
+
   /**
    * Remove a deck from the learner's library. The source decides what is
    * deleted: a cloud row, an official-library reference, or a local record.
    * Bundled guest decks are permanent; progress is deliberately retained.
    */
-  const deleteDeck = useCallback(
-    async (key: string) => {
+  const deleteDeckInternal = useCallback(
+    async (key: string, quiet: boolean): Promise<boolean> => {
       const deck = decks.find((candidate) => candidate.key === key);
       const name = deck?.title ?? key;
 
       if (isGuestDeckKey(key)) {
-        notify('info', t('toast.guestDeckLocked'));
-        return;
+        if (!quiet) notify('info', t('toast.guestDeckLocked'));
+        return false;
       }
 
       const cloudRecord = cloudState.decks.find((record) => record.clientKey === key);
@@ -1538,30 +1655,32 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const result = await cloudActions.remove(cloudRecord.id, key);
         if (!result.ok) {
           revive(key);
-          notify(
-            'error',
-            result.error.code === 'forbidden'
-              ? t('toast.deckDeleteBlocked')
-              : describeBackendError(result.error, t),
-          );
-          return;
+          if (!quiet) {
+            notify(
+              'error',
+              result.error.code === 'forbidden'
+                ? t('toast.deckDeleteBlocked')
+                : describeBackendError(result.error, t),
+            );
+          }
+          return false;
         }
         // The row is gone; a local copy left behind would be re-uploaded by the
         // automatic uploader and the deck would reappear.
         await forgetLocalDeck(key);
-        notify('success', t('toast.deckDeleted', { name }));
-        return;
+        if (!quiet) notify('success', t('toast.deckDeleted', { name }));
+        return true;
       }
 
       const ref = libraryState.refs.find((item) => `${item.packId}::${item.deckId}` === key);
       if (ref) {
         const result = await libraryActions.remove(ref.packId, ref.deckId);
         if (!result.ok) {
-          notify('error', describeBackendError(result.error, t));
-          return;
+          if (!quiet) notify('error', describeBackendError(result.error, t));
+          return false;
         }
-        notify('success', t('toast.deckDeleted', { name }));
-        return;
+        if (!quiet) notify('success', t('toast.deckDeleted', { name }));
+        return true;
       }
 
       const local = removeDeckFromLocalPlugins(state.local, key);
@@ -1575,11 +1694,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
           questionTypes.removeByPlugin(record.id);
           importers.removeByPlugin(record.id);
         }
-        notify('success', t('toast.deckDeleted', { name }));
-        return;
+        if (!quiet) notify('success', t('toast.deckDeleted', { name }));
+        return true;
       }
 
-      notify('info', t('toast.deckNotFound'));
+      if (!quiet) notify('info', t('toast.deckNotFound'));
+      return false;
     },
     [
       decks,
@@ -1592,6 +1712,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
       libraryActions,
       state.local,
     ],
+  );
+
+  const deleteDeck = useCallback(
+    (key: string) => deleteDeckInternal(key, false),
+    [deleteDeckInternal],
+  );
+
+  const deleteDecks = useCallback(
+    async (keys: readonly string[]) => {
+      const unique = [...new Set(keys)];
+      let removed = 0;
+      let failed = 0;
+      for (const key of unique) {
+        if (await deleteDeckInternal(key, true)) removed += 1;
+        else failed += 1;
+      }
+      if (removed > 0) notify('success', t('toast.decksDeleted', { n: removed }));
+      if (failed > 0) notify('error', t('toast.decksDeleteFailed', { n: failed }));
+      return { removed, failed };
+    },
+    [deleteDeckInternal, notify, t],
   );
 
   // A deck can disappear after sign-out (generated decks are account content)
@@ -1627,9 +1768,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       removeMaterial,
       clearMaterials,
       saveGeneratedDeck,
+      updateDeck,
       importPluginFiles,
       removeLocalPlugin,
       deleteDeck,
+      deleteDecks,
       forgetLocalDeck,
       exportData,
       importData,
@@ -1658,9 +1801,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       removeMaterial,
       clearMaterials,
       saveGeneratedDeck,
+      updateDeck,
       importPluginFiles,
       removeLocalPlugin,
       deleteDeck,
+      deleteDecks,
       forgetLocalDeck,
       exportData,
       importData,
@@ -1685,6 +1830,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       guestDeckKeys,
       officialDeckKeys,
       cloudDeckKeys,
+      editableDeckKeys,
       sync: syncStatus,
       findDeck,
       actions,
@@ -1701,6 +1847,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       guestDeckKeys,
       officialDeckKeys,
       cloudDeckKeys,
+      editableDeckKeys,
       syncStatus,
       findDeck,
       actions,

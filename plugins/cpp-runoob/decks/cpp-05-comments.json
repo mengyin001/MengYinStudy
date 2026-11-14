@@ -1,0 +1,461 @@
+{
+  "id": "cpp-05-comments",
+  "title": "C++ Comments",
+  "titleI18n": {
+    "zh-Hant": "C++ 註釋"
+  },
+  "description": "Line and block comments, how the compiler strips them, why block comments do not nest, and when a comment is actually worth writing.",
+  "descriptionI18n": {
+    "zh-Hant": "行註釋與區塊註釋、編譯器如何移除它們、區塊註釋為何不能嵌套，以及甚麼時候才值得寫註釋。"
+  },
+  "tags": [
+    "C++",
+    "Comments"
+  ],
+  "examMinutes": 11,
+  "questions": [
+    {
+      "id": "cpp-05-q01",
+      "type": "single",
+      "prompt": "Given the comment `/* a /* b */ c */`, what does the compiler treat as the comment?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "對於 `/* a /* b */ c */`，編譯器會把哪一段視為註釋？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "只有 `/* a /* b */` 是註釋，後面的 `c */` 會被當成程式碼。"
+          },
+          "b": {
+            "zh-Hant": "整行都是註釋，因為區塊註釋可以嵌套。"
+          },
+          "c": {
+            "zh-Hant": "整段 `/* a /* b */ c */` 都是註釋，因為編譯器會配對兩個結束標記。"
+          },
+          "d": {
+            "zh-Hant": "甚麼都不是，嵌套區塊註釋在 C++ 是非法語法。"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "區塊註釋不會嵌套：遇到第一個 */ 就結束，因此後面的 c */ 會變成程式碼，通常造成編譯錯誤。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "Only `/* a /* b */` is the comment; `c */` is code."
+        },
+        {
+          "id": "b",
+          "text": "The whole line, because block comments nest."
+        },
+        {
+          "id": "c",
+          "text": "All of `/* a /* b */ c */`, because the compiler pairs both closing markers."
+        },
+        {
+          "id": "d",
+          "text": "Nothing, because nested block comments are illegal C++."
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "Block comments do not nest: the first */ ends the comment, so the trailing c */ becomes code and usually triggers a compile error.",
+      "tags": [
+        "Comments",
+        "Lexing"
+      ],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-05-q02",
+      "type": "single",
+      "prompt": "What happens to a comment during translation?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "在翻譯過程中，註釋會變成甚麼？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "在程式被解析之前就被替換成一個空白，因此不會進入程式碼產生階段。"
+          },
+          "b": {
+            "zh-Hant": "被寫進目的檔，讓除錯器可以顯示註釋。"
+          },
+          "c": {
+            "zh-Hant": "當作中介資料傳給連結器。"
+          },
+          "d": {
+            "zh-Hant": "保留在執行檔中，並在啟用斷言時執行。"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "註釋在翻譯階段 3 就被換成一個空白，只留下分隔記號的作用；它們不會產生指令，也不會傳給連結器。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "It is replaced by a single space before the program is parsed, so it never reaches code generation."
+        },
+        {
+          "id": "b",
+          "text": "It is stored in the object file so debuggers can show it."
+        },
+        {
+          "id": "c",
+          "text": "It is passed to the linker as metadata."
+        },
+        {
+          "id": "d",
+          "text": "It is kept in the executable and executed when assertions are enabled."
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "Comments are replaced by a single space in translation phase 3, before parsing, so they produce no instructions and are never sent to the linker.",
+      "tags": [
+        "Comments",
+        "Build stages"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-05-q03",
+      "type": "boolean",
+      "prompt": "Comments are removed before code generation, so they add no instructions to the compiled program.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "註釋會在程式碼產生之前被移除，因此不會為編譯後的程式增加任何指令。"
+        },
+        "explanation": {
+          "zh-Hant": "註釋在翻譯階段 3 就處理完畢，遠早於最佳化與程式碼產生，所以不可能增加執行期的負擔。"
+        }
+      },
+      "answer": {
+        "kind": "boolean",
+        "value": true
+      },
+      "explanation": "Comments are handled in translation phase 3, long before the optimiser and code generator run, so they cannot add run-time work.",
+      "tags": [
+        "Comments",
+        "Build stages"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-05-q04",
+      "type": "boolean",
+      "prompt": "`#if 0 ... #endif` is handled by the comment rules of the compiler.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "`#if 0 ... #endif` 是由編譯器的註釋規則處理的。"
+        },
+        "explanation": {
+          "zh-Hant": "#if 0 是前置處理器的條件編譯：由前置處理器跳過其中的記號，不是註釋掃描器，因此可以嵌套。"
+        }
+      },
+      "answer": {
+        "kind": "boolean",
+        "value": false
+      },
+      "explanation": "It is a preprocessor conditional: the enclosed tokens are skipped by the preprocessor rather than by the comment scanner, so the block can be nested.",
+      "tags": [
+        "Preprocessor",
+        "Comments"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-05-q05",
+      "type": "multi",
+      "prompt": "Which statements about comments are correct? Select all that apply.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "下列關於註釋的敘述，哪些正確？可多選。"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "`/* ... */` 註釋可以跨越多行。"
+          },
+          "b": {
+            "zh-Hant": "`//` 註釋延伸到該行結尾。"
+          },
+          "c": {
+            "zh-Hant": "`/* ... */` 可以嵌套，所以 `/* /* */ */` 是一個完整的註釋。"
+          },
+          "d": {
+            "zh-Hant": "`//` 註釋中可以出現 `/*` 字元，而不會開始區塊註釋。"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "區塊註釋可跨行但不能嵌套；行註釋到換行就結束，所以其中的 /* 只是普通文字。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "A `/* ... */` comment may span several lines."
+        },
+        {
+          "id": "b",
+          "text": "A `//` comment runs to the end of the line."
+        },
+        {
+          "id": "c",
+          "text": "`/* ... */` comments nest, so `/* /* */ */` is a complete comment."
+        },
+        {
+          "id": "d",
+          "text": "A `//` comment may contain the characters `/*` without starting a block comment."
+        }
+      ],
+      "answer": {
+        "kind": "multi",
+        "optionIds": [
+          "a",
+          "b",
+          "d"
+        ]
+      },
+      "explanation": "Block comments may span lines but do not nest. A line comment ends at the newline, so a /* inside it is just text.",
+      "tags": [
+        "Comments",
+        "Lexing"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-05-q06",
+      "type": "multi",
+      "prompt": "Which of these are good reasons to write a comment? Select all that apply.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "下列哪些是寫註釋的好理由？可多選。"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "說明某個不明顯的權宜做法為何必要。"
+          },
+          "b": {
+            "zh-Hant": "記錄公開函式的契約：前置條件、資源擁有權與單位。"
+          },
+          "c": {
+            "zh-Hant": "逐行重述程式碼，例如在 i++; 後面寫 // 把 i 加一。"
+          },
+          "d": {
+            "zh-Hant": "留下標明後續追蹤議題的 TODO。"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "好的註釋補充程式碼說不出口的資訊：意圖、契約、限制與待辦事項。逐行重述只會增加維護負擔，程式一改就過時。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "Explaining why a non-obvious workaround is needed."
+        },
+        {
+          "id": "b",
+          "text": "Documenting the contract of a public function: preconditions, ownership and units."
+        },
+        {
+          "id": "c",
+          "text": "Restating each line, such as `i++; // increment i`."
+        },
+        {
+          "id": "d",
+          "text": "Leaving a TODO that names the issue to follow up."
+        }
+      ],
+      "answer": {
+        "kind": "multi",
+        "optionIds": [
+          "a",
+          "b",
+          "d"
+        ]
+      },
+      "explanation": "Good comments add what the code cannot say: intent, contracts, constraints and follow-up work. Restating each line only adds maintenance cost and goes stale.",
+      "tags": [
+        "Comments",
+        "Style"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-05-q07",
+      "type": "single",
+      "prompt": "What is the effect of the comment in `int/**/x = 1;`?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "在 `int/**/x = 1;` 中，該註釋有甚麼作用？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "它扮演記號分隔符，因此這個宣告是合法的。"
+          },
+          "b": {
+            "zh-Hant": "它把前後記號黏在一起，產生識別字 intx。"
+          },
+          "c": {
+            "zh-Hant": "這是語法錯誤，宣告中間不可以有註釋。"
+          },
+          "d": {
+            "zh-Hant": "它把宣告的其餘部分註釋掉，因此 x 沒有被定義。"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "註釋被替換成一個空白，剛好把 int 與 x 分開，所以 `int x = 1;` 合法；若沒有這個空白，intx 會是另一個識別字。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "It acts as a token separator, so the declaration is valid."
+        },
+        {
+          "id": "b",
+          "text": "It glues the tokens together, producing the identifier intx."
+        },
+        {
+          "id": "c",
+          "text": "It is a syntax error, because a comment may not appear inside a declaration."
+        },
+        {
+          "id": "d",
+          "text": "It comments out the rest of the declaration, so x is never defined."
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "The comment becomes one space, which conveniently separates int from x, so the declaration is valid. Without that separation intx would be a single identifier.",
+      "tags": [
+        "Comments",
+        "Lexing"
+      ],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-05-q08",
+      "type": "single",
+      "prompt": "What does `std::cout << \"// done\";` print?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "`std::cout << \"// done\";` 會輸出甚麼？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "// done"
+          },
+          "b": {
+            "zh-Hant": "甚麼都不輸出，因為字串裡的 // 會開始註釋。"
+          },
+          "c": {
+            "zh-Hant": "done"
+          },
+          "d": {
+            "zh-Hant": "無法編譯，因為字串中不可以有 //。"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "這些字元位於字串常值之內，其中的 // 只是一般文字，不會開始註釋。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "// done"
+        },
+        {
+          "id": "b",
+          "text": "Nothing, because the // inside the string starts a comment."
+        },
+        {
+          "id": "c",
+          "text": "done"
+        },
+        {
+          "id": "d",
+          "text": "It does not compile, because a string may not contain //."
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "The characters are inside a string literal, where a // sequence is ordinary text rather than the start of a comment.",
+      "tags": [
+        "Comments",
+        "Literals"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-05-q09",
+      "type": "fill",
+      "prompt": "A block comment begins with `/*` and ends with ____.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "區塊註釋以 `/*` 開始，並以 ____ 結束。"
+        },
+        "explanation": {
+          "zh-Hant": "區塊註釋以 */ 結束，而且不會嵌套：第一個 */ 就會關閉它。"
+        }
+      },
+      "answer": {
+        "kind": "fill",
+        "accept": [
+          "*/",
+          "＊／"
+        ],
+        "ignoreSpaces": true
+      },
+      "explanation": "A block comment is closed by */, and the first */ closes it because block comments do not nest.",
+      "tags": [
+        "Comments"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-05-q10",
+      "type": "short",
+      "prompt": "A colleague writes `i++; // add one to i`. In one or two sentences, explain why this comment is low value and what a better comment would say.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "同事在 `i++;` 後面寫了 `// 把 i 加一`。用一至兩句說明這個註釋為何價值不高，以及比較好的註釋會寫甚麼。"
+        },
+        "model": {
+          "zh-Hant": "它只是重述程式碼已經明講的事，沒有增加資訊，程式一改就容易過時。好的註釋會說明意圖或不易看出來的限制，例如這裡為何要加一（例如跳過表頭列）。"
+        },
+        "explanation": {
+          "zh-Hant": "判斷標準是：刪掉這行註釋，讀者會少了甚麼？如果甚麼都沒少，它就只是噪音。"
+        }
+      },
+      "answer": {
+        "kind": "short",
+        "model": "It only repeats what the code already says, so it adds no information and goes stale when the code changes. A better comment explains intent or a non-obvious constraint, for example why one is added here, such as skipping a header row.",
+        "keywords": [
+          "restates",
+          "intent",
+          "why",
+          "maintenance",
+          "stale"
+        ]
+      },
+      "explanation": "The test is what a reader would lose if the comment were deleted. If the answer is nothing, the comment is noise.",
+      "tags": [
+        "Comments",
+        "Style"
+      ],
+      "difficulty": 3
+    }
+  ]
+}

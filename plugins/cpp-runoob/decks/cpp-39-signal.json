@@ -1,0 +1,248 @@
+{
+  "id": "cpp-39-signal",
+  "title": "C++ Signal Handling",
+  "titleI18n": { "zh-Hant": "C++ 訊號處理" },
+  "description": "Signal handling with <csignal>: installing handlers, raise(), the SIG_IGN and SIG_DFL sentinels, async-signal-safety, and the portability limits of std::signal.",
+  "descriptionI18n": {
+    "zh-Hant": "以 <csignal> 處理訊號：安裝處理函式、raise()、SIG_IGN 與 SIG_DFL 兩個哨兵值、非同步訊號安全，以及 std::signal 的可攜性限制。"
+  },
+  "tags": ["C++", "Signals"],
+  "examMinutes": 15,
+  "questions": [
+    {
+      "id": "cpp-39-q01",
+      "type": "single",
+      "prompt": "Which header declares std::signal, std::raise and the SIGINT family of macros?",
+      "i18n": {
+        "prompt": { "zh-Hant": "哪一個標頭檔宣告了 std::signal、std::raise 與 SIGINT 這組巨集？" },
+        "options": {
+          "a": { "zh-Hant": "<csignal>" },
+          "b": { "zh-Hant": "<signal>" },
+          "c": { "zh-Hant": "<thread>" },
+          "d": { "zh-Hant": "<cstdlib>" }
+        },
+        "explanation": {
+          "zh-Hant": "<csignal> 提供 std::signal、std::raise、SIG_* 巨集與 std::sig_atomic_t；C++ 標準庫沒有 <signal> 這個標頭。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "<csignal>" },
+        { "id": "b", "text": "<signal>" },
+        { "id": "c", "text": "<thread>" },
+        { "id": "d", "text": "<cstdlib>" }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "<csignal> declares std::signal, std::raise, the SIG* macros and std::sig_atomic_t. There is no standard <signal> header, <thread> is for concurrency, and <cstdlib> covers general utilities.",
+      "tags": ["Signals", "Headers"],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-39-q02",
+      "type": "single",
+      "prompt": "What is the required signature of a handler installed with std::signal?",
+      "i18n": {
+        "prompt": { "zh-Hant": "用 std::signal 安裝的處理函式必須是甚麼簽名？" },
+        "options": {
+          "a": { "zh-Hant": "void handler(int)" },
+          "b": { "zh-Hant": "int handler(int)" },
+          "c": { "zh-Hant": "void handler()" },
+          "d": { "zh-Hant": "int handler(void)" }
+        },
+        "explanation": {
+          "zh-Hant": "處理函式回傳 void 並接受一個 int，該 int 就是收到的訊號編號，例如 SIGINT。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "void handler(int)" },
+        { "id": "b", "text": "int handler(int)" },
+        { "id": "c", "text": "void handler()" },
+        { "id": "d", "text": "int handler(void)" }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "The handler returns void and takes one int, the signal number, for example SIGINT. std::signal enforces that type: std::signal(SIGINT, handler).",
+      "tags": ["Signals", "Handlers"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-39-q03",
+      "type": "single",
+      "prompt": "What does std::raise(SIGTERM) do?",
+      "i18n": {
+        "prompt": { "zh-Hant": "std::raise(SIGTERM) 會做甚麼？" },
+        "options": {
+          "a": { "zh-Hant": "把 SIGTERM 送給目前這個程式，因此執行已安裝的處理函式或預設動作。" },
+          "b": { "zh-Hant": "丟出一個型別為 SIGTERM 的 C++ 例外。" },
+          "c": { "zh-Hant": "依 pid 把訊號送給另一個行程。" },
+          "d": { "zh-Hant": "為呼叫的執行緒封鎖 SIGTERM。" }
+        },
+        "explanation": {
+          "zh-Hant": "raise 把訊號送給目前行程（POSIX 下是呼叫的執行緒）；要送給其他行程需用 kill。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "It sends SIGTERM to the current program, which runs its handler or the default action."
+        },
+        { "id": "b", "text": "It throws a C++ exception of type SIGTERM." },
+        { "id": "c", "text": "It sends the signal to another process identified by pid." },
+        { "id": "d", "text": "It blocks SIGTERM for the calling thread." }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "raise delivers the signal to the current program, so the installed handler or the default action runs immediately. Reaching another process is the job of kill on POSIX.",
+      "tags": ["Signals", "raise"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-39-q04",
+      "type": "single",
+      "prompt": "What happens after std::signal(SIGINT, SIG_IGN)?",
+      "i18n": {
+        "prompt": { "zh-Hant": "執行 std::signal(SIGINT, SIG_IGN) 之後會怎樣？" },
+        "options": {
+          "a": { "zh-Hant": "SIGINT 被忽略：不呼叫處理函式，也不執行預設動作。" },
+          "b": { "zh-Hant": "SIGINT 的預設動作被還原。" },
+          "c": { "zh-Hant": "對 SIGINT 啟動一個新執行緒。" },
+          "d": { "zh-Hant": "SIGINT 被封鎖，直到下一次呼叫 signal()。" }
+        },
+        "explanation": {
+          "zh-Hant": "SIG_IGN 是「忽略」哨兵值，會抑制預設動作；要還原預設動作則傳 SIG_DFL。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "SIGINT is ignored: no handler runs and the default action is suppressed." },
+        { "id": "b", "text": "The default action for SIGINT is restored." },
+        { "id": "c", "text": "A new thread is started for SIGINT." },
+        { "id": "d", "text": "SIGINT is blocked until the next signal() call." }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "SIG_IGN is the ignore sentinel: the signal is discarded and the default action never happens. SIG_DFL is the opposite sentinel and restores the default behaviour.",
+      "tags": ["Signals", "SIG_IGN"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-39-q05",
+      "type": "multi",
+      "prompt": "Which of these are standard signal macros declared in <csignal>? Select all that apply.",
+      "i18n": {
+        "prompt": { "zh-Hant": "下列哪些是 <csignal> 中宣告的標準訊號巨集？可多選。" },
+        "options": {
+          "a": { "zh-Hant": "SIGINT" },
+          "b": { "zh-Hant": "SIGTERM" },
+          "c": { "zh-Hant": "SIGSEGV" },
+          "d": { "zh-Hant": "SIGTHREAD" }
+        },
+        "explanation": {
+          "zh-Hant": "SIGINT、SIGTERM、SIGSEGV 都是標準訊號；標準另外還有 SIGABRT、SIGFPE、SIGILL 等，但沒有 SIGTHREAD。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "SIGINT" },
+        { "id": "b", "text": "SIGTERM" },
+        { "id": "c", "text": "SIGSEGV" },
+        { "id": "d", "text": "SIGTHREAD" }
+      ],
+      "answer": { "kind": "multi", "optionIds": ["a", "b", "c"] },
+      "explanation": "The standard defines SIGINT, SIGTERM, SIGSEGV, SIGABRT, SIGFPE and SIGILL among others. SIGTHREAD is invented and does not exist.",
+      "tags": ["Signals", "Macros"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-39-q06",
+      "type": "multi",
+      "prompt": "Which statements about signal handlers are correct? Select all that apply.",
+      "i18n": {
+        "prompt": { "zh-Hant": "關於訊號處理函式，下列哪些敘述正確？可多選。" },
+        "options": {
+          "a": { "zh-Hant": "C++ 標準只保證極少數操作在處理函式內是安全的。" },
+          "b": { "zh-Hant": "以 std::signal 安裝的處理函式必須是 void handler(int) 形式。" },
+          "c": { "zh-Hant": "處理函式可以自由呼叫 malloc、printf 與 std::mutex::lock。" },
+          "d": { "zh-Hant": "POSIX 定義了更長的非同步訊號安全清單，其中包含 write()。" }
+        },
+        "explanation": {
+          "zh-Hant": "標準只保證極少數操作安全；POSIX 另外列出 async-signal-safe 函式（含 write）。malloc、printf、鎖與 std::cout 都不在其中，在處理函式中呼叫可能死鎖或毀損狀態。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "The C++ standard only guarantees a narrow set of operations that are safe inside a handler."
+        },
+        { "id": "b", "text": "A handler installed with std::signal must have the form void handler(int)." },
+        { "id": "c", "text": "A handler may freely call malloc, printf and std::mutex::lock." },
+        { "id": "d", "text": "POSIX defines a longer async-signal-safe list that includes write()." }
+      ],
+      "answer": { "kind": "multi", "optionIds": ["a", "b", "d"] },
+      "explanation": "The standard guarantees very little inside a handler, and POSIX extends that with its async-signal-safe function list, which includes write(). malloc, printf, std::cout and mutex operations are not safe because the handler may have interrupted the same library code.",
+      "tags": ["Signals", "Async-signal-safety"],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-39-q07",
+      "type": "boolean",
+      "prompt": "Unless a handler or SIG_IGN is installed, the default action for SIGINT is to terminate the program.",
+      "i18n": {
+        "prompt": { "zh-Hant": "若沒有安裝處理函式或 SIG_IGN，SIGINT 的預設動作就是終止程式。" },
+        "explanation": {
+          "zh-Hant": "SIGINT（通常是 Ctrl+C）的預設動作是終止程式；有些訊號的預設動作是忽略，例如 SIGCHLD。"
+        }
+      },
+      "answer": { "kind": "boolean", "value": true },
+      "explanation": "The default action for SIGINT, typically produced by Ctrl+C, is abnormal termination. Other signals differ: SIGCHLD is ignored by default, which is why the default action must be checked per signal.",
+      "tags": ["Signals", "Defaults"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-39-q08",
+      "type": "boolean",
+      "prompt": "std::signal behaves identically on every platform, so a handler written for Linux is guaranteed to behave the same way on Windows.",
+      "i18n": {
+        "prompt": { "zh-Hant": "std::signal 在各平台上行為完全相同，因此為 Linux 寫的處理函式在 Windows 上保證行為一致。" },
+        "explanation": {
+          "zh-Hant": "std::signal 的行為有許多實作定義的細節，例如被中斷的系統呼叫是否重啟、可否重設處理函式；跨平台應用通常改用 sigaction（POSIX）或平台專屬機制。"
+        }
+      },
+      "answer": { "kind": "boolean", "value": false },
+      "explanation": "std::signal leaves many details implementation-defined, such as whether interrupted system calls restart or whether the handler is reset on delivery. Portable code usually prefers POSIX sigaction or a platform-specific API.",
+      "tags": ["Signals", "Portability"],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-39-q09",
+      "type": "fill",
+      "prompt": "Passing ____ as the handler restores the default action for a signal.",
+      "i18n": {
+        "prompt": { "zh-Hant": "把 ____ 當作處理函式傳入，可以還原某個訊號的預設動作。" },
+        "explanation": {
+          "zh-Hant": "SIG_DFL 代表預設動作，SIG_IGN 代表忽略；兩者都是 <csignal> 提供的哨兵值。"
+        }
+      },
+      "answer": { "kind": "fill", "accept": ["SIG_DFL", "sig_dfl"], "ignoreCase": true },
+      "explanation": "SIG_DFL is the sentinel for the default action, while SIG_IGN means ignore. Both are provided by <csignal> and passed as the second argument of std::signal.",
+      "tags": ["Signals", "SIG_DFL"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-39-q10",
+      "type": "short",
+      "prompt": "Why should a signal handler avoid std::cout, malloc and mutex locks?",
+      "i18n": {
+        "prompt": { "zh-Hant": "為何訊號處理函式應該避免使用 std::cout、malloc 與互斥鎖？" },
+        "model": {
+          "zh-Hant": "訊號可能在程式任意一點中斷，甚至正好中斷在它想呼叫的那個程式庫函式內部。此時只有非同步訊號安全的操作才可用，否則處理函式可能死鎖或破壞內部狀態。可攜的做法是在處理函式中只設定 volatile std::sig_atomic_t 旗標，真正的工作留給主迴圈。"
+        },
+        "explanation": {
+          "zh-Hant": "關鍵在於處理函式是「插隊」執行的，不能假設任何程式庫狀態一致。"
+        }
+      },
+      "answer": {
+        "kind": "short",
+        "model": "A signal can interrupt the program at any point, possibly in the middle of the very library call the handler wants to use. Only async-signal-safe operations are permitted; otherwise the handler may deadlock or corrupt internal state. The portable pattern is to set a volatile std::sig_atomic_t flag and do the real work in the main loop.",
+        "keywords": ["async-signal-safe", "interrupt", "flag", "sig_atomic_t", "deadlock"]
+      },
+      "explanation": "The handler runs asynchronously, so it cannot assume that any library state is consistent when it arrives.",
+      "tags": ["Signals", "Async-signal-safety", "Best practice"],
+      "difficulty": 4
+    }
+  ]
+}

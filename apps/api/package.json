@@ -1,6 +1,6 @@
 {
   "name": "@mengyin/api",
-  "version": "0.8.0",
+  "version": "0.8.7",
   "private": true,
   "type": "module",
   "description": "MengYin AI question API on Cloudflare Workers: GLM/DeepSeek text and Workers AI images",

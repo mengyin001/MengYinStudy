@@ -1,0 +1,248 @@
+{
+  "id": "cpp-41-web",
+  "title": "C++ Web Programming",
+  "titleI18n": { "zh-Hant": "C++ Web 程式設計" },
+  "description": "How C++ is used on the web: CGI, HTTP requests and responses, environment variables, sockets, libraries such as cpp-httplib and Boost.Beast, plus security and portability trade-offs.",
+  "descriptionI18n": {
+    "zh-Hant": "C++ 如何用在網路上：CGI、HTTP 請求與回應、環境變數、通訊端、cpp-httplib 與 Boost.Beast 等程式庫，以及安全與可攜性的取捨。"
+  },
+  "tags": ["C++", "Web"],
+  "examMinutes": 15,
+  "questions": [
+    {
+      "id": "cpp-41-q01",
+      "type": "single",
+      "prompt": "What is CGI?",
+      "i18n": {
+        "prompt": { "zh-Hant": "甚麼是 CGI？" },
+        "options": {
+          "a": { "zh-Hant": "Common Gateway Interface：網頁伺服器啟動外部程式，並用環境變數與標準輸入把請求交給它。" },
+          "b": { "zh-Hant": "一套用來繪製網頁圖形的 C++ 類別庫。" },
+          "c": { "zh-Hant": "瀏覽器 DOM 的 JavaScript API。" },
+          "d": { "zh-Hant": "網頁伺服器使用的資料庫協定。" }
+        },
+        "explanation": {
+          "zh-Hant": "CGI 是伺服器與外部程式之間的介面約定：伺服器把請求資訊放進環境變數，把請求主體送到程式的標準輸入，程式再把 HTTP 回應寫到標準輸出。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "Common Gateway Interface: the web server runs an external program and passes the request to it through environment variables and standard input."
+        },
+        { "id": "b", "text": "A C++ class library for drawing web graphics." },
+        { "id": "c", "text": "A JavaScript API for the browser DOM." },
+        { "id": "d", "text": "A database protocol used by web servers." }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "CGI is a convention between the server and an external program: request metadata arrives in environment variables, the request body on standard input, and the program writes the HTTP response to standard output.",
+      "tags": ["Web", "CGI"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-41-q02",
+      "type": "single",
+      "prompt": "In an HTTP response, what does the status code 404 mean?",
+      "i18n": {
+        "prompt": { "zh-Hant": "在 HTTP 回應中，狀態碼 404 代表甚麼？" },
+        "options": {
+          "a": { "zh-Hant": "找不到要求的資源。" },
+          "b": { "zh-Hant": "請求成功。" },
+          "c": { "zh-Hant": "用戶端必須先驗證身分。" },
+          "d": { "zh-Hant": "伺服器發生內部錯誤。" }
+        },
+        "explanation": {
+          "zh-Hant": "404 Not Found 表示伺服器找不到該資源；200 是成功，401 需要驗證，500 是伺服器內部錯誤。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "The requested resource was not found." },
+        { "id": "b", "text": "The request succeeded." },
+        { "id": "c", "text": "The client must authenticate first." },
+        { "id": "d", "text": "The server hit an internal error." }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "404 Not Found means the server could not find the requested resource. 200 is success, 401 means authentication is required, and 500 reports an internal server error.",
+      "tags": ["Web", "HTTP"],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-41-q03",
+      "type": "single",
+      "prompt": "In a CGI program, where does the query string of a GET request arrive?",
+      "i18n": {
+        "prompt": { "zh-Hant": "在 CGI 程式中，GET 請求的查詢字串會從哪裡取得？" },
+        "options": {
+          "a": { "zh-Hant": "在環境變數 QUERY_STRING 中。" },
+          "b": { "zh-Hant": "在標準輸出上。" },
+          "c": { "zh-Hant": "在從標準輸入讀取的請求主體中。" },
+          "d": { "zh-Hant": "在 HTTP 狀態列中。" }
+        },
+        "explanation": {
+          "zh-Hant": "GET 的查詢字串放在 QUERY_STRING 環境變數；POST 的主體才從標準輸入讀取，長度由 CONTENT_LENGTH 指定，方法名稱在 REQUEST_METHOD。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "In the QUERY_STRING environment variable." },
+        { "id": "b", "text": "On standard output." },
+        { "id": "c", "text": "In the request body read from standard input." },
+        { "id": "d", "text": "In the HTTP status line." }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "A GET query string is placed in the QUERY_STRING environment variable. A POST body is read from standard input, sized by CONTENT_LENGTH, and the method itself is in REQUEST_METHOD.",
+      "tags": ["Web", "CGI", "Environment variables"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-41-q04",
+      "type": "single",
+      "prompt": "What are cpp-httplib and Boost.Beast?",
+      "i18n": {
+        "prompt": { "zh-Hant": "cpp-httplib 與 Boost.Beast 是甚麼？" },
+        "options": {
+          "a": { "zh-Hant": "用來撰寫 HTTP 伺服器與用戶端的 C++ 程式庫（cpp-httplib 為單一標頭檔，Beast 屬於 Boost）。" },
+          "b": { "zh-Hant": "前端 JavaScript 框架。" },
+          "c": { "zh-Hant": "CSS 版面引擎。" },
+          "d": { "zh-Hant": "關聯式資料庫引擎。" }
+        },
+        "explanation": {
+          "zh-Hant": "cpp-httplib 是單一標頭檔的 HTTP 程式庫；Boost.Beast 建構在 Boost.Asio 之上，提供 HTTP 與 WebSocket 的低階協定實作。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "C++ libraries for writing HTTP servers and clients (cpp-httplib is header-only, Beast is part of Boost)."
+        },
+        { "id": "b", "text": "Front-end JavaScript frameworks." },
+        { "id": "c", "text": "CSS layout engines." },
+        { "id": "d", "text": "Relational database engines." }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "cpp-httplib is a header-only HTTP library, and Boost.Beast builds HTTP and WebSocket protocol support on top of Boost.Asio. Both are C++ libraries, not front-end tooling or databases.",
+      "tags": ["Web", "Libraries"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-41-q05",
+      "type": "multi",
+      "prompt": "Which of these run on the server side? Select all that apply.",
+      "i18n": {
+        "prompt": { "zh-Hant": "下列哪些是在伺服器端執行的？可多選。" },
+        "options": {
+          "a": { "zh-Hant": "由 Apache 啟動的 CGI 程式。" },
+          "b": { "zh-Hant": "用 Boost.Beast 建立的 HTTP 伺服器。" },
+          "c": { "zh-Hant": "在瀏覽器 DOM 中修改頁面的 JavaScript。" },
+          "d": { "zh-Hant": "cpp-httplib 中處理 GET /users 的處理函式。" }
+        },
+        "explanation": {
+          "zh-Hant": "CGI 程式、HTTP 伺服器與伺服器端路由都在伺服器執行；瀏覽器裡的 JavaScript 屬於用戶端。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "A CGI program launched by Apache." },
+        { "id": "b", "text": "An HTTP server built with Boost.Beast." },
+        { "id": "c", "text": "JavaScript that changes the page in the browser DOM." },
+        { "id": "d", "text": "A cpp-httplib handler that answers GET /users." }
+      ],
+      "answer": { "kind": "multi", "optionIds": ["a", "b", "d"] },
+      "explanation": "The CGI process, the HTTP server and its route handlers all execute on the server. JavaScript that manipulates the DOM runs inside the browser, which is the client side.",
+      "tags": ["Web", "Client and server"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-41-q06",
+      "type": "multi",
+      "prompt": "Which are basic security practices for a C++ web service? Select all that apply.",
+      "i18n": {
+        "prompt": { "zh-Hant": "下列哪些是 C++ 網路服務的基本安全做法？可多選。" },
+        "options": {
+          "a": { "zh-Hant": "驗證輸入的長度與範圍，並對每個緩衝區做邊界檢查。" },
+          "b": { "zh-Hant": "以參數化語句（prepared statement）建立 SQL，而不是字串串接。" },
+          "c": { "zh-Hant": "把請求資料未經跳脫就直接寫進 HTML。" },
+          "d": { "zh-Hant": "以 HTTPS 提供服務，並持續更新相依程式庫。" }
+        },
+        "explanation": {
+          "zh-Hant": "邊界檢查、參數化 SQL 與 TLS 都是基本防線；把未跳脫的請求資料寫進 HTML 會造成跨站腳本（XSS）。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "Validate input length and range, and bound-check every buffer." },
+        { "id": "b", "text": "Build SQL with prepared statements instead of string concatenation." },
+        { "id": "c", "text": "Write request data into HTML without escaping it." },
+        { "id": "d", "text": "Serve over HTTPS and keep dependencies patched." }
+      ],
+      "answer": { "kind": "multi", "optionIds": ["a", "b", "d"] },
+      "explanation": "Bounds checking, prepared statements and TLS with patched dependencies are baseline defences. Emitting unescaped request data into HTML is exactly how cross-site scripting is introduced.",
+      "tags": ["Web", "Security"],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-41-q07",
+      "type": "boolean",
+      "prompt": "C++ is commonly used to write CGI programs, HTTP servers and high-performance backend services.",
+      "i18n": {
+        "prompt": { "zh-Hant": "C++ 常用來撰寫 CGI 程式、HTTP 伺服器與高效能後端服務。" },
+        "explanation": {
+          "zh-Hant": "C++ 具備原生效能與低階記憶體控制，經常用於伺服器、代理與延遲敏感的後端元件。"
+        }
+      },
+      "answer": { "kind": "boolean", "value": true },
+      "explanation": "C++ is used for CGI processes, HTTP and WebSocket servers, proxies and latency-sensitive backend components, where native performance and memory control matter.",
+      "tags": ["Web", "Use cases"],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-41-q08",
+      "type": "boolean",
+      "prompt": "C++ is the most widely used language for building web application backends today.",
+      "i18n": {
+        "prompt": { "zh-Hant": "C++ 是當今建置網頁應用後端最廣泛使用的語言。" },
+        "explanation": {
+          "zh-Hant": "PHP、Python、JavaScript/Node.js、Java 與 Go 等在網頁後端更常見；C++ 多用於效能關鍵的少數元件。"
+        }
+      },
+      "answer": { "kind": "boolean", "value": false },
+      "explanation": "Languages such as PHP, Python, JavaScript, Java and Go dominate web backends. C++ is chosen for specific performance-critical components rather than general application development.",
+      "tags": ["Web", "Adoption"],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-41-q09",
+      "type": "fill",
+      "prompt": "The HTTP method that retrieves a resource without modifying it is ____.",
+      "i18n": {
+        "prompt": { "zh-Hant": "用來取得資源而不修改資源的 HTTP 方法是 ____。" },
+        "explanation": {
+          "zh-Hant": "GET 用於取得資源且不應有副作用；POST 用於送出資料，PUT 與 DELETE 會修改或移除資源。"
+        }
+      },
+      "answer": { "kind": "fill", "accept": ["GET", "get"], "ignoreCase": true },
+      "explanation": "GET requests a representation of a resource and should have no side effects. POST submits data, while PUT and DELETE create, replace or remove resources.",
+      "tags": ["Web", "HTTP"],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-41-q10",
+      "type": "short",
+      "prompt": "Give two reasons why C++ is less common than Python or JavaScript for web applications.",
+      "i18n": {
+        "prompt": { "zh-Hant": "舉出兩個理由，說明為何 C++ 在網頁應用上不如 Python 或 JavaScript 常見。" },
+        "model": {
+          "zh-Hant": "C++ 沒有內建的網頁框架與垃圾回收，日常的請求處理需要更多程式碼，記憶體與物件生命週期也必須手動管理。部署時要為各平台編譯，除錯與迭代速度較慢；而 Python 與 JavaScript 生態系龐大、開發快速，因此 C++ 主要用在吞吐量或延遲真正關鍵的地方。"
+        },
+        "explanation": {
+          "zh-Hant": "關鍵在於開發效率與生態系：C++ 換來效能，但付出更多手動管理與建置成本。"
+        }
+      },
+      "answer": {
+        "kind": "short",
+        "model": "C++ has no built-in web framework or garbage collector, so routine request handling needs more code and manual memory and lifetime management. Deployment requires compiling per platform and iteration is slower, while Python and JavaScript offer large ecosystems and fast development; C++ is chosen mainly where throughput or latency really matters.",
+        "keywords": ["framework", "memory", "compile", "ecosystem", "iteration"]
+      },
+      "explanation": "The trade-off is development speed and ecosystem size: C++ buys performance at the cost of more manual management and a heavier build and deployment story.",
+      "tags": ["Web", "Trade-offs"],
+      "difficulty": 3
+    }
+  ]
+}

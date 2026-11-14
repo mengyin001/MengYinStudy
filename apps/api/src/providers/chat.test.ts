@@ -68,8 +68,27 @@ describe('OpenAI-compatible chat model', () => {
     expect((calls[0]?.init.headers as Record<string, string>).Authorization).toBe('Bearer test-key');
   });
 
-  it('accepts a full chat completions URL as the configured base URL', async () => {
-    const calls: string[] = [];
+  it('can force a non-streaming reply for a health check', async () => {
+    const calls: { url: string; init: RequestInit }[] = [];
+    const fetchImpl = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      calls.push({ url: String(input), init: init ?? {} });
+      return jsonResponse({ choices: [{ message: { content: 'OK' }, finish_reason: 'stop' }] });
+    }) as typeof fetch;
+
+    const model = createOpenAiChatModel(config({ fetchImpl }));
+    const result = await model.complete([{ role: 'user', content: 'hi' }], {
+      stream: false,
+      jsonMode: false,
+      maxTokens: 8,
+    });
+    expect(result.text).toBe('OK');
+    const body = JSON.parse(String(calls[0]?.init.body)) as Record<string, unknown>;
+    expect(body.stream).toBe(false);
+    expect(body.max_tokens).toBe(8);
+    expect(body.response_format).toBeUndefined();
+  });
+
+  it('accepts a full chat completions URL as the configured base URL', async () => {    const calls: string[] = [];
     const fetchImpl = (async (input: RequestInfo | URL) => {
       calls.push(String(input));
       return jsonResponse({ choices: [{ message: { content: 'ok' } }] });

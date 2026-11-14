@@ -583,8 +583,8 @@ export const termsOfService: LegalDoc = {
         ),
         ul(
           [
-            '本服務提供免費方案與付費方案。免費方案每月有 200 題 GLM-4.7 的生成額度；付費方案按月或按年訂閱，包含每月點數、較高階模型與 AI 生圖額度。實際方案、價格與包含內容以方案頁與 Stripe 結帳頁為準。',
-            'The service offers a free plan and paid plans. The free plan includes 200 GLM-4.7 questions per calendar month; paid plans are billed monthly or yearly and include a monthly points allowance, stronger models and AI image quotas. The plans page and the Stripe checkout page show the current plans, prices and inclusions.',
+            '本服務提供免費方案與付費方案。免費方案目前不包含 AI 出題額度，練習、複習、考試與官方題庫仍可免費使用；付費方案按月或按年訂閱，包含每月點數、AI 出題、較高階模型與 AI 生圖額度。實際方案、價格與包含內容以方案頁與 Stripe 結帳頁為準。',
+            'The service offers a free plan and paid plans. The free plan does not include AI generation at the moment — practice, review, exams and the official catalogue stay free; paid plans are billed monthly or yearly and include a monthly points allowance, AI generation, stronger models and AI image quotas. The plans page and the Stripe checkout page show the current plans, prices and inclusions.',
           ],
           [
             'AI 出題使用本服務的供應商額度；你不需要自備 API 金鑰。為維持服務穩定與公平使用，我們可能設定每日或每月的題數、圖片數與速率上限，並可能隨成本調整；付費方案的用量以點數計算。',

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   dueEntries,
   examMinutesForDeck,
@@ -11,17 +11,26 @@ import {
 } from '@mengyin/core';
 import { Icon } from '@/components/Icons';
 import { CollectionEditorSheet, CollectionPickerSheet } from '@/components/CollectionSheets';
+import { DeckEditorSheet } from '@/components/DeckEditorSheet';
 import { OfficialStatus } from '@/components/OfficialStatus';
 import { Empty, Meter, Note, PageHead, Sheet } from '@/components/ui';
-import { buildCollectionView, collectionsContainingDeck } from '@/domain/collections';
+import {
+  OFFICIAL_PACK_COLLECTION_PREFIX,
+  buildCollectionView,
+  collectionsContainingDeck,
+  isOfficialPackCollection,
+} from '@/domain/collections';
 import type { DeckView } from '@/domain/library';
 import { questionTypeLabel } from '@/domain/registry';
 import { describeBackendError } from '@/i18n/backend';
+import { isAiDeck } from '@/domain/deckOrigin';
 import type { MessageKey } from '@/i18n/messages';
 import { pct, shorten } from '@/lib/format';
 import { navigate } from '@/lib/router';
 import { useApp } from '@/state/AppContext';
+import { useAuth } from '@/state/AuthContext';
 import { useCollections } from '@/state/CollectionsContext';
+import { useOfficialContent } from '@/state/OfficialContentContext';
 
 type Filter = 'all' | 'due' | 'mistakes' | 'new';
 
@@ -35,12 +44,22 @@ interface ModeOption {
 }
 
 export function LibraryPage() {
-  const { state, deckViews, pluginNames, guestDeckKeys, officialDeckKeys, cloudDeckKeys, t, actions } =
-    useApp();
+  const {
+    state,
+    deckViews,
+    pluginNames,
+    guestDeckKeys,
+    officialDeckKeys,
+    cloudDeckKeys,
+    editableDeckKeys,
+    t,
+    actions,
+  } = useApp();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<Filter>('all');
   const [selected, setSelected] = useState<string | null>(null);
   const [modeDeck, setModeDeck] = useState<string | null>(null);
+  const [editDeckKey, setEditDeckKey] = useState<string | null>(null);
   const [removeKey, setRemoveKey] = useState<string | null>(null);
   const [removing, setRemoving] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
@@ -51,6 +70,60 @@ export function LibraryPage() {
     authenticated: collectionsAuthenticated,
     actions: collectionActions,
   } = useCollections();
+  const { state: officialState } = useOfficialContent();
+  const { state: auth } = useAuth();
+  const ensuredPackCollections = useRef(new Set<string>());
+
+  /**
+   * Existing libraries may already contain a whole official pack without the
+   * matching collection. Create it once so those decks move into "My
+   * collections" instead of sitting in the flat deck list.
+   */
+  useEffect(() => {
+    if (!collectionsAuthenticated || !collectionsState.ready || !auth.user) return;
+    for (const pack of officialState.packs) {
+      const id = `${auth.user.id}:${OFFICIAL_PACK_COLLECTION_PREFIX}${pack.manifest.id}`;
+      if (collectionsState.collections.some((item) => item.id === id)) continue;
+      if (ensuredPackCollections.current.has(id)) continue;
+      const deckKeys = pack.decks.map((deck) => deck.key);
+      if (deckKeys.length === 0) continue;
+      if (!deckKeys.every((key) => officialDeckKeys.has(key))) continue;
+
+      ensuredPackCollections.current.add(id);
+      void collectionActions
+        .create({
+          id,
+          name: pack.manifest.name,
+          description: pack.manifest.description ?? null,
+          deckKeys,
+        })
+        .then((result) => {
+          if (!result.ok) ensuredPackCollections.current.delete(id);
+        });
+    }
+  }, [
+    auth.user,
+    collectionActions,
+    collectionsAuthenticated,
+    collectionsState.collections,
+    collectionsState.ready,
+    officialDeckKeys,
+    officialState.packs,
+  ]);
+
+  // A deck that belongs to a collection is browsed from that collection, not
+  // from the flat deck list.
+  const collectionDeckKeys = useMemo(() => {
+    const hidden = new Set<string>();
+    for (const collection of collectionsState.collections) {
+      for (const key of collection.deckKeys) hidden.add(key);
+    }
+    return hidden;
+  }, [collectionsState.collections]);
+  const libraryDeckViews = useMemo(
+    () => deckViews.filter((view) => !collectionDeckKeys.has(view.deck.key)),
+    [deckViews, collectionDeckKeys],
+  );
 
   const mastery = useMemo(() => masteryMap(state.progress.attempts), [state.progress.attempts]);
   const collectionViewByKey = useMemo(
@@ -68,7 +141,9 @@ export function LibraryPage() {
   const pickSelection = useMemo(
     () =>
       pickDeckKey
-        ? collectionsContainingDeck(collectionsState.collections, pickDeckKey).map((item) => item.id)
+        ? collectionsContainingDeck(collectionsState.collections, pickDeckKey)
+            .filter((item) => !isOfficialPackCollection(item.id))
+            .map((item) => item.id)
         : [],
     [collectionsState.collections, pickDeckKey],
   );
@@ -77,17 +152,17 @@ export function LibraryPage() {
 
   const counts = useMemo(
     () => ({
-      all: deckViews.length,
-      due: deckViews.filter((view) => view.dueCount > 0).length,
-      mistakes: deckViews.filter((view) => view.mistakeCount > 0).length,
-      new: deckViews.filter((view) => view.seen === 0).length,
+      all: libraryDeckViews.length,
+      due: libraryDeckViews.filter((view) => view.dueCount > 0).length,
+      mistakes: libraryDeckViews.filter((view) => view.mistakeCount > 0).length,
+      new: libraryDeckViews.filter((view) => view.seen === 0).length,
     }),
-    [deckViews],
+    [libraryDeckViews],
   );
 
   const visible = useMemo(() => {
     const text = query.trim().toLowerCase();
-    return deckViews.filter((view) => {
+    return libraryDeckViews.filter((view) => {
       if (filter === 'due' && view.dueCount === 0) return false;
       if (filter === 'mistakes' && view.mistakeCount === 0) return false;
       if (filter === 'new' && view.seen > 0) return false;
@@ -102,12 +177,13 @@ export function LibraryPage() {
         .toLowerCase();
       return haystack.includes(text);
     });
-  }, [deckViews, filter, pluginNames, query]);
+  }, [libraryDeckViews, filter, pluginNames, query]);
 
   const selectedView = selected ? deckViews.find((view) => view.deck.key === selected) : undefined;
   const modeView = modeDeck ? deckViews.find((view) => view.deck.key === modeDeck) : undefined;
+  const editView = editDeckKey ? deckViews.find((view) => view.deck.key === editDeckKey) : undefined;
   const removeView = removeKey ? deckViews.find((view) => view.deck.key === removeKey) : undefined;
-  const totalQuestions = deckViews.reduce((sum, view) => sum + view.total, 0);
+  const totalQuestions = libraryDeckViews.reduce((sum, view) => sum + view.total, 0);
 
   const confirmRemove = async () => {
     if (!removeKey) return;
@@ -196,7 +272,7 @@ export function LibraryPage() {
     <div className="page">
       <PageHead
         title={t('lib.title')}
-        lede={t('lib.subtitle', { decks: deckViews.length, questions: totalQuestions })}
+        lede={t('lib.subtitle', { decks: libraryDeckViews.length, questions: totalQuestions })}
         actions={
           <>
             <button type="button" className="btn btn--quiet btn--sm" onClick={() => navigate('/plaza')}>
@@ -259,6 +335,7 @@ export function LibraryPage() {
                 type="button"
                 className="collection-card"
                 key={collectionView.collection.id}
+                title={collectionView.collection.name}
                 onClick={() =>
                   navigate(`/collections/${encodeURIComponent(collectionView.collection.id)}`)
                 }
@@ -357,6 +434,9 @@ export function LibraryPage() {
                       {guestDeckKeys.has(deck.key) ? (
                         <span className="badge">{t('lib.guestBadge')}</span>
                       ) : null}
+                      {isAiDeck(deck) ? (
+                        <span className="badge badge--ai">{t('lib.aiBadge')}</span>
+                      ) : null}
                       {officialDeckKeys.has(deck.key) ? (
                         <span className="badge badge--official">{t('official.badge')}</span>
                       ) : null}
@@ -393,6 +473,17 @@ export function LibraryPage() {
                     <button type="button" className="btn btn--sm" onClick={() => openModes(view)}>
                       {t('common.study')}
                     </button>
+                    {editableDeckKeys.has(deck.key) ? (
+                      <button
+                        type="button"
+                        className="icon-btn"
+                        aria-label={t('lib.editDeck')}
+                        title={t('lib.editDeck')}
+                        onClick={() => setEditDeckKey(deck.key)}
+                      >
+                        <Icon name="note" size={13} strokeWidth={1.6} />
+                      </button>
+                    ) : null}
                     {!guestDeckKeys.has(deck.key) ? (
                       <button
                         type="button"
@@ -421,6 +512,9 @@ export function LibraryPage() {
           selectedView ? (
             <>
               <span className="sheet__hint">
+                {isAiDeck(selectedView.deck) ? (
+                  <span className="badge badge--ai">{t('lib.aiBadge')}</span>
+                ) : null}
                 {t('lib.previewMeta', {
                   n: selectedView.total,
                   seen: selectedView.seen,
@@ -428,6 +522,18 @@ export function LibraryPage() {
                 })}
               </span>
               <div className="deck-row__actions">
+                {editableDeckKeys.has(selectedView.deck.key) ? (
+                  <button
+                    type="button"
+                    className="text-btn"
+                    onClick={() => {
+                      setSelected(null);
+                      setEditDeckKey(selectedView.deck.key);
+                    }}
+                  >
+                    {t('lib.editDeck')}
+                  </button>
+                ) : null}
                 {collectionsAuthenticated ? (
                   <button
                     type="button"
@@ -568,7 +674,9 @@ export function LibraryPage() {
       <CollectionPickerSheet
         open={!!pickDeckKey}
         deckTitle={pickView?.deck.title ?? ''}
-        collections={collectionsState.collections}
+        collections={collectionsState.collections.filter(
+          (item) => !isOfficialPackCollection(item.id),
+        )}
         initialSelected={pickSelection}
         busy={collectionsState.busy}
         onClose={() => setPickDeckKey(null)}
@@ -589,6 +697,16 @@ export function LibraryPage() {
           setPendingDeckKey(null);
         }}
         onSave={createCollection}
+      />
+
+      <DeckEditorSheet
+        open={!!editView}
+        deck={editView?.deck ?? null}
+        onClose={() => setEditDeckKey(null)}
+        onSave={(edit) => {
+          if (!editDeckKey) return Promise.resolve(false);
+          return actions.updateDeck(editDeckKey, edit);
+        }}
       />
     </div>
   );

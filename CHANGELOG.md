@@ -1,9 +1,253 @@
 # Changelog
 
-## Unreleased
+## 0.8.7 — 2026-11-15
 
 ### Added
 
+- **The study guide and the official question banks are now real, indexable pages.** The build
+  emits `/guide/`, `/banks/`, one page per official collection and one page per official question
+  bank. A bank page carries its title, description, licence, every question prompt, a canonical
+  URL, Open Graph metadata, `LearningResource` structured data and a link into the app. Answers and
+  explanations stay in the app so the pages do not spoil practice.
+- **The sitemap now covers the guide and the whole official catalogue.** It grows from the static
+  landing/legal pages to **50 URLs**: the guide, the catalogue index, the C++ collection and its 44
+  bilingual banks. The pages are generated from `plugins/<pack>/decks/*.json`, the same files the
+  app syncs, so the sitemap and the in-app decks cannot drift. The bundled `starter.study` demo is
+  excluded because it is not part of the published catalogue.
+- The landing page, its pre-JavaScript shell and the footer link to `/banks/` and `/guide/`.
+- The README now links the live site, the guide and the official banks. The GitHub repository is
+  public and its Website field points at `https://study.mengyin.online/`.
+
+### Verified
+
+- **684 tests / 80 files**, typecheck clean, production build OK. New tests cover the guide and
+  official page renderer, the official sitemap routes and the demo-pack exclusion.
+- Production `mengyinstudy` deployed as `177b7d90-7420-496f-9c7e-ff1fdc7eb2f4` on 0.8.7;
+  `/api/ai/health` reports `0.8.7`. Live `/sitemap.xml` has 50 URLs; `/guide/`, `/banks/`,
+  the C++ collection and all 44 bank pages return 200 `text/html`; `/banks/starter/` is absent.
+
+## 0.8.6 — 2026-11-13
+
+### Fixed
+
+- **A stale HTML response can no longer make Search Console reject the sitemap.**
+  `/sitemap.xml` and `/robots.txt` were cached for an hour, so a client that read
+  the SPA shell at `/sitemap.xml` before the file existed could keep seeing HTML
+  after the deploy; Search Console reported “Sitemap is HTML”. The SEO files now
+  use `Cache-Control: public, max-age=0, must-revalidate`, and `/sitemap`,
+  `/sitemap.xml/`, `/sitemap_index.xml` and `/sitemap-index.xml` redirect to the
+  canonical `/sitemap.xml`. The generated sitemap itself was already valid XML;
+  an existing Search Console entry that holds the old HTML read still needs to
+  be removed and re-added so Google re-fetches the URL.
+
+### Verified
+
+- **680 tests / 79 files**, typecheck clean, production build OK. The new SEO test asserts the
+  generated document starts with the XML declaration and contains no `<html>`/`<body>`; the
+  sitemap URLs and `lastmod` checks are unchanged.
+- Production `mengyinstudy` deployed as `728eb672-8cd4-4cb6-860e-cc27617fca81` on 0.8.6;
+  `/api/ai/health` reports `0.8.6`. Live `/sitemap.xml` returns 200 `application/xml` with
+  `Cache-Control: public, max-age=0, must-revalidate`; `/sitemap`, `/sitemap.xml/`,
+  `/sitemap_index.xml` and `/sitemap-index.xml` all 301 to `/sitemap.xml`.
+
+## 0.8.5 — 2026-11-13
+
+### Fixed
+
+- **A reasoning model no longer fails the key test just because it spent the tiny health-check
+  budget before answering.** The test sends a one-word prompt; NVIDIA’s
+  `nvidia/nemotron-3.5-super-vl-120b-a12b` and similar models can use the whole small budget on
+  hidden reasoning and return `finish_reason: length` with no text, which the Settings test reported
+  as “The provider stopped at its output limit before writing a reply”. The test now gives a small
+  but more realistic 32-token budget and treats an output-limit reply as a valid key: the endpoint
+  accepted the request and started generating, which is what the test verifies. A real generation
+  keeps the full output budget and still reports truncation normally.
+
+### Verified
+
+- **679 tests / 79 files**, typecheck clean, production build OK. The new test returns 200 for an
+  output-limit reply from the key test.
+- Production `mengyinstudy` deployed as `9267fa53-d8e2-4b0c-a99a-d2de2b5e2d79` on 0.8.5;
+  `/api/ai/health` reports `0.8.5`. The web bundle is unchanged (`assets/index-D_dcRVsf.js`); this
+  release changes the Worker only.
+
+## 0.8.4 — 2026-11-13
+
+### Fixed
+
+- **The API-key test no longer hangs on “Testing…”.** `/api/ai/test` is a health check, but it
+  inherited the 300 s generation inactivity timeout and streamed the reply; a provider that held
+  the SSE connection open left the Settings button spinning for minutes. The test now sends
+  `stream: false`, aborts at **20 s** on the server (a `Promise.race` bound holds even if the
+  provider ignores the abort signal), and forwards a client disconnect to the provider request.
+  Settings also races the request against a **25 s** timer, so the button always returns and
+  reports “Test timed out. Check the Base URL and model…” instead of staying in “Testing…”. The
+  own provider’s declared context window is now passed to the test resolver as well.
+
+### Verified
+
+- **678 tests / 79 files**, typecheck clean, production build OK. New tests cover a non-streaming
+  health reply and a hanging test provider returning 504 `provider_timeout`.
+- Production `mengyinstudy` deployed as `c2df25f5-5fcb-4a04-9ec7-fdfc58b092f1` on 0.8.4;
+  `/api/ai/health` reports `0.8.4` and the served HTML references `assets/index-D_dcRVsf.js`.
+
+## 0.8.3 — 2026-11-13
+
+### Fixed
+
+- **An own provider key is no longer clamped to the free plan's remaining questions.** Generate
+  set the count field's maximum, and clamped the chosen count, to `max(1, questionsRemaining)` even
+  when the learner had selected their own key. An account with no server questions left could
+  therefore request only one question. The ceiling now comes from `questionCountCeiling()`, which
+  returns no ceiling for an own key or a paid plan and keeps the free-plan bound only when the
+  server's provider is paying. It also waits for the saved settings to hydrate, so a saved own key
+  is not clamped to one before it has loaded. The API already skipped the quota for `byoKey`; this
+  fixes the UI side.
+
+### Verified
+
+- **676 tests / 79 files**, typecheck clean, production build OK. The new
+  `apps/web/src/ai/count.test.ts` covers the free remaining count, the zero-left floor, a paid plan,
+  an own key with zero server questions left, billing switched off, and the pre-hydration state.
+- Production `mengyinstudy` deployed as `48f184bd-f284-4fd0-aab4-576f6cc9e068` on 0.8.3;
+  `/api/ai/health` reports `0.8.3` and the served HTML references `assets/index-B0mqbixG.js`.
+
+## 0.8.2 — 2026-11-09
+
+### Removed
+
+- **GLM-4.7-Flash is withdrawn, and the free plan no longer generates questions.** Zhipu's open
+  platform terms restrict non-paid models to non-commercial personal use (「非付費功能…僅可以非商業的、
+  個人研究學習的方式使用」), so a paid product cannot run a free tier on that model. The catalogue is
+  now DeepSeek Flash (1 point a question) and DeepSeek V4 Pro (4 points); the free plan keeps
+  practice, review, exams, the Plaza and rendered figures, and Generate says "AI generation requires
+  a paid plan" instead of showing a quota it cannot spend. The GLM provider, its four environment
+  variables and its vision model are gone from the API. A **paid** GLM model can come back with a
+  few lines in `registry.ts` once its pricing is decided.
+
+### Changed
+
+- **The generation model is a dropdown.** The picker used to be a row of cards; it is now one line —
+  provider icon, model name over its provider, points badge — that opens a scrollable listbox. Each
+  row repeats that shape: the model name is the large line, the provider the small one, the ×
+  multiplier on the right and a check on the current model. It is a real listbox: arrow keys,
+  Home/End, Enter/Space, Escape and click-outside work, unavailable rows are skipped by the keyboard
+  and marked with the reason, and the menu scrolls on a phone.
+- **Pricing and the billing guide show the free plan without an AI model.** Its model line reads
+  "No AI model" and the plan tables drop the 200-question cap, which only existed for the withdrawn
+  free model. The billing, account and legal copy say the same thing.
+- **The Generate bar no longer claims a free model.** With GLM-4.7-Flash gone there is no zero-point
+  model, so "Free model · no points charged" was misleading — it appeared whenever nothing was
+  selected. The cost line now only appears when a run would actually cost points; a free plan sees
+  "AI generation requires a paid plan" and the upgrade link instead. The hint returns with a free
+  tier.
+
+### Added
+
+- **Bring your own API key, for any OpenAI-compatible provider.** Settings has an "API Key" panel
+  laid out two fields to a row — Base URL and model on the first, context window and key on the
+  second — with Save, **Test key** and Remove. Test key sends the drafts to `/api/ai/test`, so a key
+  can be checked before it is stored, and reports "Key works: {model}" or the provider's error. The
+  fields accept DeepSeek, OpenAI, OpenRouter, Moonshot, SiliconFlow or any other compatible endpoint,
+  with whatever model id that account can call; the context window keeps the completion budget inside
+  the model's limit. Generation with it charges no points and ignores the plan's model list, so a
+  free account can generate at its own cost. The values stay in this browser (IndexedDB) and go out
+  with each request; the server uses them for that one call, never stores them and never puts them in
+  a response or a log line. The base URL is checked for `https` on a public host, because the Worker
+  fetches it — loopback, private ranges and link-local targets are refused. The plan still decides
+  whether AI photos are allowed, since those use our image provider.
+- **The model picker starts empty and shows what the plan unlocks.** Generate now opens with
+  "Choose a model" rather than silently preselecting one. The menu lists the learner's own model
+  first (when configured) and then the catalogue: a paid account can switch between its own provider
+  and the paid models, and a free account can open the menu but its locked rows send it to the plans
+  page instead of selecting.
+- **AI-generated decks are marked.** Library rows and the deck preview show an "AI generated" badge
+  for decks the generator wrote, recognised from their `ai.<topic>-…` plugin id, so the label also
+  survives cloud sync and applies to decks saved before the badge existed.
+- **Question generation can be switched off server-side without deleting a key.** `AI_GENERATION=off`
+  makes `/config` return an empty provider list — so Generate shows its normal "no provider
+  configured" state rather than a broken form — and every generation or test call fails with
+  `ai_unconfigured` before a provider is contacted. Images keep their own switches
+  (`IMAGE_PROVIDER`, `IMAGE_SEARCH`).
+
+### Verified
+
+- **669 tests / 78 files**, typecheck clean, production build OK. The new tests cover the free plan
+  refusing generation, an unknown model id being priced at the ceiling, the GLM provider being gone
+  from the catalogue, `AI_GENERATION=off` emptying the catalogue and blocking every call, an own key
+  skipping every charge (and still refusing free-plan photos), `apiKey` / `apiBaseUrl` validation
+  (public https only), an own provider resolving without a server key, and the deck-origin marker.
+- **Model-menu check.** A harness rendering the real `ModelPicker` with one own-model row and two
+  plan-locked rows shows the trigger reading "Choose a model" while nothing is selected, the locked
+  rows carrying "Not in your plan · upgrade" and `aria-disabled`, clicking a locked row firing the
+  upgrade callback and leaving the selection empty, and choosing the own row selecting it and
+  showing "glm-4.7-flash / your provider"; no page errors.
+- Preview Worker `mengyinstudy-preview` deployed as `59507f0b-77b9-431c-9b10-e8a9167ef6a4` and
+  production `mengyinstudy` as `f1a3d2e3-472a-4d83-bff3-6758ed134ddd`, both on 0.8.2. The production
+  Settings panel is titled "API Key", lays Base URL + model over context window + key in two
+  columns (487 px each at 1280 px), and offers Save and Test key. `/api/ai/health` reports `0.8.2`
+  with `providersConfigured: 1`; `#/pricing` shows "No AI model" for Free and "DeepSeek Flash ·
+  DeepSeek V4 Pro" for Standard, and `#/docs/billing` lists exactly those two rates, with no page
+  errors and no horizontal overflow. The served bundle no longer contains "Free model · no points
+  charged" and still contains the paid-plan hint.
+
+## 0.8.1 — 2026-11-08
+
+### Added
+
+- **A spinner while a question's illustration loads.** Paging to a question with a picture used to land
+  on an empty gap until the image arrived; the card now shows a framed placeholder with a small ring
+  spinner in its place, sized like a generated (square) illustration so the picture replaces it without
+  a jump. The frame only appears after a 160 ms grace period, so cached and inline images never flash
+  it, and the picture fades in when it decodes. Option thumbnails get a smaller placeholder, a missing
+  object still renders nothing at all, and the ring is a theme-aware CSS animation that slows down
+  under `prefers-reduced-motion`; screen readers get a localised "Image loading…" status.
+- **An answer-streak system for practice, review, SRS, random and drill.** Correct answers now
+  build a session streak shown as a flame counter in the practice bar, and the pitch of a short
+  synthesised chime climbs with the run. A single wholly correct answer gets its own bright rising
+  fifth, and a partly correct answer gets a softer rising minor third as encouragement, so feedback
+  is audible before a streak starts. Runs of 3, 5, 10, 15 and every fifth answer after that
+  earn a confetti burst and a milestone card; the results screen repeats the session's best run and
+  Statistics shows the all-time best. On a phone the card is centred over the reading column instead
+  of covering the footer button, and the stacked pager sits on the centre line. Exams are excluded
+  end to end: they never build, break or display a streak, and never play a sound. Both the sound
+  and the confetti have their own switches under Settings → Practice, and the animation honours
+  `prefers-reduced-motion`. The audio is generated with the Web Audio API after the first tap, so it
+  adds no audio file, works offline and does not depend on the service worker.
+- **A score sound when a session ends.** A perfect 100 earns a real CC0 applause recording (with a
+  synthetic clap fallback if it cannot be fetched or decoded), 60–99 gets a short rising major
+  arpeggio, and below 60 gets a lower, softer perfect-fourth motif that encourages another attempt.
+  The sound waits 350 ms for the results screen to appear, plays once per session even if the view
+  is revisited, and respects the same sound switch. The practice bar also has a speaker button that
+  mutes or unmutes immediately (suspending a sound already playing) and stays in sync with Settings.
+  Exam results stay silent, matching the rule that tests never play answer feedback.
+- **Official collections stay together in the library.** Adding a catalogue pack now also creates a
+  synced collection named after the pack and hides those decks from the flat deck list, so a course
+  is browsed from **My collections** instead of as 44 separate rows. Official collections are
+  read-only: the name, description and deck membership cannot be changed, only the whole collection
+  can be deleted. Deleting a collection also removes its decks from the library (a deck shared with
+  another collection stays there), and any deck that belongs to a collection is only listed inside
+  that collection. The per-deck **Add to my decks** action remains for adding a single bank, and
+  existing libraries that already contain a whole pack get the collection on the next Decks visit.
+  The session results review also spans the full reading column now instead of shrink-wrapping around
+  its contents, which made expanding a row look narrower.
+- **Bilingual official question banks, starting with the C++ course.** Official decks may now
+  carry `i18n` text (English in the ordinary fields, Traditional Chinese in the overrides) on deck
+  titles, descriptions, question prompts, options, explanations and short-answer models. The app
+  localises official catalogue content to the interface language in the Plaza, library, practice
+  session, feedback panel and results, so switching EN/繁中 switches the questions themselves; the
+  canonical text is kept in `i18n`, which makes repeated switches idempotent. Deck-level text travels
+  in two new nullable `official_decks` columns (`title_i18n`, `description_i18n`, see
+  `20261112090000_official_deck_i18n.sql`); a project still on an older migration falls back to the
+  English columns instead of failing the catalogue read. The new `cpp.runoob` pack ships 44 decks,
+  one for every chapter of the C++ course, with 10 bilingual questions each, ordered from
+  the first program through OOP, templates, concurrency and the standard library. `npm test` now
+  validates every bundled deck and enforces both languages for the C++ pack.
+- **AI-generated decks can be renamed and pruned after saving.** The library row and its preview sheet
+  now expose an “Edit deck” action for decks the learner generated. The editor renames the deck and
+  removes unwanted questions in one save; kept questions retain their ids, so their practice history
+  stays attached. The cloud row and the local copy are updated together, and the whole change is
+  validated against the deck schema (at least one question, 80-character name) before it is written.
 - **Self-service refunds for paid subscriptions.** `GET /api/billing/refund` returns a quote and
   `POST /api/billing/refund` performs it. The automatic window is seven days from the first
   successful payment. A monthly refund returns `paid × unused plan points ÷ monthly plan points`;
@@ -131,6 +375,10 @@
 
 ### Fixed
 
+- **The mobile dashboard's metric column is straight.** The desktop rule that indents every metric
+  after the first was still applied to the first cell of the second row, so “Due today” and the
+  “Mastered” underneath it started on different vertical lines. The two-column layout now resets
+  that indent for the left cells and drops the extra bottom rule on the last row.
 - **The Account page refreshes its billing snapshot on arrival.** After generating images, the
   profile page could keep showing the previous `0 / 40` AI-image count until a manual reload even
   though the server had already recorded the usage. Opening Account now calls `refresh()` and shows
@@ -185,6 +433,11 @@
 
 ### Changed
 
+- **The Today page shows the daily-goal progress.** The target set in Settings now drives a goal
+  band at the top of Today — answers so far against the target, the remaining count and the
+  percentage — so a learner can see the goal without opening the Plaza. The non-editable “Exam
+  length” row is removed from Settings; each deck already owns its exam length, and the row only
+  repeated that, leaving the daily target and auto-advance delay as the panel's controls.
 - **A support email is visible before and during payment.** The Pricing page and billing guide link
   to `mengyinqwq@gmail.com`, and Stripe Checkout shows the same address below its submit button via
   `custom_text`, so a learner who has a payment or subscription problem knows where to ask.
@@ -279,7 +532,36 @@
 
 ### Verified
 
-- **628 tests / 72 files**, typecheck clean, production build OK.
+- **661 tests / 77 files**, typecheck clean, production build OK.
+- **Image-loading preview check.** A harness rendering the real `QuestionImage` with the production
+  stylesheet and a server-delayed SVG went `pending → loading` at 263 ms and `ready` at 1.7 s, with the
+  ring, `aria-busy` and the hidden "Image loading…" label centred inside the frame, then no spinner once
+  the picture arrived. An immediately-served image went straight to `ready` and never flashed the frame.
+  The practice card's placeholder measured 320×320 and the loaded 640×480 picture 426×320, option
+  thumbnails stayed 138×104, the Generate preview stayed 320 px wide with its credit line, and the
+  390 px and 320 px layouts had no horizontal overflow. The deployed preview serves the new
+  `.media-stage`, `.media-loading__ring` and `@keyframes media-spin` rules and boots practice with no
+  page errors.
+- **Answer-streak preview check.** Headless Edge ran the built app and the deployed preview through
+  the guest deck: three correct answers in a row showed the `3` flame chip and the 20-particle
+  celebration card and produced 18 oscillator starts (the first-correct fifth, the streak-2 chime
+  and the streak-3 fanfare). A partly correct multi-select answer produced its own four-oscillator
+  encouraging motif with no streak chip or burst. Exam mode showed no chip, no burst and no chime,
+  and Settings exposed the sound and celebration switches. `/api/ai/health` reports `0.8.1`.
+- **Score-sound preview check.** Perfect 100 fetched the CC0 `applause-*.mp3` asset (HTTP 200) and
+  played it as one buffer source; score 60 → 8 oscillator starts for the passing arpeggio; score
+  20 → 4 for the softer retry motif; an exam results page → zero of both. The four new band tests
+  pass.
+- **Sound-toggle preview check.** The practice-bar button started `aria-pressed="true"`, switched to
+  `false`, and a correct answer while muted created zero oscillators. Re-enabling it produced the
+  four-oscillator correct motif on the next answer, the Settings switch stayed in sync, and exam mode
+  rendered no toggle. The 320 px and 390 px layouts had no horizontal overflow.
+- Preview Worker `mengyinstudy-preview` deployed as version
+  `318c58f2-5bda-4a03-bb8e-0da61e7d7d2a`: `https://mengyinstudy-preview.libingzham1.workers.dev`.
+- Production `mengyinstudy` deployed as `3727ffb0-061e-4c74-a5d8-db588307850a`:
+  `https://mengyinstudy.libingzham1.workers.dev`. `/api/ai/health` reports `0.8.1`, the served bundle
+  carries the `.media-stage` / `.media-loading__ring` rules, and a headless run opened the starter deck,
+  reached the practice card and finished with no page errors.
 - Refund preview check against Stripe test mode and both the local API and the preview Worker
   (`d53a8709-b88c-4875-a0fa-4f9b1ae981b4`): monthly US$3.99 from US$4.99 with 400/500 points
   left, annual US$49.06 from US$49.90 with the same unused share; the Stripe refund succeeded,

@@ -5,6 +5,7 @@ import {
   type Answer,
   type Question,
 } from '@mengyin/core';
+import type { Translate } from '@/i18n/messages';
 import { questionTypes } from './registry';
 
 export type AnswerMode = 'text' | 'number' | 'choice' | 'multichoice';
@@ -59,7 +60,7 @@ export function optionText(question: Question, optionId: string): string {
 }
 
 /** Text of the correct answer, for the feedback panel. */
-export function describeAnswer(question: Question): string {
+export function describeAnswer(question: Question, t?: Translate): string {
   if (question.type === 'code') return describeCodeAnswer(question) || '—';
   const key = question.answer;
   switch (key.kind) {
@@ -68,7 +69,7 @@ export function describeAnswer(question: Question): string {
     case 'multi':
       return key.optionIds.map((id) => optionText(question, id)).join('；');
     case 'boolean':
-      return key.value ? '正確' : '錯誤';
+      return key.value ? (t?.('answer.true') ?? '正確') : (t?.('answer.false') ?? '錯誤');
     case 'fill':
       return key.accept.join(' / ');
     case 'short':
@@ -80,46 +81,48 @@ export function describeAnswer(question: Question): string {
   }
 }
 
-export function describeGiven(question: Question, answer: Answer | null): string {
-  if (!answer) return '未作答';
+export function describeGiven(question: Question, answer: Answer | null, t?: Translate): string {
+  const unanswered = t?.('answer.unanswered') ?? '未作答';
+  if (!answer) return unanswered;
   if (question.type === 'code') {
     const spec = codeSpecOf(question);
     const value = codeValueOf(answer);
-    if (!spec || !value) return '未作答';
+    if (!spec || !value) return unanswered;
     const filled = spec.blanks
       .map((blank) => ({
         label: blank.label ?? (spec.blanks.length === 1 ? '' : blank.id),
         value: (value.values[blank.id] ?? '').trim(),
       }))
       .filter((item) => item.value.length > 0);
-    if (filled.length === 0) return '未作答';
-    if (spec.blanks.length === 1) return filled[0]?.value ?? '未作答';
+    if (filled.length === 0) return unanswered;
+    if (spec.blanks.length === 1) return filled[0]?.value ?? unanswered;
     return filled.map((item) => `${item.label}: ${item.value}`).join('\n');
   }
   switch (answer.kind) {
     case 'single':
-      return answer.optionId ? optionText(question, answer.optionId) : '未作答';
+      return answer.optionId ? optionText(question, answer.optionId) : unanswered;
     case 'multi':
       return answer.optionIds.length > 0
         ? answer.optionIds.map((id) => optionText(question, id)).join('；')
-        : '未作答';
+        : unanswered;
     case 'boolean':
-      return answer.value === null ? '未作答' : answer.value ? '正確' : '錯誤';
+      if (answer.value === null) return unanswered;
+      return answer.value ? (t?.('answer.true') ?? '正確') : (t?.('answer.false') ?? '錯誤');
     case 'fill':
     case 'short':
-      return answer.value.trim() ? answer.value : '未作答';
+      return answer.value.trim() ? answer.value : unanswered;
     case 'custom': {
       const value = answer.value;
-      if (Array.isArray(value)) return value.length > 0 ? value.join('、') : '未作答';
-      return value === null || value === undefined || value === '' ? '未作答' : String(value);
+      if (Array.isArray(value)) return value.length > 0 ? value.join('、') : unanswered;
+      return value === null || value === undefined || value === '' ? unanswered : String(value);
     }
     default:
-      return '未作答';
+      return unanswered;
   }
 }
 
 /** Short label for lists: strips long prompts. */
-export function answerSummary(question: Question, answer: Answer | null): string {
-  const text = describeGiven(question, answer);
+export function answerSummary(question: Question, answer: Answer | null, t?: Translate): string {
+  const text = describeGiven(question, answer, t);
   return text.length > 80 ? `${text.slice(0, 79)}…` : text;
 }

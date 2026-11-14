@@ -28,13 +28,32 @@ export interface AiMaterial {
  * IndexedDB.
  */
 export interface AiSettings {
-  /** A model id advertised by /api/ai/config. Never `auto`. */
+  /**
+   * What to generate with: a catalogue model id, `'own'` for the learner's own
+   * provider, or `''` when nothing has been chosen yet.
+   */
   model: string;
   /** `off`, `auto` (only where a picture helps) or `on` (ask for one wherever it helps). */
   imageMode: AiImageMode;
   /** `auto` or an image model id advertised by /api/ai/config. */
   imageModel: string;
+  /**
+   * The learner's own provider key, when they chose to bring one.
+   *
+   * Stored in this browser only and sent with each generation request; using it
+   * skips points and works on the free plan. It is never logged server-side.
+   */
+  apiKey?: string;
+  /** OpenAI-compatible base URL for that provider, e.g. https://api.openai.com/v1. */
+  apiBaseUrl?: string;
+  /** Model id on that provider. Free text: it need not be in our catalogue. */
+  apiModel?: string;
+  /** Context window of that model, in tokens, as the learner reports it. */
+  apiContextTokens?: number;
 }
+
+/** The picker value that means "use my own provider". */
+export const AI_OWN_MODEL = 'own';
 
 export type GeneratedDifficulty = AiDifficulty;
 export type GeneratedLanguage = AiLanguage;

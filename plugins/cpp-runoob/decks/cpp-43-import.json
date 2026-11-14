@@ -1,0 +1,230 @@
+{
+  "id": "cpp-43-import",
+  "title": "Importing the C++ Standard Library",
+  "titleI18n": { "zh-Hant": "C++ 匯入標準庫" },
+  "description": "How a C++ program reaches the standard library: preprocessor includes, using-declarations, and the C++20 module alternative.",
+  "descriptionI18n": {
+    "zh-Hant": "C++ 程式如何取得標準程式庫：前置處理器的 #include、using 宣告，以及 C++20 的模組替代方案。"
+  },
+  "tags": ["C++", "STL", "Headers"],
+  "examMinutes": 15,
+  "questions": [
+    {
+      "id": "cpp-43-q01",
+      "type": "single",
+      "prompt": "Which directive includes a standard header in classic C++?",
+      "i18n": {
+        "prompt": { "zh-Hant": "在傳統 C++ 中，哪一個指示用於包含標準標頭檔？" },
+        "options": {
+          "a": { "zh-Hant": "#include" },
+          "b": { "zh-Hant": "#import" },
+          "c": { "zh-Hant": "#using" },
+          "d": { "zh-Hant": "#library" }
+        },
+        "explanation": {
+          "zh-Hant": "#include 由前置處理器展開，把標頭檔內容插入原始碼；#import 不是標準 C++ 指示。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "#include" },
+        { "id": "b", "text": "#import" },
+        { "id": "c", "text": "#using" },
+        { "id": "d", "text": "#library" }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "#include is expanded by the preprocessor, which inserts the header's contents into the source. #import is not a standard C++ directive.",
+      "tags": ["Preprocessor", "Headers"],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-43-q02",
+      "type": "single",
+      "prompt": "Which C++20 keyword imports a module instead of textually including a header?",
+      "i18n": {
+        "prompt": { "zh-Hant": "C++20 用哪一個關鍵字匯入模組，而不是以文字方式包含標頭檔？" },
+        "options": {
+          "a": { "zh-Hant": "import" },
+          "b": { "zh-Hant": "include" },
+          "c": { "zh-Hant": "require" },
+          "d": { "zh-Hant": "using" }
+        },
+        "explanation": {
+          "zh-Hant": "import 匯入已編譯的模組介面；include 只是前置處理器的文字插入。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "import" },
+        { "id": "b", "text": "include" },
+        { "id": "c", "text": "require" },
+        { "id": "d", "text": "using" }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "import brings in a compiled module interface. include is only textual insertion performed by the preprocessor.",
+      "tags": ["Modules"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-43-q03",
+      "type": "boolean",
+      "prompt": "Putting `using namespace std;` at global scope in a header file is good practice.",
+      "i18n": {
+        "prompt": { "zh-Hant": "在標頭檔的全域範圍寫 `using namespace std;` 是好習慣。" },
+        "explanation": {
+          "zh-Hant": "標頭會被許多檔案包含，全域 using 會把整個 std 帶進每個包含者，容易造成名稱衝突；應在 .cpp 內使用或只 using 特定名稱。"
+        }
+      },
+      "answer": { "kind": "boolean", "value": false },
+      "explanation": "A header is included by many translation units, so a global using-directive leaks all of std into every includer and invites name collisions. Prefer a using-declaration or qualify names.",
+      "tags": ["Namespaces", "Headers"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-43-q04",
+      "type": "boolean",
+      "prompt": "<iostream> is a standard C++ header.",
+      "i18n": {
+        "prompt": { "zh-Hant": "<iostream> 是 C++ 標準標頭檔。" },
+        "explanation": {
+          "zh-Hant": "<iostream> 屬於標準程式庫，提供 cin、cout、cerr、clog 等串流物件。"
+        }
+      },
+      "answer": { "kind": "boolean", "value": true },
+      "explanation": "<iostream> is part of the standard library and declares cin, cout, cerr and clog.",
+      "tags": ["Headers", "I/O"],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-43-q05",
+      "type": "multi",
+      "prompt": "Which of these make a std name usable? Select all that apply.",
+      "i18n": {
+        "prompt": { "zh-Hant": "下列哪些做法可以讓 std 的名稱被使用？可多選。" },
+        "options": {
+          "a": { "zh-Hant": "`using std::cout;`" },
+          "b": { "zh-Hant": "`using namespace std;`" },
+          "c": { "zh-Hant": "直接寫 `std::cout`" },
+          "d": { "zh-Hant": "`include std;`" }
+        },
+        "explanation": {
+          "zh-Hant": "using 宣告、using 指示與完整限定名稱都可行；`include std;` 不是 C++ 語法。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "`using std::cout;`" },
+        { "id": "b", "text": "`using namespace std;`" },
+        { "id": "c", "text": "Writing `std::cout` directly" },
+        { "id": "d", "text": "`include std;`" }
+      ],
+      "answer": { "kind": "multi", "optionIds": ["a", "b", "c"] },
+      "explanation": "A using-declaration, a using-directive or a fully qualified name all work. `include std;` is not C++ syntax.",
+      "tags": ["Namespaces"],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-43-q06",
+      "type": "multi",
+      "prompt": "Which of these are standard C++ headers? Select all that apply.",
+      "i18n": {
+        "prompt": { "zh-Hant": "下列哪些是 C++ 標準標頭檔？可多選。" },
+        "options": {
+          "a": { "zh-Hant": "<vector>" },
+          "b": { "zh-Hant": "<string>" },
+          "c": { "zh-Hant": "<algorithm>" },
+          "d": { "zh-Hant": "<conio.h>" }
+        },
+        "explanation": {
+          "zh-Hant": "vector、string、algorithm 都是標準標頭；<conio.h> 是 DOS/Windows 編譯器的非標準擴充。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "<vector>" },
+        { "id": "b", "text": "<string>" },
+        { "id": "c", "text": "<algorithm>" },
+        { "id": "d", "text": "<conio.h>" }
+      ],
+      "answer": { "kind": "multi", "optionIds": ["a", "b", "c"] },
+      "explanation": "vector, string and algorithm are standard headers. <conio.h> is a non-standard DOS/Windows extension.",
+      "tags": ["Headers"],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-43-q07",
+      "type": "fill",
+      "prompt": "The directive that textually pulls a header into a translation unit begins with #____.",
+      "i18n": {
+        "prompt": { "zh-Hant": "以文字方式把標頭檔引入編譯單元的指示，以 #____ 開頭。" },
+        "explanation": {
+          "zh-Hant": "#include 會在編譯前把指定檔案的內容插入目前位置。"
+        }
+      },
+      "answer": { "kind": "fill", "accept": ["include", "#include"], "ignoreCase": true, "ignoreSpaces": true },
+      "explanation": "#include inserts the contents of the named file before compilation begins.",
+      "tags": ["Preprocessor"],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-43-q08",
+      "type": "fill",
+      "prompt": "The namespace that contains cout, vector and string is ____.",
+      "i18n": {
+        "prompt": { "zh-Hant": "包含 cout、vector 與 string 的命名空間是 ____。" },
+        "explanation": {
+          "zh-Hant": "標準程式庫的名稱都放在 std 命名空間中。"
+        }
+      },
+      "answer": { "kind": "fill", "accept": ["std", "std::"], "ignoreCase": true, "ignoreSpaces": true },
+      "explanation": "All standard library names live in the std namespace.",
+      "tags": ["Namespaces"],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-43-q09",
+      "type": "short",
+      "prompt": "In one or two sentences, contrast `#include <vector>` with `import std;`.",
+      "i18n": {
+        "prompt": { "zh-Hant": "用一至兩句比較 `#include <vector>` 與 `import std;`。" },
+        "model": {
+          "zh-Hant": "#include 是前置處理器的文字插入，會把整個標頭檔內容貼進每個編譯單元；import 匯入已編譯的模組，只暴露匯出的名稱，編譯較快且較不受巨集影響。"
+        },
+        "explanation": {
+          "zh-Hant": "兩者都能取得標準程式庫，但一個是文字替換，一個是語言層級的模組匯入。"
+        }
+      },
+      "answer": {
+        "kind": "short",
+        "model": "#include is a preprocessor text insertion: the whole header is pasted into every translation unit. import loads a compiled module and exposes only its exported names, which compiles faster and is less affected by macros.",
+        "keywords": ["preprocessor", "text", "module", "compiled"]
+      },
+      "explanation": "Both give access to the standard library, but one is textual substitution and the other is a language-level module import.",
+      "tags": ["Modules", "Headers"],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-43-q10",
+      "type": "single",
+      "prompt": "What is `<bits/stdc++.h>`?",
+      "i18n": {
+        "prompt": { "zh-Hant": "`<bits/stdc++.h>` 是甚麼？" },
+        "options": {
+          "a": { "zh-Hant": "所有編譯器都支援的標準標頭" },
+          "b": { "zh-Hant": "GCC 提供的非標準「一次包含所有標頭」檔" },
+          "c": { "zh-Hant": "C++20 的標準模組" },
+          "d": { "zh-Hant": "Linux 核心專用標頭" }
+        },
+        "explanation": {
+          "zh-Hant": "它是 GCC/libstdc++ 的非標準便利標頭，方便競賽程式一次引入大量標準標頭，但不可移植且拖慢編譯。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "A standard header supported by every compiler" },
+        { "id": "b", "text": "A non-standard GCC header that includes many standard headers at once" },
+        { "id": "c", "text": "The standard C++20 module" },
+        { "id": "d", "text": "A Linux kernel header" }
+      ],
+      "answer": { "kind": "single", "optionId": "b" },
+      "explanation": "It is a non-standard GCC/libstdc++ convenience header that pulls in many standard headers. It is not portable and slows compilation.",
+      "tags": ["Headers", "Toolchain"],
+      "difficulty": 2
+    }
+  ]
+}

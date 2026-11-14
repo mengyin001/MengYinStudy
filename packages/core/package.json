@@ -1,6 +1,6 @@
 {
   "name": "@mengyin/core",
-  "version": "0.8.0",
+  "version": "0.8.7",
   "private": true,
   "type": "module",
   "description": "Pure domain engine: questions, grading, spaced repetition, sessions, statistics",

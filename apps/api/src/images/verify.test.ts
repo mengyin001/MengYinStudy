@@ -4,12 +4,12 @@ import type { ResolvedProvider } from '../providers/registry';
 import { verifyIllustration, visionModelFor } from './verify';
 
 const provider: ResolvedProvider = {
-  id: 'glm',
-  label: 'GLM',
-  baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
+  id: 'deepseek',
+  label: 'DeepSeek',
+  baseUrl: 'https://api.deepseek.com/v1',
   apiKey: 'test-key',
-  model: 'glm-4.7-flash',
-  models: ['glm-4.7-flash'],
+  model: 'deepseek-flash',
+  models: ['deepseek-flash'],
   temperature: 0.4,
   maxTokens: 1024,
   timeoutMs: 30_000,
@@ -41,10 +41,10 @@ function reply(body: unknown, status = 200): Response {
 
 describe('visionModelFor', () => {
   it('reads the provider-specific model and honours the off switch', () => {
-    expect(visionModelFor({ GLM_VISION_MODEL: 'glm-4v-flash' }, 'glm')).toBe('glm-4v-flash');
-    expect(visionModelFor({ GLM_VISION_MODEL: 'glm-4v-flash' }, 'deepseek')).toBeNull();
+    expect(visionModelFor({ DEEPSEEK_VISION_MODEL: 'deepseek-vl' }, 'deepseek')).toBe('deepseek-vl');
+    expect(visionModelFor({ DEEPSEEK_VISION_MODEL: 'deepseek-vl' }, 'glm')).toBeNull();
     expect(
-      visionModelFor({ GLM_VISION_MODEL: 'glm-4v-flash', AI_VERIFY_IMAGES: 'off' }, 'glm'),
+      visionModelFor({ DEEPSEEK_VISION_MODEL: 'deepseek-vl', AI_VERIFY_IMAGES: 'off' }, 'deepseek'),
     ).toBeNull();
   });
 });
@@ -61,7 +61,7 @@ describe('verifyIllustration', () => {
   });
 
   it('reports a mismatch with the model reason', async () => {
-    const result = await verifyIllustration({ GLM_VISION_MODEL: 'glm-4v-flash' }, provider, question, image, async () =>
+    const result = await verifyIllustration({ DEEPSEEK_VISION_MODEL: 'deepseek-vl' }, provider, question, image, async () =>
       reply({
         choices: [{ message: { content: '{"matches":false,"reason":"shows an open book"}' } }],
       }),
@@ -70,7 +70,7 @@ describe('verifyIllustration', () => {
   });
 
   it('accepts a matching image', async () => {
-    const result = await verifyIllustration({ GLM_VISION_MODEL: 'glm-4v-flash' }, provider, question, image, async () => {
+    const result = await verifyIllustration({ DEEPSEEK_VISION_MODEL: 'deepseek-vl' }, provider, question, image, async () => {
       const body = JSON.stringify({
         choices: [{ message: { content: '{"matches": true}' } }],
       });
@@ -82,7 +82,7 @@ describe('verifyIllustration', () => {
   it('uses a clue-aware prompt when the picture is the thing to identify', async () => {
     let body = '';
     const result = await verifyIllustration(
-      { GLM_VISION_MODEL: 'glm-4v-flash' },
+      { DEEPSEEK_VISION_MODEL: 'deepseek-vl' },
       provider,
       question,
       image,
@@ -97,19 +97,19 @@ describe('verifyIllustration', () => {
   });
 
   it('never throws when the provider fails', async () => {
-    const result = await verifyIllustration({ GLM_VISION_MODEL: 'glm-4v-flash' }, provider, question, image, async () => {
+    const result = await verifyIllustration({ DEEPSEEK_VISION_MODEL: 'deepseek-vl' }, provider, question, image, async () => {
       throw new Error('network down');
     });
     expect(result).toEqual({ checked: false, ok: true });
     await expect(
-      verifyIllustration({ GLM_VISION_MODEL: 'glm-4v-flash' }, provider, question, image, async () =>
+      verifyIllustration({ DEEPSEEK_VISION_MODEL: 'deepseek-vl' }, provider, question, image, async () =>
         reply({ error: 'busy' }, 429),
       ),
     ).resolves.toEqual({ checked: false, ok: true });
   });
 
   it('treats an unreadable reply as not checked', async () => {
-    const result = await verifyIllustration({ GLM_VISION_MODEL: 'glm-4v-flash' }, provider, question, image, async () =>
+    const result = await verifyIllustration({ DEEPSEEK_VISION_MODEL: 'deepseek-vl' }, provider, question, image, async () =>
       reply({ choices: [{ message: { content: 'looks fine to me' } }] }),
     );
     expect(result).toEqual({ checked: false, ok: true });

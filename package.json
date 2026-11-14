@@ -1,9 +1,9 @@
 {
   "name": "mengyin-study",
-  "version": "0.8.0",
+  "version": "0.8.7",
   "private": true,
   "type": "module",
-  "description": "MengYin Study — a plugin-driven revision and practice app (web + desktop)",
+  "description": "MengYin Study 鈥?a plugin-driven revision and practice app (web + desktop)",
   "workspaces": [
     "packages/*",
     "apps/*"

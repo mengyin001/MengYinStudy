@@ -1,0 +1,330 @@
+{
+  "id": "cpp-27-inheritance",
+  "title": "C++ Inheritance",
+  "titleI18n": { "zh-Hant": "C++ 繼承" },
+  "description": "Base and derived classes, the three inheritance access modes, construction and destruction order, multiple inheritance, virtual bases and the diamond problem, and the difference between overriding and hiding.",
+  "descriptionI18n": {
+    "zh-Hant": "基底類別與衍生類別、三種繼承存取方式、建構與解構順序、多重繼承、虛擬基底與菱形繼承問題，以及覆寫與隱藏的分別。"
+  },
+  "tags": ["C++", "Inheritance"],
+  "examMinutes": 15,
+  "questions": [
+    {
+      "id": "cpp-27-inheritance-q01",
+      "type": "single",
+      "prompt": "With `class Dog : public Animal`, what relationship does the public inheritance express?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "宣告 `class Dog : public Animal` 時，public 繼承表達的是甚麼關係？"
+        },
+        "options": {
+          "a": { "zh-Hant": "Dog 是一種（is-a）Animal" },
+          "b": { "zh-Hant": "Animal 是一種（is-a）Dog" },
+          "c": { "zh-Hant": "Dog 內含（has-a）一個 Animal 成員" },
+          "d": { "zh-Hant": "Dog 與 Animal 完全無關" }
+        },
+        "explanation": {
+          "zh-Hant": "public 繼承建立 is-a 關係：Dog 物件可以當成 Animal 使用，指向 Dog 的 Animal* 是合法的。has-a 關係應該用成員物件表達，而不是繼承。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "Dog is-a Animal" },
+        { "id": "b", "text": "Animal is-a Dog" },
+        { "id": "c", "text": "Dog has-a Animal member" },
+        { "id": "d", "text": "Dog and Animal are unrelated types" }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "Public inheritance models an is-a relationship: a Dog can be used wherever an Animal is expected, and an Animal* may point to a Dog. A has-a relationship should be modelled with a member object instead.",
+      "tags": ["Inheritance", "is-a"],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-27-inheritance-q02",
+      "type": "single",
+      "prompt": "A `Derived` object is created and later destroyed. Which sequence of constructor and destructor calls is correct?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "建立一個 `Derived` 物件之後再銷毀它，建構函式與解構函式的呼叫順序為何？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "基底建構函式 → 衍生建構函式 → 衍生解構函式 → 基底解構函式"
+          },
+          "b": {
+            "zh-Hant": "衍生建構函式 → 基底建構函式 → 基底解構函式 → 衍生解構函式"
+          },
+          "c": {
+            "zh-Hant": "基底建構函式 → 衍生建構函式 → 基底解構函式 → 衍生解構函式"
+          },
+          "d": {
+            "zh-Hant": "衍生建構函式 → 基底建構函式 → 衍生解構函式 → 基底解構函式"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "基底必須先完整建構，衍生類別才能使用它；銷毀時順序相反，先拆衍生再拆基底。順序永遠是「基底建構、衍生建構、衍生解構、基底解構」。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "Base constructor, Derived constructor, Derived destructor, Base destructor"
+        },
+        {
+          "id": "b",
+          "text": "Derived constructor, Base constructor, Base destructor, Derived destructor"
+        },
+        {
+          "id": "c",
+          "text": "Base constructor, Derived constructor, Base destructor, Derived destructor"
+        },
+        {
+          "id": "d",
+          "text": "Derived constructor, Base constructor, Derived destructor, Base destructor"
+        }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "The base subobject must be fully constructed before the derived body runs, so base construction comes first. Destruction reverses that order: the derived part is destroyed before the base subobject.",
+      "tags": ["Inheritance", "Lifetime"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-27-inheritance-q03",
+      "type": "single",
+      "prompt": "What does `class D : private B` mean for the members that `B` declares public or protected?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "宣告 `class D : private B` 時，`B` 的 public 與 protected 成員在 `D` 中會變成怎樣？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "它們在 D 中變成 private，因此 D 不對外公開 B 的介面"
+          },
+          "b": { "zh-Hant": "B 的 private 成員在 D 中變成 public" },
+          "c": {
+            "zh-Hant": "D 可以直接存取 B 的 private 成員"
+          },
+          "d": {
+            "zh-Hant": "B 的 public 成員在 D 中變成 protected"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "private 繼承把基底中 public 與 protected 的成員在衍生類別裡降為 private：D 內部仍可使用，但 D 的物件不再對外提供 B 的介面，也不構成公開的 is-a 關係。無論用哪種繼承方式，基底 private 成員都無法被衍生類別直接存取。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "They become private in D, so D does not expose B's interface publicly"
+        },
+        { "id": "b", "text": "B's private members become public in D" },
+        { "id": "c", "text": "D can access B's private members directly" },
+        { "id": "d", "text": "B's public members become protected in D" }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "Private inheritance demotes public and protected base members to private in the derived class: D can still use them internally, but D's objects no longer expose B's interface, so the is-a relationship is not public. Base private members stay inaccessible either way.",
+      "tags": ["Inheritance", "Access control"],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-27-inheritance-q04",
+      "type": "single",
+      "prompt": "In `class D : public virtual B`, why is the `virtual` keyword used on the base class?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "`class D : public virtual B` 中的 `virtual` 有甚麼作用？"
+        },
+        "options": {
+          "a": { "zh-Hant": "讓所有衍生類別共用同一個 B 基底子物件" },
+          "b": { "zh-Hant": "讓 B 的解構函式自動變成 virtual" },
+          "c": { "zh-Hant": "讓 B 的所有成員函式都變成 virtual" },
+          "d": { "zh-Hant": "禁止其他類別再繼承 B" }
+        },
+        "explanation": {
+          "zh-Hant": "虛擬基底讓最衍生類別只保留一份 B 子物件。在菱形繼承中，若兩條路徑都非虛擬地繼承 B，D 會含有兩份 B，造成成員存取不明確；改用 virtual 繼承即可合併成一份。它不會讓成員函式或解構函式自動變成 virtual。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "So that all derived classes share a single B base subobject" },
+        { "id": "b", "text": "So that B's destructor automatically becomes virtual" },
+        { "id": "c", "text": "So that every member function of B becomes virtual" },
+        { "id": "d", "text": "To forbid any further class from deriving from B" }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "A virtual base is stored once and shared by every class in the hierarchy. In a diamond, non-virtual inheritance of the same base through two paths gives D two B subobjects and makes member access ambiguous; virtual inheritance merges them. It does not make member functions or the destructor virtual.",
+      "tags": ["Inheritance", "Virtual base", "Diamond"],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-27-inheritance-q05",
+      "type": "multi",
+      "prompt": "Which statements about inheritance access control are correct? Select all that apply.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "下列關於繼承存取控制的敘述，哪些正確？可多選。"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "使用 public 繼承時，基底的 public 成員在衍生類別中仍是 public。"
+          },
+          "b": {
+            "zh-Hant": "protected 基底成員可在衍生類別的成員函式中使用，但無法透過無關的物件存取。"
+          },
+          "c": {
+            "zh-Hant": "衍生類別可以直接存取基底的 private 成員。"
+          },
+          "d": {
+            "zh-Hant": "使用 private 繼承時，基底的 public 成員在衍生類別中變成 private。"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "public 繼承保留 public 成員的可見性；protected 只開放給衍生類別與其成員函式，外界仍不可及；private 繼承把 public 與 protected 成員降為 private。基底的 private 成員永遠只有基底本身（及其 friend）能存取。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "With public inheritance, public base members stay public in the derived class."
+        },
+        {
+          "id": "b",
+          "text": "A protected base member is usable inside derived member functions but not through an unrelated object."
+        },
+        {
+          "id": "c",
+          "text": "A derived class can access the private members of its base class directly."
+        },
+        {
+          "id": "d",
+          "text": "With private inheritance, public base members become private in the derived class."
+        }
+      ],
+      "answer": { "kind": "multi", "optionIds": ["a", "b", "d"] },
+      "explanation": "Public inheritance keeps public members public; protected members are reachable only inside the derived class and its member functions; private inheritance demotes public and protected base members to private. Base private members remain accessible only to the base class itself and its friends.",
+      "tags": ["Inheritance", "Access control"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-27-inheritance-q06",
+      "type": "multi",
+      "prompt": "Which statements about multiple inheritance and virtual bases are correct? Select all that apply.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "下列關於多重繼承與虛擬基底的敘述，哪些正確？可多選。"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "虛擬基底由最衍生的類別負責初始化，中間類別的初始化會被忽略。"
+          },
+          "b": {
+            "zh-Hant": "虛擬繼承可以消除菱形階層中重複的基底子物件。"
+          },
+          "c": {
+            "zh-Hant": "一個 C++ 類別可以同時繼承多個基底類別。"
+          },
+          "d": {
+            "zh-Hant": "虛擬基底類別不能擁有建構函式。"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "虛擬基底只有一份，因此由最衍生類別直接初始化，中間類別寫在初始化列表中的虛擬基底初始化會被忽略；虛擬繼承正是為了解決菱形重複子物件；C++ 支援多重繼承。虛擬基底當然可以有建構函式。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "A virtual base is initialized by the most-derived class, and intermediate initializers for it are ignored."
+        },
+        {
+          "id": "b",
+          "text": "Virtual inheritance removes duplicate base subobjects in a diamond hierarchy."
+        },
+        { "id": "c", "text": "A C++ class may inherit from more than one base class." },
+        { "id": "d", "text": "A virtual base class cannot have constructors." }
+      ],
+      "answer": { "kind": "multi", "optionIds": ["a", "b", "c"] },
+      "explanation": "Because only one virtual base subobject exists, the most-derived class initializes it and mem-initializers for it in intermediate classes are ignored. Virtual inheritance merges the duplicated base in a diamond, and multiple inheritance itself is a standard C++ feature. Virtual bases may of course have constructors.",
+      "tags": ["Inheritance", "Multiple inheritance", "Virtual base"],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-27-inheritance-q07",
+      "type": "boolean",
+      "prompt": "A derived class constructor can directly initialize the private data members of its base class in its member initializer list.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "衍生類別的建構函式可以在成員初始化列表中，直接初始化基底類別的 private 資料成員。"
+        },
+        "explanation": {
+          "zh-Hant": "private 成員只有基底類別本身（及其 friend）能存取。衍生類別應改為呼叫基底的建構函式，把參數交給基底去初始化。"
+        }
+      },
+      "answer": { "kind": "boolean", "value": false },
+      "explanation": "Private members are accessible only to the base class itself and its friends. A derived constructor must call a base constructor and let the base initialize its own data.",
+      "tags": ["Inheritance", "Construction"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-27-inheritance-q08",
+      "type": "boolean",
+      "prompt": "If a derived class declares a function with the same name as a base-class function, a `using Base::name;` declaration can bring the base overloads back into the derived class scope.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "若衍生類別宣告了與基底同名的函式，可用 `using Base::name;` 把基底的各個多載重新引入衍生類別的作用域。"
+        },
+        "explanation": {
+          "zh-Hant": "衍生類別的同名宣告會遮蔽整個基底名稱，包含其他多載；`using Base::name;` 把基底版本帶回同一作用域，讓多載解析能同時看到兩邊。"
+        }
+      },
+      "answer": { "kind": "boolean", "value": true },
+      "explanation": "A derived declaration hides every base overload with that name. A using-declaration reintroduces the base versions into the derived scope so overload resolution sees both sets.",
+      "tags": ["Inheritance", "Name hiding", "using"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-27-inheritance-q09",
+      "type": "fill",
+      "prompt": "When a derived class declares a function with the same name as a non-virtual base function, the base function is ____ in the derived class.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "當衍生類別宣告了與非 virtual 基底函式同名的函式時，該基底函式在衍生類別中被 ____。"
+        },
+        "explanation": {
+          "zh-Hant": "名稱查找會先在衍生類別找到該名稱就停止，因此基底版本被「隱藏」（name hiding），即使簽章不同也一樣；要用 `Base::f()` 或 using 宣告才呼叫得到。"
+        }
+      },
+      "answer": {
+        "kind": "fill",
+        "accept": ["hidden", "hiding", "name hiding", "隱藏", "被隱藏"],
+        "ignoreCase": true,
+        "ignoreSpaces": true
+      },
+      "explanation": "Name lookup stops as soon as it finds the name in the derived class, so the base version is hidden even when the signatures differ. A qualified call such as `Base::f()` or a using-declaration is needed to reach it.",
+      "tags": ["Inheritance", "Name hiding"],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-27-inheritance-q10",
+      "type": "short",
+      "prompt": "In two or three sentences, explain the difference between overriding a virtual function and hiding a base-class function.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "用兩至三句說明「覆寫 virtual 函式」與「隱藏基底函式」的分別。"
+        },
+        "model": {
+          "zh-Hant": "覆寫要求基底函式是 virtual 且簽章完全相同，透過基底指標或參考呼叫時，會在執行期依物件實際型別決定呼叫哪個版本。隱藏則是衍生類別宣告了同名但簽章不同的函式，或基底函式不是 virtual：名稱查找在衍生類別就停止，必須用限定呼叫或 using 宣告才碰得到基底版本。覆寫是動態綁定，隱藏只是編譯期的名稱查找規則。"
+        },
+        "explanation": {
+          "zh-Hant": "關鍵在於「簽章是否相同、基底是否 virtual」以及「綁定發生在編譯期還是執行期」。"
+        }
+      },
+      "answer": {
+        "kind": "short",
+        "model": "Overriding requires a virtual base function and an identical signature; the derived version is chosen at run time through a base pointer or reference. Hiding happens when the derived class declares a same-named function with a different signature, or when the base function is not virtual: name lookup stops in the derived scope, so the base version is reachable only with a qualified call or a using-declaration. Overriding is dynamic dispatch, while hiding is a compile-time name-lookup rule.",
+        "keywords": ["virtual", "signature", "name lookup", "using", "dynamic dispatch"]
+      },
+      "explanation": "The deciding factors are whether the signature matches and the base function is virtual, and whether binding happens at compile time or at run time.",
+      "tags": ["Inheritance", "Overriding", "Name hiding"],
+      "difficulty": 3
+    }
+  ]
+}

@@ -1,0 +1,464 @@
+{
+  "id": "cpp-35-dynamic-memory",
+  "title": "C++ Dynamic Memory",
+  "titleI18n": {
+    "zh-Hant": "C++ 動態記憶體"
+  },
+  "description": "Heap allocation and ownership: new/delete, arrays, C-style malloc/free, the classic memory bugs, and the smart pointers that prevent them.",
+  "descriptionI18n": {
+    "zh-Hant": "堆積配置與所有權：new/delete、陣列、C 風格的 malloc/free、常見記憶體錯誤，以及用來避免這些問題的智慧指標。"
+  },
+  "tags": [
+    "C++",
+    "Memory"
+  ],
+  "examMinutes": 15,
+  "questions": [
+    {
+      "id": "cpp-35-q01",
+      "type": "single",
+      "prompt": "Memory obtained with `new int[10]` must be released with which expression?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "由 `new int[10]` 取得的記憶體，必須用哪個運算式釋放？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "`delete[] p`"
+          },
+          "b": {
+            "zh-Hant": "`delete p`"
+          },
+          "c": {
+            "zh-Hant": "`std::free(p)`"
+          },
+          "d": {
+            "zh-Hant": "`std::free(*p)`"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "`new[]` 配置的是陣列並記錄元素數量，只有 `delete[]` 會正確呼叫每個元素的解構函式並釋放；`new[]` 配 `delete` 或 `free` 都是未定義行為。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "`delete[] p`"
+        },
+        {
+          "id": "b",
+          "text": "`delete p`"
+        },
+        {
+          "id": "c",
+          "text": "`std::free(p)`"
+        },
+        {
+          "id": "d",
+          "text": "`std::free(*p)`"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "`new[]` allocates an array and records its element count; only `delete[]` runs the destructors of all elements and frees the block correctly. Mixing `new[]` with `delete` or free is undefined behaviour.",
+      "tags": [
+        "new[]",
+        "delete[]"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-35-q02",
+      "type": "single",
+      "prompt": "Which smart pointer models exclusive ownership and cannot be copied?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "哪一種智慧指標表達獨佔所有權，而且不可複製？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "std::unique_ptr"
+          },
+          "b": {
+            "zh-Hant": "std::shared_ptr"
+          },
+          "c": {
+            "zh-Hant": "std::weak_ptr"
+          },
+          "d": {
+            "zh-Hant": "std::auto_ptr"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "`std::unique_ptr` 只能移動、不可複製，同一時間只有一個擁有者，額外開銷幾乎為零；`shared_ptr` 可複製並以參考計數共享，`weak_ptr` 不擁有物件，`auto_ptr` 已在 C++17 移除。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "std::unique_ptr"
+        },
+        {
+          "id": "b",
+          "text": "std::shared_ptr"
+        },
+        {
+          "id": "c",
+          "text": "std::weak_ptr"
+        },
+        {
+          "id": "d",
+          "text": "std::auto_ptr"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "`std::unique_ptr` is move-only: one owner at a time and no overhead beyond the raw pointer. shared_ptr is copyable and reference-counted, weak_ptr does not own, and auto_ptr was removed in C++17.",
+      "tags": [
+        "unique_ptr",
+        "Ownership"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-35-q03",
+      "type": "boolean",
+      "prompt": "With std::shared_ptr, the managed object is destroyed when the last shared_ptr that owns it is destroyed or reset.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "使用 std::shared_ptr 時，最後一個擁有該物件的 shared_ptr 被銷毀或 reset 後，物件就會被銷毀。"
+        },
+        "explanation": {
+          "zh-Hant": "控制區塊維護強引用計數，計數歸零時銷毀物件；弱引用計數也歸零時才釋放控制區塊。"
+        }
+      },
+      "answer": {
+        "kind": "boolean",
+        "value": true
+      },
+      "explanation": "The control block keeps a strong count; reaching zero destroys the managed object, and when the weak count also reaches zero the control block itself is freed.",
+      "tags": [
+        "shared_ptr",
+        "Reference counting"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-35-q04",
+      "type": "boolean",
+      "prompt": "Heap memory allocated with `new` is automatically reclaimed when the pointer variable that holds it goes out of scope.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "以 `new` 配置的堆積記憶體，會在持有它的指標變數離開作用域時自動回收。"
+        },
+        "explanation": {
+          "zh-Hant": "離開作用域的只是指標變數本身，配置的記憶體仍然存在，若沒有其他擁有者釋放就會洩漏。因此所有權應交給智慧指標或容器。"
+        }
+      },
+      "answer": {
+        "kind": "boolean",
+        "value": false
+      },
+      "explanation": "Only the pointer variable disappears; the allocation remains and is leaked unless another owner deletes it. That is why ownership should live in a smart pointer or a container.",
+      "tags": [
+        "Memory leaks",
+        "RAII"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-35-q05",
+      "type": "multi",
+      "prompt": "Which statements about `std::malloc` and `std::free` are correct? Select all that apply.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "下列關於 `std::malloc` 與 `std::free` 的敘述，哪些正確？可多選。"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "malloc 回傳未初始化的記憶體，使用前必須先初始化"
+          },
+          "b": {
+            "zh-Hant": "`free(nullptr)` 是安全的空操作"
+          },
+          "c": {
+            "zh-Hant": "malloc/free 不會執行建構函式或解構函式"
+          },
+          "d": {
+            "zh-Hant": "由 malloc 取得的記憶體可以用 delete 釋放"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "malloc 是 C 的配置：只有原始位元組、不建立物件生命週期，必須搭配 free。`new`/`delete` 會建構與解構物件，失敗時可拋出 `bad_alloc`。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "malloc returns uninitialized memory, so the bytes must be initialized before use."
+        },
+        {
+          "id": "b",
+          "text": "`free(nullptr)` is a safe no-op."
+        },
+        {
+          "id": "c",
+          "text": "malloc/free do not run constructors or destructors."
+        },
+        {
+          "id": "d",
+          "text": "Memory from malloc may be released with delete."
+        }
+      ],
+      "answer": {
+        "kind": "multi",
+        "optionIds": [
+          "a",
+          "b",
+          "c"
+        ]
+      },
+      "explanation": "malloc is a C allocation: raw bytes with no object lifetime, and it must be paired with free. `new`/`delete` additionally construct and destroy objects and may throw bad_alloc.",
+      "tags": [
+        "malloc",
+        "free"
+      ],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-35-q06",
+      "type": "multi",
+      "prompt": "Which statements about std::make_unique and std::make_shared are correct? Select all that apply.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "下列關於 std::make_unique 與 std::make_shared 的敘述，哪些正確？可多選。"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "`std::make_unique<T>(args...)` 把引數轉發給 T 的建構函式，並回傳 `std::unique_ptr<T>`"
+          },
+          "b": {
+            "zh-Hant": "`std::make_shared<T>(args...)` 通常把物件與控制區塊配置在同一塊記憶體"
+          },
+          "c": {
+            "zh-Hant": "當 `f(std::shared_ptr<T>(new T), g())` 中的 `g()` 拋出時，make_shared 可避免洩漏"
+          },
+          "d": {
+            "zh-Hant": "`std::make_shared<T>` 回傳 `std::unique_ptr<T>`，之後必須再轉型"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "工廠函式會推導型別、具例外安全，並避免在程式中直接寫 `new`。`make_shared` 的單一配置也比用裸指標建構 `shared_ptr` 更快。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "`std::make_unique<T>(args...)` forwards args to T's constructor and returns `std::unique_ptr<T>`."
+        },
+        {
+          "id": "b",
+          "text": "`std::make_shared<T>(args...)` typically allocates the object and its control block together."
+        },
+        {
+          "id": "c",
+          "text": "make_shared avoids the leak that `f(std::shared_ptr<T>(new T), g())` can cause when g() throws."
+        },
+        {
+          "id": "d",
+          "text": "`std::make_shared<T>` returns a `std::unique_ptr<T>` that must be converted afterwards."
+        }
+      ],
+      "answer": {
+        "kind": "multi",
+        "optionIds": [
+          "a",
+          "b",
+          "c"
+        ]
+      },
+      "explanation": "The factory functions deduce the type, are exception-safe, and keep a bare `new` out of application code. make_shared's single allocation is also faster than constructing a shared_ptr from a raw pointer.",
+      "tags": [
+        "make_unique",
+        "make_shared"
+      ],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-35-q07",
+      "type": "fill",
+      "prompt": "Memory obtained from `new T` is released with the ____ operator, while memory from `new T[n]` needs `delete[]`.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "由 `new T` 取得的記憶體要用 ____ 運算子釋放，而 `new T[n]` 則需使用 `delete[]`。"
+        },
+        "explanation": {
+          "zh-Hant": "`delete p;` 會銷毀單一物件並釋放儲存空間；陣列必須用 `delete[] p;`，因為它才知道元素數量。"
+        }
+      },
+      "answer": {
+        "kind": "fill",
+        "accept": [
+          "delete",
+          "Delete"
+        ],
+        "ignoreCase": true,
+        "ignoreSpaces": true
+      },
+      "explanation": "`delete p;` destroys the single object and frees its storage; an array needs `delete[] p;`, which knows the element count.",
+      "tags": [
+        "delete",
+        "new"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-35-q08",
+      "type": "short",
+      "prompt": "Explain the main differences between stack and heap allocation in C++.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "說明 C++ 中堆疊配置與堆積配置的主要差別。"
+        },
+        "model": {
+          "zh-Hant": "堆疊儲存空間由區域變數自動取得，速度極快（只需調整堆疊指標），並在作用域結束時自動釋放。堆積儲存空間來自 `new` 或 `malloc`，在執行期取得、不受固定大小限制（僅受可用記憶體限制），必須明確釋放才能結束生命週期；因此可以活得比建立它的作用域更久，但有洩漏與破碎化的風險。"
+        },
+        "explanation": {
+          "zh-Hant": "堆疊：自動生命週期、容量小、速度快。堆積：由手動或智慧指標管理生命週期、大小有彈性、較慢，也是洩漏與破碎化的來源。"
+        }
+      },
+      "answer": {
+        "kind": "short",
+        "model": "Stack storage is allocated automatically for local variables, is fast (just a pointer adjustment) and is released at the end of the enclosing scope. Heap storage comes from `new` or malloc, is requested at run time with no fixed size limit beyond available memory, and lives until it is explicitly freed; it can therefore outlive the creating scope, but risks leaks and fragmentation.",
+        "keywords": [
+          "stack",
+          "heap",
+          "lifetime",
+          "scope",
+          "new",
+          "leak"
+        ]
+      },
+      "explanation": "Stack: automatic lifetime, small and fast. Heap: manual or smart-pointer lifetime, flexible size, slower, and the source of leaks and fragmentation.",
+      "tags": [
+        "Stack vs heap",
+        "Lifetime"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-35-q09",
+      "type": "single",
+      "prompt": "What is wrong with `delete p; delete p;` when p is not reassigned between the two calls?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "若 p 在兩次呼叫之間沒有重新指派，`delete p; delete p;` 有甚麼問題？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "第二次 delete 是重複釋放，屬於未定義行為"
+          },
+          "b": {
+            "zh-Hant": "第二次 delete 是無害的空操作"
+          },
+          "c": {
+            "zh-Hant": "第二次 delete 會拋出 std::bad_alloc"
+          },
+          "d": {
+            "zh-Hant": "編譯器一定會拒絕這段程式"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "第一次 delete 之後指標即成懸空指標，再次 delete 會破壞配置器的記錄，屬於未定義行為。delete 之後應把指標設為 nullptr，因為 `delete nullptr` 是安全的。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "The second delete is a double free and undefined behaviour."
+        },
+        {
+          "id": "b",
+          "text": "The second delete is a harmless no-op."
+        },
+        {
+          "id": "c",
+          "text": "The second delete throws std::bad_alloc."
+        },
+        {
+          "id": "d",
+          "text": "The compiler always rejects the code."
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "After the first delete the pointer is dangling; deleting it again corrupts the allocator's bookkeeping and is undefined behaviour. Set the pointer to nullptr after delete, because `delete nullptr` is safe.",
+      "tags": [
+        "Double free",
+        "Dangling pointers"
+      ],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-35-q10",
+      "type": "single",
+      "prompt": "An object must observe a Widget owned by a std::shared_ptr elsewhere, without extending its lifetime. Which member should it store?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "某物件需要觀察由別處的 std::shared_ptr 擁有的 Widget，但不得延長其生命週期。它應儲存哪一種成員？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "std::weak_ptr<Widget>"
+          },
+          "b": {
+            "zh-Hant": "std::shared_ptr<Widget>"
+          },
+          "c": {
+            "zh-Hant": "std::unique_ptr<Widget>"
+          },
+          "d": {
+            "zh-Hant": "一個裸 Widget*，之後由它 delete"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "`std::weak_ptr` 只觀察而不增加強引用計數，因此不會延長生命週期，也能打破循環引用；使用前先呼叫 `lock()` 取得暫時的 `shared_ptr`。`unique_ptr` 不能共享所有權，裸指標則無法偵測物件是否已消失。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "std::weak_ptr<Widget>"
+        },
+        {
+          "id": "b",
+          "text": "std::shared_ptr<Widget>"
+        },
+        {
+          "id": "c",
+          "text": "std::unique_ptr<Widget>"
+        },
+        {
+          "id": "d",
+          "text": "A raw Widget* that it deletes later"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "`std::weak_ptr` observes a shared object without incrementing the strong count, so it neither extends the lifetime nor keeps a reference cycle alive; call `lock()` to obtain a temporary shared_ptr before use. A unique_ptr cannot share ownership, and a raw pointer gives no way to detect that the object is gone.",
+      "tags": [
+        "weak_ptr",
+        "Ownership cycles"
+      ],
+      "difficulty": 4
+    }
+  ]
+}

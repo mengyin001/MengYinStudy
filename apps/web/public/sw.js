@@ -1,5 +1,5 @@
 /* Offline shell for MengYin Study. Registered only in production builds. */
-const VERSION = 'mengyin-study-v7';
+const VERSION = 'mengyin-study-v8';
 const SHELL = ['./', './index.html', './manifest.webmanifest'];
 
 self.addEventListener('install', (event) => {

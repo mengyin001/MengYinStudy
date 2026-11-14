@@ -42,9 +42,9 @@ function FeatureCard({
                 ? t('plugins.local')
                 : t('plugins.builtin')}
         </span>
-        <span className="plugin__meta">
-          {plugin.id} · v{plugin.version}
-        </span>
+        {plugin.source !== 'official' ? (
+          <span className="plugin__meta">v{plugin.version}</span>
+        ) : null}
       </div>
       {plugin.description ? <p className="plugin__desc">{plugin.description}</p> : null}
       <div className="plugin__stats">
@@ -201,13 +201,11 @@ export function PluginsPage() {
       <section className="panel">
         <div className="panel__head">
           <h2 className="panel__title">{t('plugins.officialFeatures')}</h2>
-          <span className="panel__more">v1.0.0</span>
         </div>
         <article className="plugin">
           <div className="plugin__head">
             <h3 className="plugin__name">{t('plugins.codeFeature')}</h3>
             <span className="badge badge--official">{t('plugins.official')}</span>
-            <span className="plugin__meta">official.code · v1.2.0</span>
           </div>
           <p className="plugin__desc">{t('plugins.codeFeatureDesc')}</p>
           <div className="plugin__stats">

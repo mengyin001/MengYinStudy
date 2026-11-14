@@ -60,7 +60,9 @@ export function buildOfficialPacks(catalog: OfficialCatalog): OfficialBuildResul
       const parsed = parseDeckFile({
         id: candidate.id,
         title: candidate.title,
+        ...(candidate.titleI18n ? { titleI18n: candidate.titleI18n } : {}),
         ...(candidate.description ? { description: candidate.description } : {}),
+        ...(candidate.descriptionI18n ? { descriptionI18n: candidate.descriptionI18n } : {}),
         tags: candidate.tags,
         questions: candidate.questions,
         ...(candidate.examMinutes === undefined ? {} : { examMinutes: candidate.examMinutes }),

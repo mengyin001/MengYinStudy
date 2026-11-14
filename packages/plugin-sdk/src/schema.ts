@@ -60,6 +60,20 @@ const optionSchema = z.object({
   media: z.array(mediaSchema).optional(),
 });
 
+/** Text in the app's two content languages; used by official bilingual decks. */
+const localizedTextSchema = z.object({
+  en: z.string().min(1).optional(),
+  'zh-Hant': z.string().min(1).optional(),
+});
+
+const questionI18nSchema = z.object({
+  prompt: localizedTextSchema.optional(),
+  explanation: localizedTextSchema.optional(),
+  hint: localizedTextSchema.optional(),
+  model: localizedTextSchema.optional(),
+  options: z.record(z.string(), localizedTextSchema).optional(),
+});
+
 const answerKeySchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('single'), optionId: z.string().min(1) }),
   z.object({ kind: z.literal('multi'), optionIds: z.array(z.string().min(1)).min(1) }),
@@ -225,6 +239,8 @@ export const questionSchema = z
     media: z.array(mediaSchema).optional(),
     /** Plugin specific payload, e.g. numeric tolerance. */
     meta: z.record(z.string(), z.unknown()).optional(),
+    /** Bilingual text for official decks; absent on single-language decks. */
+    i18n: questionI18nSchema.optional(),
   })
   .superRefine((question, ctx) => {
     const expected = BUILTIN_TYPE_KIND[question.type];
@@ -273,6 +289,9 @@ export const deckFileSchema = z.object({
   id: z.string().min(1),
   title: z.string().min(1),
   description: z.string().optional(),
+  /** Bilingual deck title/description for official decks. */
+  titleI18n: localizedTextSchema.optional(),
+  descriptionI18n: localizedTextSchema.optional(),
   tags: z.array(z.string()).default([]),
   questions: z.array(questionSchema).min(1),
   /**
@@ -404,6 +423,7 @@ export function adaptQuestion(raw: QuestionFile, assetBase?: string): Question {
     ...(raw.source ? { source: raw.source } : {}),
     ...(raw.media ? { media: resolveMedia(raw.media, assetBase) } : {}),
     ...(raw.meta ? { meta: raw.meta } : {}),
+    ...(raw.i18n ? { i18n: raw.i18n } : {}),
   };
 }
 
@@ -414,6 +434,8 @@ export function adaptDeck(pluginId: string, raw: DeckFile, assetBase?: string): 
     pluginId,
     title: raw.title,
     ...(raw.description ? { description: raw.description } : {}),
+    ...(raw.titleI18n ? { titleI18n: raw.titleI18n } : {}),
+    ...(raw.descriptionI18n ? { descriptionI18n: raw.descriptionI18n } : {}),
     tags: uniqueTags(raw.tags),
     questions: raw.questions.map((question) => adaptQuestion(question, assetBase)),
     ...(raw.examMinutes === undefined ? {} : { examMinutes: raw.examMinutes }),

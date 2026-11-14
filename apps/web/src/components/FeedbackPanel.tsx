@@ -35,7 +35,7 @@ export function FeedbackPanel({
         <div className="pairs__row">
           <span className="pairs__key">{t('verdict.yourAnswer')}</span>
           <span className={`pairs__val ${question.type === 'code' ? 'pairs__val--code' : ''}`}>
-            {describeGiven(question, answer)}
+            {describeGiven(question, answer, t)}
           </span>
         </div>
         <div className="pairs__row">
@@ -43,7 +43,7 @@ export function FeedbackPanel({
           <span
             className={`pairs__val pairs__val--ok ${question.type === 'code' ? 'pairs__val--code' : ''}`}
           >
-            {describeAnswer(question)}
+            {describeAnswer(question, t)}
           </span>
         </div>
       </div>

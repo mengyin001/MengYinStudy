@@ -61,6 +61,8 @@ export interface GenerationLimitsInput {
   count: number;
   materialChars: number;
   imageMode: 'off' | 'auto' | 'on';
+  /** True when the learner supplied their own provider key for this request. */
+  byoKey?: boolean;
 }
 
 /** Plan used for a deployment that has billing switched off. */
@@ -73,6 +75,40 @@ export async function resolveGenerationPolicy(
   requestId: string,
 ): Promise<GenerationPolicy> {
   const enforced = billingEnforced(env) && Boolean(auth.userId);
+
+  // A learner's own key means the provider bill is theirs: nothing is reserved
+  // or charged, and the free plan may generate. Their plan still decides
+  // whether AI photos (which use this server's image provider) are allowed.
+  if (input.byoKey) {
+    let plan = planFor(UNRESTRICTED);
+    let snapshot: BillingSnapshot | null = null;
+    if (billingEnforced(env) && auth.userId) {
+      try {
+        snapshot = await readSnapshot(env, auth);
+        plan = planFor(snapshot.plan);
+      } catch {
+        plan = planFor(UNRESTRICTED);
+      }
+    }
+    const photosAllowed = planAllowsPhotos(plan);
+    return {
+      enforced: false,
+      plan,
+      snapshot,
+      imageMode: input.imageMode,
+      imagesBlocked: input.imageMode !== 'off' && !photosAllowed,
+      photosAllowed,
+      estimate: estimatePoints({
+        model: input.model,
+        count: input.count,
+        materialChars: input.materialChars,
+      }),
+      requestId,
+      reserved: 0,
+      reservedQuestions: 0,
+      questionLimit: 0,
+    };
+  }
 
   if (!enforced) {
     return {

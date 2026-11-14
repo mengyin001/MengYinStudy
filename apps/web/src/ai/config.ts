@@ -1,12 +1,13 @@
-import { FREE_MODEL, SUPPORTED_MODELS } from '@mengyin/core';
+import { SUPPORTED_MODELS } from '@mengyin/core';
 import { AI_API_BASE, type AiImageMode } from '@mengyin/ai-contract';
 import { appStore, STORAGE_KEYS } from '@/lib/storage';
-import type { AiSettings } from './types';
+import { AI_OWN_MODEL, type AiSettings } from './types';
 
 export const AI_AUTO = 'auto';
 
+/** Nothing is chosen until the learner picks a model in Generate. */
 export const DEFAULT_AI_SETTINGS: AiSettings = {
-  model: FREE_MODEL,
+  model: '',
   imageMode: 'auto',
   imageModel: AI_AUTO,
 };
@@ -16,41 +17,56 @@ function imageMode(value: unknown): AiImageMode {
 }
 
 function modelId(value: unknown): string {
-  if (typeof value !== 'string') return FREE_MODEL;
+  if (typeof value !== 'string') return '';
   const trimmed = value.trim();
-  return (SUPPORTED_MODELS as readonly string[]).includes(trimmed) ? trimmed : FREE_MODEL;
+  if (trimmed === AI_OWN_MODEL) return AI_OWN_MODEL;
+  return (SUPPORTED_MODELS as readonly string[]).includes(trimmed) ? trimmed : '';
+}
+
+function contextTokens(value: unknown): number | undefined {
+  const parsed = Number(value);
+  if (!Number.isSafeInteger(parsed) || parsed < 1_024 || parsed > 2_000_000) return undefined;
+  return parsed;
 }
 
 /**
- * Accept both the current settings object and the pre-0.6.1 BYO-key shape.
+ * Accept the current settings object, the optional own-key field and the
+ * pre-0.6.1 BYO shape.
  *
- * The provider field and the API key are deliberately dropped: generation now
- * names a model directly, and a key must not stay in local storage once
- * generation moves to the hosted service. An unknown legacy model falls back
- * to the free model rather than being sent to the server.
+ * `apiKey` is the learner's own provider key, stored only in this browser and
+ * sent per request; it is never written to the server. A legacy `baseUrl` or
+ * `provider` field is dropped because generation names the model directly.
  */
 export function normalizeAiSettings(input: unknown): AiSettings {
   if (!input || typeof input !== 'object') return { ...DEFAULT_AI_SETTINGS };
   const raw = input as Record<string, unknown>;
   const rawImageModel = typeof raw.imageModel === 'string' ? raw.imageModel.trim() : '';
+  const rawApiKey = typeof raw.apiKey === 'string' ? raw.apiKey.trim().slice(0, 200) : '';
+  const rawBase = typeof raw.apiBaseUrl === 'string' ? raw.apiBaseUrl.trim().slice(0, 300) : '';
+  const rawApiModel = typeof raw.apiModel === 'string' ? raw.apiModel.trim().slice(0, 120) : '';
+  const apiBaseUrl = /^https:\/\//i.test(rawBase) ? rawBase.replace(/\/+$/, '') : '';
+  const apiContextTokens = contextTokens(raw.apiContextTokens);
 
   return {
     model: modelId(raw.model),
     imageMode: imageMode(raw.imageMode),
     imageModel: rawImageModel || AI_AUTO,
+    ...(rawApiKey ? { apiKey: rawApiKey } : {}),
+    ...(apiBaseUrl ? { apiBaseUrl } : {}),
+    ...(rawApiModel ? { apiModel: rawApiModel } : {}),
+    ...(apiContextTokens ? { apiContextTokens } : {}),
   };
 }
 
 export async function loadAiSettings(): Promise<AiSettings> {
   const stored = await appStore.get<unknown>(STORAGE_KEYS.aiConfig);
   const settings = normalizeAiSettings(stored);
-  // Migrate away from the old shape, which could contain a provider key.
+  // Migrate away from the old shape, which carried a provider and a base URL.
   if (stored && typeof stored === 'object') {
     const raw = stored as Record<string, unknown>;
-    const hasLegacySecret = typeof raw.apiKey === 'string' && raw.apiKey.trim().length > 0;
     const hasLegacyBase = typeof raw.baseUrl === 'string';
     const hasLegacyProvider = typeof raw.provider === 'string';
-    if (hasLegacySecret || hasLegacyBase || hasLegacyProvider) await saveAiSettings(settings);
+    if (hasLegacyBase || hasLegacyProvider) await saveAiSettings(settings);
   }
   return settings;
 }

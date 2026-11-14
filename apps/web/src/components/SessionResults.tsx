@@ -1,12 +1,18 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { summarize, type Session } from '@mengyin/core';
 import { Icon } from './Icons';
 import { Empty, Meter } from './ui';
 import { answerSummary, describeAnswer } from '@/domain/answers';
+import { localizeQuestion } from '@/domain/localize';
 import type { MessageKey } from '@/i18n/messages';
+import { scoreSoundBand } from '@/lib/answerStreak';
+import { playScoreSound } from '@/lib/answerStreakAudio';
 import { formatDuration } from '@/lib/format';
 import { navigate } from '@/lib/router';
 import { useApp } from '@/state/AppContext';
+
+/** Score feedback is once per session, even if the results view remounts. */
+const scoreSoundSessions = new Set<string>();
 
 const STATUS: Record<string, { key: MessageKey; cls: string }> = {
   correct: { key: 'results.correct', cls: 'badge--ok' },
@@ -15,10 +21,28 @@ const STATUS: Record<string, { key: MessageKey; cls: string }> = {
 };
 
 export function SessionResults({ session }: { session: Session }) {
-  const { t, locale, actions } = useApp();
+  const { t, locale, actions, state } = useApp();
   const summary = useMemo(() => summarize(session), [session]);
   const [openKey, setOpenKey] = useState<string | null>(null);
   const [onlyWrong, setOnlyWrong] = useState(true);
+
+  // Give the result a moment to appear, then react to the score. The timer is
+  // cleared on a real unmount, and the module-level set stops StrictMode from
+  // scheduling it twice or replaying it when the same results are revisited.
+  useEffect(() => {
+    if (scoreSoundSessions.has(session.id)) return undefined;
+    if (session.mode === 'exam' || !state.progress.settings.soundEffects) {
+      scoreSoundSessions.add(session.id);
+      return undefined;
+    }
+    const band = scoreSoundBand(summary.score);
+    const timer = window.setTimeout(() => {
+      if (scoreSoundSessions.has(session.id)) return;
+      scoreSoundSessions.add(session.id);
+      playScoreSound(band);
+    }, 350);
+    return () => window.clearTimeout(timer);
+  }, [session.id, session.mode, summary.score, state.progress.settings.soundEffects]);
 
   const wrongEntries = useMemo(() => {
     const seen = new Set<string>();
@@ -59,6 +83,15 @@ export function SessionResults({ session }: { session: Session }) {
         <span className="scoreline__meta">
           {t(modeKey)} · {t('results.correctOf', { correct: summary.correct, total: summary.total })} ·{' '}
           {formatDuration(summary.msSpent, locale)}
+          {session.mode !== 'exam' && (summary.bestAnswerStreak ?? 0) >= 2 ? (
+            <>
+              {' · '}
+              <span className="scoreline__streak">
+                <Icon name="flame" size={12} strokeWidth={1.7} />
+                {t('results.bestStreak', { n: summary.bestAnswerStreak ?? 0 })}
+              </span>
+            </>
+          ) : null}
         </span>
       </header>
 
@@ -153,6 +186,7 @@ export function SessionResults({ session }: { session: Session }) {
                 : (STATUS[item.result?.status ?? 'incorrect'] ?? STATUS.incorrect);
               if (!status) return null;
               const open = openKey === item.entry.key;
+              const question = localizeQuestion(item.entry.question, locale);
               return (
                 <div className="review__item" key={item.entry.key}>
                   <button
@@ -162,7 +196,7 @@ export function SessionResults({ session }: { session: Session }) {
                     onClick={() => setOpenKey(open ? null : item.entry.key)}
                   >
                     <span className={`badge ${status.cls}`}>{t(status.key)}</span>
-                    <span className="review__prompt">{item.entry.question.prompt}</span>
+                    <span className="review__prompt">{question.prompt}</span>
                     <Icon name={open ? 'chevronDown' : 'chevronRight'} size={14} strokeWidth={1.6} />
                   </button>
 
@@ -172,22 +206,22 @@ export function SessionResults({ session }: { session: Session }) {
                         <div className="pairs__row">
                           <span className="pairs__key">{t('verdict.yourAnswer')}</span>
                           <span
-                            className={`pairs__val ${item.entry.question.type === 'code' ? 'pairs__val--code' : ''}`}
+                            className={`pairs__val ${question.type === 'code' ? 'pairs__val--code' : ''}`}
                           >
-                            {answerSummary(item.entry.question, item.answer)}
+                            {answerSummary(question, item.answer, t)}
                           </span>
                         </div>
                         <div className="pairs__row">
                           <span className="pairs__key">{t('verdict.correctAnswer')}</span>
                           <span
-                            className={`pairs__val pairs__val--ok ${item.entry.question.type === 'code' ? 'pairs__val--code' : ''}`}
+                            className={`pairs__val pairs__val--ok ${question.type === 'code' ? 'pairs__val--code' : ''}`}
                           >
-                            {describeAnswer(item.entry.question)}
+                            {describeAnswer(question, t)}
                           </span>
                         </div>
                       </div>
-                      {item.entry.question.explanation ? (
-                        <p className="explain">{item.entry.question.explanation}</p>
+                      {question.explanation ? (
+                        <p className="explain">{question.explanation}</p>
                       ) : null}
                     </div>
                   ) : null}

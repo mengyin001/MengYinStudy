@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { computeStats, computeStreak, DAY_MS, startOfDay } from '@mengyin/core';
+import { computeAnswerStreak, computeStats, computeStreak, DAY_MS, startOfDay } from '@mengyin/core';
+import { Icon } from '@/components/Icons';
 import { StreakFlame } from '@/components/StreakFlame';
 import { Empty, Meter, PageHead } from '@/components/ui';
 import { tagStats } from '@/domain/library';
@@ -14,6 +15,7 @@ export function StatsPage() {
 
   const stats = useMemo(() => computeStats(attempts, 14), [attempts]);
   const streak = useMemo(() => computeStreak(attempts), [attempts]);
+  const answerStreak = useMemo(() => computeAnswerStreak(attempts), [attempts]);
   const tags = useMemo(() => tagStats(entries, attempts), [entries, attempts]);
   const [showAllTags, setShowAllTags] = useState(false);
 
@@ -59,15 +61,21 @@ export function StatsPage() {
         title={t('stats.title')}
         lede={t('stats.subtitle', { n: attempts.length, time: formatDuration(stats.ms, locale) })}
         actions={
-          <span className="badge">
-            <StreakFlame
-              current={streak.current}
-              best={streak.best}
-              size={13}
-              label={streakLabel(streak.current, streak.best, t)}
-            />{' '}
-            {t('stats.streak', { current: streak.current, best: streak.best })}
-          </span>
+          <>
+            <span className="badge">
+              <StreakFlame
+                current={streak.current}
+                best={streak.best}
+                size={13}
+                label={streakLabel(streak.current, streak.best, t)}
+              />{' '}
+              {t('stats.streak', { current: streak.current, best: streak.best })}
+            </span>
+            <span className={`badge ${answerStreak >= 3 ? 'badge--ok' : ''}`}>
+              <Icon name="flame" size={12} strokeWidth={1.7} />
+              {t('stats.answerStreak', { n: answerStreak })}
+            </span>
+          </>
         }
       />
 
@@ -185,7 +193,9 @@ export function StatsPage() {
                 <tr key={view.deck.key}>
                   <td>
                     <span className="table__title">{view.deck.title}</span>
-                    <span className="table__sub">{view.deck.pluginId}</span>
+                    {view.deck.tags.length > 0 ? (
+                      <span className="table__sub">{view.deck.tags.slice(0, 3).join(' · ')}</span>
+                    ) : null}
                   </td>
                   <td>
                     <span className="table__meter">

@@ -14,6 +14,7 @@ import {
   type Question,
 } from '@mengyin/core';
 import { AiApiError, generateQuestionsWithApi, getAiServiceConfig, testAiService } from '@/ai/api';
+import { questionCountCeiling } from '@/ai/count';
 import { clearDraft, hydrateDraft, loadDraft, saveDraft } from '@/ai/draft';
 import { ACCEPTED_EXTENSIONS } from '@/ai/extract';
 import { mergeGeneratedResults } from '@/ai/merge';
@@ -21,8 +22,8 @@ import { MAX_MATERIAL_BYTES, totalMaterialBytes, totalMaterialChars } from '@/ai
 import type { AiSettings, GeneratedDifficulty, GeneratedLanguage, GenerationRequest } from '@/ai/types';
 import { ALL_GENERATED_TYPES, type GeneratedQuestionType } from '@/ai/types';
 import { Icon } from '@/components/Icons';
-import { ProviderIcon } from '@/components/ProviderIcon';
 import { GenerationLiveness } from '@/components/GenerationLiveness';
+import { ModelPicker } from '@/components/ModelPicker';
 import { QuestionImage } from '@/components/QuestionImage';
 import { Meter, Note, NumField, PageHead, Seg } from '@/components/ui';
 import { describeAnswer } from '@/domain/answers';
@@ -92,6 +93,20 @@ export function GeneratePage() {
   const settings = state.aiSettings;
   const materials = state.materials;
   const usedBytes = totalMaterialBytes(materials);
+  // A learner who brought their own provider key pays that provider directly,
+  // so the plan's free-question ceiling must not clamp this run. `own` means
+  // the provider configured in Settings.
+  const ownReady = Boolean(settings.apiKey && settings.apiModel);
+  const selection = settings.model;
+  const byo = selection === 'own' && ownReady;
+  const countCeiling = questionCountCeiling({
+    hydrated: state.ready,
+    enforced,
+    paid: plan.paid,
+    byo,
+    remaining: questionsRemaining,
+    monthly: plan.monthlyQuestions,
+  });
 
   const [service, setService] = useState<AiServiceConfig | null>(null);
   const [serviceError, setServiceError] = useState<string | null>(null);
@@ -146,13 +161,13 @@ export function GeneratePage() {
     void loadService();
   }, [loadService]);
 
-  // There is no per-run question cap. Only a free account is pulled down to the
-  // questions it has left this month, because that is the wallet it spends.
+  // There is no per-run question cap. Only a free account using the server's
+  // provider is pulled down to the questions it has left this month, because
+  // that is the wallet it spends. An own key never touches that wallet.
   useEffect(() => {
-    if (!enforced || plan.paid) return;
-    const ceiling = Math.max(1, questionsRemaining ?? plan.monthlyQuestions);
-    if (count > ceiling) setCount(ceiling);
-  }, [count, enforced, plan.monthlyQuestions, plan.paid, questionsRemaining]);
+    if (countCeiling === undefined) return;
+    if (count > countCeiling) setCount(countCeiling);
+  }, [count, countCeiling]);
 
   useEffect(() => () => abortRef.current?.abort(), []);
 
@@ -225,46 +240,25 @@ export function GeneratePage() {
     service?.images.model ??
     '';
 
-  // One explicit model. There is no server default and no "provider default":
-  // the id below is what the request sends and what the estimate prices.
-  const effectiveModel = settings.model;
+  // The learner chooses a model explicitly; nothing is preselected. `own` means
+  // the provider configured in Settings, which bypasses points and the plan list.
+  const effectiveModel = byo ? (settings.apiModel ?? '') : selection;
+  const hasModel = Boolean(effectiveModel);
   const selectedChoice = choices.find((choice) => choice.model === effectiveModel);
-  const modelConfigured = selectedChoice?.configured ?? false;
-  const modelAllowed = !enforced || planAllowsModel(plan, effectiveModel);
+  const modelConfigured = byo || (selectedChoice?.configured ?? false);
+  const modelAllowed = byo || !enforced || (hasModel && planAllowsModel(plan, effectiveModel));
   const materialChars = totalMaterialChars(materials);
-  const estimate = estimatePoints({
-    model: effectiveModel,
-    count,
-    materialChars,
-  });
+  const estimate = hasModel
+    ? estimatePoints({ model: effectiveModel, count, materialChars })
+    : { questions: 0, materials: 0, images: 0, total: 0, perQuestion: 0 };
   const freeLeft = questionsRemaining ?? plan.monthlyQuestions;
   const remainingForModel = !enforced
     ? null
     : plan.paid
       ? questionsForPoints(points, effectiveModel)
       : freeLeft;
-  const shortOfPoints = enforced && plan.paid && estimate.total > points;
-  const shortOfQuestions = enforced && !plan.paid && count > freeLeft;
-
-  // If a saved model disappeared or its provider lost its key, move to the
-  // first usable model instead of leaving an unselectable ghost selected.
-  useEffect(() => {
-    if (!service) return;
-    const current = choices.find((choice) => choice.model === settings.model);
-    const usable = Boolean(
-      current?.configured && (!enforced || planAllowsModel(plan, current.model)),
-    );
-    if (usable) return;
-    const next =
-      choices.find(
-        (choice) => choice.configured && (!enforced || planAllowsModel(plan, choice.model)),
-      ) ??
-      choices.find((choice) => choice.configured) ??
-      choices[0];
-    if (next && next.model !== settings.model) {
-      actions.updateAiSettings({ model: next.model });
-    }
-  }, [actions, choices, enforced, plan, service, settings.model]);
+  const shortOfPoints = !byo && enforced && plan.paid && estimate.total > points;
+  const shortOfQuestions = !byo && enforced && !plan.paid && count > freeLeft;
 
   const chooseModel = (model: string) => {
     setTestResult(null);
@@ -345,7 +339,7 @@ export function GeneratePage() {
       actions.notify('info', t('gen.serviceNotReady'));
       return;
     }
-    if (!effectiveModel || !modelConfigured) {
+    if (!hasModel || !modelConfigured) {
       actions.notify('info', t('gen.noModel'));
       return;
     }
@@ -564,32 +558,49 @@ export function GeneratePage() {
 
               <div className="gen-billing">
                 <span className="badge">{t(`plan.${plan.id}`)}</span>
-                {enforced ? (
-                  plan.paid ? (
-                    <span>{t('gen.balance', { n: points })}</span>
-                  ) : (
-                    <span>
-                      {t('gen.freeRemaining', {
-                        n: freeLeft,
-                        limit: questionsLimit || plan.monthlyQuestions,
-                      })}
-                    </span>
-                  )
-                ) : null}
-                {enforced ? (
-                  plan.paid ? (
-                    remainingForModel === null ? (
-                      <span>{t('gen.remainingUnlimited')}</span>
-                    ) : (
-                      <span>{t('gen.remaining', { n: remainingForModel })}</span>
-                    )
-                  ) : null
-                ) : null}
-                <span className="gen-billing__cost">
-                  {estimate.total > 0 ? t('gen.estimate', { n: estimate.total }) : t('gen.freeRun')}
-                </span>
-                <button type="button" className="text-btn" onClick={() => navigate('/pricing')}>
-                  {t('gen.upgrade')}
+                {byo ? (
+                  <>
+                    <span className="badge badge--ai">{t('gen.ownKeyBadge')}</span>
+                    <span>{t('gen.ownKeyCost')}</span>
+                  </>
+                ) : (
+                  <>
+                    {enforced ? (
+                      plan.paid ? (
+                        <span>{t('gen.balance', { n: points })}</span>
+                      ) : plan.models.length === 0 ? (
+                        <span>{t('gen.freeNoAi')}</span>
+                      ) : (
+                        <span>
+                          {t('gen.freeRemaining', {
+                            n: freeLeft,
+                            limit: questionsLimit || plan.monthlyQuestions,
+                          })}
+                        </span>
+                      )
+                    ) : null}
+                    {enforced ? (
+                      plan.paid ? (
+                        remainingForModel === null ? (
+                          <span>{t('gen.remainingUnlimited')}</span>
+                        ) : (
+                          <span>{t('gen.remaining', { n: remainingForModel })}</span>
+                        )
+                      ) : null
+                    ) : null}
+                    {estimate.total > 0 ? (
+                      <span className="gen-billing__cost">
+                        {t('gen.estimate', { n: estimate.total })}
+                      </span>
+                    ) : null}
+                  </>
+                )}
+                <button
+                  type="button"
+                  className="text-btn"
+                  onClick={() => navigate(byo ? '/settings' : '/pricing')}
+                >
+                  {byo ? t('gen.ownKeyManage') : t('gen.upgrade')}
                 </button>
               </div>
 
@@ -607,43 +618,51 @@ export function GeneratePage() {
                 <div className="field model-field">
                   <span className="field__label">{t('gen.model')}</span>
                   <span className="field__hint">{t('gen.modelHint')}</span>
-                  <div className="model-picker" role="radiogroup" aria-label={t('gen.model')}>
-                    {choices.map((choice) => {
-                      const allowed = !enforced || planAllowsModel(plan, choice.model);
-                      const selected = effectiveModel === choice.model;
-                      const multiplier =
-                        config?.pointCosts[choice.model] ?? pointsPerQuestion(choice.model);
-                      const note = !choice.configured
-                        ? t('gen.notConfigured')
-                        : !allowed
+                  <ModelPicker
+                    value={selection}
+                    label={t('gen.model')}
+                    placeholder={t('gen.chooseModel')}
+                    freeLabel={t('gen.modelFree')}
+                    disabled={busy}
+                    onChange={chooseModel}
+                    onLocked={() => navigate('/pricing')}
+                    options={[
+                      ...(ownReady
+                        ? [
+                            {
+                              value: 'own',
+                              label: settings.apiModel ?? '',
+                              providerId: 'byo',
+                              providerLabel: t('gen.ownKeyProvider'),
+                              multiplier: 0,
+                              note: '',
+                              disabled: false,
+                            },
+                          ]
+                        : []),
+                      ...choices.map((choice) => {
+                        const allowed = !enforced || planAllowsModel(plan, choice.model);
+                        const multiplier =
+                          config?.pointCosts[choice.model] ?? pointsPerQuestion(choice.model);
+                        const note = !allowed
                           ? t('gen.lockedModel')
-                          : '';
-                      return (
-                        <button
-                          key={choice.model}
-                          type="button"
-                          role="radio"
-                          aria-checked={selected}
-                          className={`model-option ${selected ? 'is-on' : ''}`}
-                          disabled={busy || !allowed || !choice.configured}
-                          onClick={() => chooseModel(choice.model)}
-                        >
-                          <ProviderIcon provider={choice.providerId} size={22} />
-                          <span className="model-option__body">
-                            <span className="model-option__name">{modelLabel(choice.model)}</span>
-                            <span className="model-option__meta">
-                              {choice.providerLabel}
-                              {note ? ` · ${note}` : ''}
-                            </span>
-                          </span>
-                          <span className="model-option__mult">
-                            {multiplier <= 0 ? t('gen.modelFree') : `×${multiplier}`}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                  {!effectiveModel || !modelConfigured ? (
+                          : !choice.configured
+                            ? t('gen.notConfigured')
+                            : '';
+                        return {
+                          value: choice.model,
+                          label: modelLabel(choice.model),
+                          providerId: choice.providerId,
+                          providerLabel: choice.providerLabel,
+                          multiplier,
+                          note,
+                          disabled: busy || !choice.configured,
+                          locked: !allowed,
+                        };
+                      }),
+                    ]}
+                  />
+                  {!hasModel || !modelConfigured ? (
                     <span className="field__hint">{t('gen.noModel')}</span>
                   ) : null}
                 </div>
@@ -763,7 +782,7 @@ export function GeneratePage() {
                   label={t('gen.count')}
                   value={count}
                   min={1}
-                  {...(enforced && !plan.paid ? { max: Math.max(1, freeLeft) } : {})}
+                  {...(countCeiling === undefined ? {} : { max: countCeiling })}
                   step={1}
                   disabled={busy}
                   onChange={setCount}
@@ -1153,7 +1172,7 @@ export function GeneratePage() {
                           </ul>
                         ) : null}
                         <p className="gen-q__answer">
-                          <span className="eyebrow">{t('gen.answer')}</span> {describeAnswer(question)}
+                          <span className="eyebrow">{t('gen.answer')}</span> {describeAnswer(question, t)}
                         </p>
                         {question.explanation ? <p className="explain">{question.explanation}</p> : null}
                         {spec ? (

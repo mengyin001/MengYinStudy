@@ -12,18 +12,23 @@ export type PlanId = 'free' | 'light' | 'standard' | 'pro';
 
 export const PLAN_IDS: readonly PlanId[] = ['free', 'light', 'standard', 'pro'];
 
-/** The free model. Free accounts may generate with this one only. */
-export const FREE_MODEL = 'glm-4.7-flash';
+/**
+ * The model a new account starts on, and the fallback for a stored id that is
+ * no longer offered.
+ *
+ * GLM-4.7-Flash used to be this model and cost nothing, but its provider terms
+ * restrict non-paid models to non-commercial personal use, so it is withdrawn
+ * from the catalogue (see docs/AI_API.md). That leaves the two DeepSeek models;
+ * the free plan has no AI model at all until a commercially usable free tier is
+ * added.
+ */
+export const DEFAULT_MODEL = 'deepseek-flash';
 
 /**
- * Every model this release offers, cheapest first. A provider may expose more
- * ids through its environment list, but a plan can only unlock these.
+ * Every model this release offers. A provider may expose more ids through its
+ * environment list, but a plan can only unlock these.
  */
-export const SUPPORTED_MODELS = [
-  'glm-4.7-flash',
-  'deepseek-flash',
-  'deepseek-v4-pro',
-] as const;
+export const SUPPORTED_MODELS = ['deepseek-flash', 'deepseek-v4-pro'] as const;
 
 export interface Plan {
   id: PlanId;
@@ -60,9 +65,11 @@ export interface Plan {
   paid: boolean;
 }
 
-const FREE_MODELS = [FREE_MODEL] as const;
-const LIGHT_MODELS = ['glm-4.7-flash', 'deepseek-flash'] as const;
-const STANDARD_MODELS = [...LIGHT_MODELS, 'deepseek-v4-pro'] as const;
+// The free plan has no AI model while the free tier is under review; paid plans
+// add one or both DeepSeek models.
+const NO_MODELS = [] as const;
+const LIGHT_MODELS = ['deepseek-flash'] as const;
+const STANDARD_MODELS = ['deepseek-flash', 'deepseek-v4-pro'] as const;
 
 export const PLANS: readonly Plan[] = [
   {
@@ -71,11 +78,11 @@ export const PLANS: readonly Plan[] = [
     annualCents: 0,
     monthlyPoints: 0,
     imagesPerMonth: 0,
-    monthlyQuestions: 200,
+    monthlyQuestions: 0,
     materialChars: 10_000,
     pointCap: 0,
     priority: false,
-    models: FREE_MODELS,
+    models: NO_MODELS,
     paid: false,
   },
   {
@@ -166,12 +173,17 @@ export function annualMonthlyCents(plan: Plan): number {
  * provider prices are about 3.5×; the multiplier is rounded up to a whole point
  * (4) so a Pro question can never be cheaper than its share of the bill.
  *
- * The catalogue has exactly three models. Unknown models use the highest rate:
- * a newly added expensive model must not be accidentally cheap, and the server
- * rejects models a plan may not use.
+ * The free plan has no AI model while the free tier is under review, so every
+ * question costs points on a paid plan. DeepSeek Flash is the unit: one Flash
+ * question costs one point. DeepSeek V4 Pro costs the same multiple of that unit
+ * as its list price is to Flash. The provider prices are about 3.5×; the
+ * multiplier is rounded up to a whole point (4) so a Pro question can never be
+ * cheaper than its share of the bill.
+ *
+ * Unknown models use the highest rate: a newly added expensive model must not
+ * be accidentally cheap, and the server rejects models a plan may not use.
  */
 export const MODEL_POINT_COSTS: Readonly<Record<string, number>> = {
-  'glm-4.7-flash': 0,
   'deepseek-flash': 1,
   'deepseek-v4-pro': 4,
 };

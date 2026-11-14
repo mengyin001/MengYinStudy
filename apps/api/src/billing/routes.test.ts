@@ -161,7 +161,8 @@ describe('billing me payload', () => {
     );
     expect(me.monthlyPoints).toBe(0);
     expect(me.pointsResetAt).toBeNull();
-    expect(me.questionsRemaining).toBe(200);
+    // The free plan has no question quota while it has no AI model.
+    expect(me.questionsRemaining).toBeNull();
   });
 });
 

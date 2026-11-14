@@ -1,0 +1,462 @@
+{
+  "id": "cpp-22-io",
+  "title": "C++ Basic Input and Output",
+  "titleI18n": {
+    "zh-Hant": "C++ 基本輸入輸出"
+  },
+  "description": "Console input and output with the iostream library: std::cout, std::cin, std::cerr and std::clog, the stream operators, std::endl versus the newline character, std::getline, whitespace handling and stream state.",
+  "descriptionI18n": {
+    "zh-Hant": "使用 iostream 程式庫進行主控台輸入輸出：std::cout、std::cin、std::cerr 與 std::clog、串流運算子、std::endl 與換行字元的分別、std::getline、空白字元處理以及串流狀態。"
+  },
+  "tags": [
+    "C++",
+    "I/O"
+  ],
+  "examMinutes": 14,
+  "questions": [
+    {
+      "id": "cpp-22-q01",
+      "type": "single",
+      "prompt": "Which standard stream is meant for error messages and flushes after each insertion?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "哪一個標準串流專門用來輸出錯誤訊息，並且每次插入後都會刷新？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "std::cerr"
+          },
+          "b": {
+            "zh-Hant": "std::clog"
+          },
+          "c": {
+            "zh-Hant": "std::cout"
+          },
+          "d": {
+            "zh-Hant": "std::cin"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "std::cerr 對應標準錯誤串流，預設帶有 unitbuf，每次輸出後立即刷新；std::clog 同樣寫入標準錯誤，但會先緩衝。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "std::cerr"
+        },
+        {
+          "id": "b",
+          "text": "std::clog"
+        },
+        {
+          "id": "c",
+          "text": "std::cout"
+        },
+        {
+          "id": "d",
+          "text": "std::cin"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "std::cerr writes to the standard error stream and is unit-buffered, so each output operation flushes. std::clog also writes to standard error but keeps its output buffered.",
+      "tags": [
+        "I/O",
+        "Streams"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-22-q02",
+      "type": "single",
+      "prompt": "After `int n; std::cin >> n;` fails because the user typed letters, which call resets the stream's error state so later extractions can be attempted?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "執行 `int n; std::cin >> n;` 時，若使用者輸入字母而失敗，呼叫哪一個成員函式可以重設串流的錯誤狀態，讓後續的提取可以再嘗試？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "std::cin.clear()"
+          },
+          "b": {
+            "zh-Hant": "std::cin.ignore()"
+          },
+          "c": {
+            "zh-Hant": "std::cin.flush()"
+          },
+          "d": {
+            "zh-Hant": "std::cin.rdbuf()"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "clear() 會清除 failbit、eofbit 等狀態旗標；ignore() 只丟棄緩衝區中的字元，並不會清除旗標。basic_istream 也沒有 flush() 成員。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "std::cin.clear()"
+        },
+        {
+          "id": "b",
+          "text": "std::cin.ignore()"
+        },
+        {
+          "id": "c",
+          "text": "std::cin.flush()"
+        },
+        {
+          "id": "d",
+          "text": "std::cin.rdbuf()"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "clear() resets the stream state flags such as failbit. ignore() only discards characters from the buffer and leaves the flags set, and basic_istream has no flush() member.",
+      "tags": [
+        "I/O",
+        "Stream state"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-22-q03",
+      "type": "single",
+      "prompt": "What does std::endl do that the character '\\n' does not?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "std::endl 做了哪一件字元 '\\n' 不會做的事？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "刷新輸出緩衝區"
+          },
+          "b": {
+            "zh-Hant": "把換行轉成 Windows 的 CRLF"
+          },
+          "c": {
+            "zh-Hant": "關閉輸出串流"
+          },
+          "d": {
+            "zh-Hant": "清除串流的錯誤旗標"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "std::endl 等於插入 '\\n' 再呼叫 flush()；純粹的 '\\n' 只把換行放進緩衝區，不一定會立即刷新。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "It flushes the output buffer."
+        },
+        {
+          "id": "b",
+          "text": "It converts the newline to CRLF on Windows."
+        },
+        {
+          "id": "c",
+          "text": "It closes the output stream."
+        },
+        {
+          "id": "d",
+          "text": "It clears the stream's error flags."
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "std::endl inserts a newline and then calls flush(); a plain '\\n' only puts the newline in the buffer and may not flush immediately. The text-mode translation of the C runtime already handles CRLF on Windows.",
+      "tags": [
+        "I/O",
+        "endl"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-22-q04",
+      "type": "single",
+      "prompt": "Which call reads a whole line, including spaces, into a std::string?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "哪一個呼叫可以把包含空白的整行讀進 std::string？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "std::getline(std::cin, line)"
+          },
+          "b": {
+            "zh-Hant": "std::cin >> line"
+          },
+          "c": {
+            "zh-Hant": "std::cin.get(line)"
+          },
+          "d": {
+            "zh-Hant": "std::cin.read(line, 10)"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "getline 會一直讀到換行字元，把換行消耗掉但不存入字串；>> 遇到空白就停止，get 和 read 則需要 char* 緩衝區。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "std::getline(std::cin, line)"
+        },
+        {
+          "id": "b",
+          "text": "std::cin >> line"
+        },
+        {
+          "id": "c",
+          "text": "std::cin.get(line)"
+        },
+        {
+          "id": "d",
+          "text": "std::cin.read(line, 10)"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "std::getline reads up to the newline, extracts and discards it, and stores the text including spaces. operator>> stops at the first whitespace, and get/read need a char array rather than a std::string.",
+      "tags": [
+        "I/O",
+        "getline"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-22-q05",
+      "type": "multi",
+      "prompt": "Which statements about formatted extraction with std::cin >> are true? Select all that apply.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "下列關於使用 std::cin >> 做格式化提取的敘述，哪些是正確的？可多選。"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "讀取數值前會先跳過前導空白"
+          },
+          "b": {
+            "zh-Hant": "讀入 std::string 時會在第一個空白處停止"
+          },
+          "c": {
+            "zh-Hant": "預設會把空白一併讀入 std::string"
+          },
+          "d": {
+            "zh-Hant": "提取可以串接，例如 std::cin >> a >> b"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "operator>> 預設會跳過前導空白，並以空白作為字串的結束；它會回傳串流本身，所以可以串接。要讀整行必須用 getline。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "It skips leading whitespace before reading a value."
+        },
+        {
+          "id": "b",
+          "text": "Reading into a std::string stops at the first whitespace."
+        },
+        {
+          "id": "c",
+          "text": "It reads spaces into a std::string by default."
+        },
+        {
+          "id": "d",
+          "text": "Extractions can be chained, as in std::cin >> a >> b."
+        }
+      ],
+      "answer": {
+        "kind": "multi",
+        "optionIds": [
+          "a",
+          "b",
+          "d"
+        ]
+      },
+      "explanation": "operator>> skips leading whitespace by default and treats whitespace as the end of a string, so it cannot read spaces. It returns the stream itself, which is what makes chaining possible; use getline to read a whole line.",
+      "tags": [
+        "I/O",
+        "Whitespace"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-22-q06",
+      "type": "multi",
+      "prompt": "Which statements about std::cerr and std::clog are true? Select all that apply.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "下列關於 std::cerr 與 std::clog 的敘述，哪些是正確的？可多選。"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "兩者預設都寫入標準錯誤串流"
+          },
+          "b": {
+            "zh-Hant": "std::cerr 每次輸出後即刷新，std::clog 則會緩衝"
+          },
+          "c": {
+            "zh-Hant": "兩者與 std::cout 共用同一個緩衝區"
+          },
+          "d": {
+            "zh-Hant": "std::clog 通常用來輸出必須立即出現的互動提示"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "cerr 與 clog 都連到標準錯誤，但 cerr 為 unitbuf、會立即刷新，clog 有緩衝；需要即時出現的訊息應使用 cerr。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "Both write to the standard error stream by default."
+        },
+        {
+          "id": "b",
+          "text": "std::cerr flushes after each output operation, while std::clog is buffered."
+        },
+        {
+          "id": "c",
+          "text": "Both share std::cout's buffer."
+        },
+        {
+          "id": "d",
+          "text": "std::clog is the usual choice for interactive prompts that must appear immediately."
+        }
+      ],
+      "answer": {
+        "kind": "multi",
+        "optionIds": [
+          "a",
+          "b"
+        ]
+      },
+      "explanation": "cerr and clog both target standard error, but cerr is unit-buffered and flushes immediately, whereas clog buffers its output. Immediate messages belong on cerr, not clog, and neither shares cout's buffer.",
+      "tags": [
+        "I/O",
+        "Streams"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-22-q07",
+      "type": "boolean",
+      "prompt": "The statement `std::cout << \"a\" << \"b\";` prints ab because operator<< returns the stream, which allows chaining.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "`std::cout << \"a\" << \"b\";` 會印出 ab，因為 operator<< 會回傳串流本身，所以可以串接。"
+        },
+        "explanation": {
+          "zh-Hant": "operator<< 回傳 std::ostream&，因此前一次插入的結果可以繼續接受下一次插入。"
+        }
+      },
+      "answer": {
+        "kind": "boolean",
+        "value": true
+      },
+      "explanation": "operator<< returns std::ostream&, so the result of one insertion can be used as the left operand of the next, which is exactly how chaining works.",
+      "tags": [
+        "I/O",
+        "Chaining"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-22-q08",
+      "type": "boolean",
+      "prompt": "After `std::cin >> n;`, a following `std::getline(std::cin, line);` may read an empty line because the newline typed after the number is still in the buffer.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "執行 `std::cin >> n;` 之後緊接著 `std::getline(std::cin, line);`，可能讀到空字串，因為數字後面輸入的換行還留在緩衝區。"
+        },
+        "explanation": {
+          "zh-Hant": ">> 讀完數字就停住，換行留在緩衝區；getline 一看到換行就回傳空字串。常見解法是先 cin.ignore() 丟掉換行。"
+        }
+      },
+      "answer": {
+        "kind": "boolean",
+        "value": true
+      },
+      "explanation": "operator>> stops right after the number and leaves the newline in the input buffer, so the next getline immediately sees a newline and returns an empty string. Calling std::cin.ignore() first discards it.",
+      "tags": [
+        "I/O",
+        "getline"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-22-q09",
+      "type": "fill",
+      "prompt": "The manipulator that inserts a newline and flushes the stream is ____.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "會插入換行並刷新串流的操縱器是 ____。"
+        },
+        "explanation": {
+          "zh-Hant": "std::endl 先插入換行再呼叫 flush()；若不需要立即刷新，用 '\\n' 較有效率。"
+        }
+      },
+      "answer": {
+        "kind": "fill",
+        "accept": [
+          "endl",
+          "std::endl"
+        ],
+        "ignoreCase": true,
+        "ignoreSpaces": true
+      },
+      "explanation": "std::endl inserts a newline and then flushes the stream. When immediate flushing is not needed, '\\n' avoids the extra flush.",
+      "tags": [
+        "I/O",
+        "endl"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-22-q10",
+      "type": "short",
+      "prompt": "In one or two sentences, explain why writing thousands of lines with std::endl inside a loop can be slower than writing '\\n'.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "用一至兩句說明：為什麼在迴圈中用 std::endl 輸出數千行，會比用 '\\n' 慢？"
+        },
+        "model": {
+          "zh-Hant": "std::endl 每輸出一次就呼叫 flush()，等於每一行都要求作業系統把緩衝區寫出去，系統呼叫與等待的成本很高；'\\n' 只把字元放進緩衝區，等緩衝區滿或程式結束時才一次寫出，因此批次寫入快得多。"
+        },
+        "explanation": {
+          "zh-Hant": "關鍵在於刷新次數：每行刷新會造成大量小規模的系統呼叫，而換行字元讓輸出自然批次處理。"
+        }
+      },
+      "answer": {
+        "kind": "short",
+        "model": "std::endl flushes the stream every time, so each line forces the buffered data out to the operating system, which is expensive when repeated thousands of times. A plain '\\n' only appends a character to the buffer, and the buffer is written out in large blocks when it fills or the program exits, so far fewer system calls are made.",
+        "keywords": [
+          "endl",
+          "flush",
+          "buffer",
+          "system call",
+          "newline"
+        ]
+      },
+      "explanation": "The cost is the number of flushes: flushing every line produces many small writes, while '\\n' lets the buffer batch the output.",
+      "tags": [
+        "I/O",
+        "Buffering"
+      ],
+      "difficulty": 3
+    }
+  ]
+}

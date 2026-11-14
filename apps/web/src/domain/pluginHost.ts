@@ -1,4 +1,4 @@
-import type { Deck, QuestionMedia } from '@mengyin/core';
+import { examMinutesForQuestions, type Deck, type Question, type QuestionMedia } from '@mengyin/core';
 import {
   adaptDeck,
   parseDeckFile,
@@ -405,6 +405,66 @@ export function removeDeckFromLocalPlugins(
     return decks.length > 0 ? [{ ...record, decks }] : [];
   });
   return { records: next, removed };
+}
+
+export interface LocalDeckEdit {
+  /** New deck name, already trimmed by the caller. */
+  title: string;
+  /** Question ids to keep, in the order they should remain. */
+  questionIds: readonly string[];
+}
+
+export interface UpdateLocalDeckResult {
+  records: LocalPluginRecord[];
+  updated: boolean;
+}
+
+/**
+ * Apply a rename/question-prune to the local copy of a deck. Questions are
+ * matched by id so every kept question keeps its original object (and inline
+ * images); a generated one-deck plugin also follows its deck's new name.
+ *
+ * The caller is responsible for refusing an edit that would leave no questions:
+ * such a deck is never written, because the deck schema requires at least one.
+ */
+export function updateDeckInLocalPlugins(
+  records: readonly LocalPluginRecord[],
+  key: string,
+  edit: LocalDeckEdit,
+): UpdateLocalDeckResult {
+  let updated = false;
+  const next = records.map((record) => {
+    const index = record.decks.findIndex((deck) => deck.key === key);
+    if (index < 0) return record;
+    const deck = record.decks[index];
+    if (!deck) return record;
+
+    const byId = new Map(deck.questions.map((question) => [question.id, question]));
+    const questions = edit.questionIds
+      .map((id) => byId.get(id))
+      .filter((question): question is Question => Boolean(question));
+    if (questions.length === 0) return record;
+
+    updated = true;
+    const editedDeck: Deck = {
+      ...deck,
+      title: edit.title,
+      questions,
+      examMinutes: examMinutesForQuestions(questions),
+    };
+    const decks = record.decks.map((candidate, deckIndex) =>
+      deckIndex === index ? editedDeck : candidate,
+    );
+    // The manifest is the plugin's display name. Generated plugins hold one
+    // deck, so leaving the old name here made Decks show the previous title
+    // beside the renamed deck.
+    const manifest =
+      isGeneratedLocalPlugin(record) && record.decks.length === 1
+        ? { ...record.manifest, name: edit.title }
+        : record.manifest;
+    return { ...record, decks, manifest };
+  });
+  return { records: updated ? next : [...records], updated };
 }
 
 export async function loadPersistedLocalPlugins(): Promise<LocalPluginRecord[]> {

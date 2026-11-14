@@ -227,7 +227,9 @@ export function PricingPage() {
 
                   <p className="plan-card__models">
                     <span className="field__label">{t('pricing.models')}</span>
-                    {plan.models.map(modelLabel).join(' · ')}
+                    {plan.models.length > 0
+                      ? plan.models.map(modelLabel).join(' · ')
+                      : t('pricing.noAiModel')}
                   </p>
 
                   <button

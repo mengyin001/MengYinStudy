@@ -13,7 +13,7 @@ import { backend } from '@/services';
 import { BackendError, fail, ok, toBackendError, type ServiceResult } from '@/services/errors';
 import type { UserCollection, UserCollectionInput } from '@/services/types';
 import { appStore, STORAGE_KEYS } from '@/lib/storage';
-import { normalizeDeckKeys } from '@/domain/collections';
+import { isOfficialPackCollection, normalizeDeckKeys } from '@/domain/collections';
 import { createRefreshGuard, type RefreshGuard } from './refreshGuard';
 import { useAuth } from './AuthContext';
 
@@ -65,7 +65,12 @@ function reducer(state: CollectionsState, action: Action): CollectionsState {
 
 export interface CollectionsActions {
   refresh(): Promise<void>;
-  create(input: { name: string; description?: string | null }): Promise<ServiceResult<UserCollection>>;
+  create(input: {
+    id?: string;
+    name: string;
+    description?: string | null;
+    deckKeys?: string[];
+  }): Promise<ServiceResult<UserCollection>>;
   update(
     id: string,
     patch: { name?: string; description?: string | null; deckKeys?: string[] },
@@ -217,10 +222,10 @@ export function CollectionsProvider({ children }: { children: ReactNode }) {
       try {
         const [saved] = await persist([
           {
-            id: createId('col'),
+            id: input.id?.trim().slice(0, 128) || createId('col'),
             name,
             description: cleanDescription(input.description),
-            deckKeys: [],
+            deckKeys: normalizeDeckKeys(input.deckKeys ?? []),
           },
         ]);
         if (!saved) return fail(new BackendError('unknown', 'The collection was not returned.'));
@@ -332,6 +337,8 @@ export function CollectionsProvider({ children }: { children: ReactNode }) {
       const wanted = new Set(collectionIds);
       const inputs: UserCollectionInput[] = [];
       for (const collection of state.collections) {
+        // Official pack collections mirror the catalogue and stay read-only.
+        if (isOfficialPackCollection(collection.id)) continue;
         const has = collection.deckKeys.includes(deckKey);
         const should = wanted.has(collection.id);
         if (has === should) continue;

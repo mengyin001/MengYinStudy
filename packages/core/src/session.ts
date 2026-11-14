@@ -1,3 +1,4 @@
+import { applyAnswerStreak } from './answerStreak';
 import { createId } from './ids';
 import { grade as gradeAnswer, isAnswered } from './grading';
 import { mulberry32, shuffle, toSeed } from './rng';
@@ -65,6 +66,8 @@ export function createSession(input: CreateSessionInput): Session {
     reveal: input.reveal ?? input.mode !== 'exam',
     requeueMissed: input.requeueMissed ?? input.mode === 'drill',
     finished: false,
+    answerStreak: 0,
+    bestAnswerStreak: 0,
   };
 }
 
@@ -89,23 +92,34 @@ export function submitAnswer(
   const item = currentItem(session);
   if (!item || item.result) return session;
   const result = grader(item.entry.question, answer);
-  return replaceCurrent(session, {
-    answer,
-    result,
-    msSpent: item.msSpent + Math.max(0, msSpent),
-    skipped: false,
-  });
+  const streak = applyAnswerStreak(
+    session.mode,
+    { current: session.answerStreak, best: session.bestAnswerStreak },
+    result.status,
+  );
+  return replaceCurrent(
+    { ...session, answerStreak: streak.current, bestAnswerStreak: streak.best },
+    {
+      answer,
+      result,
+      msSpent: item.msSpent + Math.max(0, msSpent),
+      skipped: false,
+    },
+  );
 }
 
 export function skipCurrent(session: Session, msSpent: number): Session {
   const item = currentItem(session);
   if (!item || item.result) return session;
-  return replaceCurrent(session, {
-    result: { status: 'incorrect', ratio: 0 },
-    msSpent: item.msSpent + Math.max(0, msSpent),
-    skipped: true,
-    answer: null,
-  });
+  return replaceCurrent(
+    { ...session, answerStreak: 0 },
+    {
+      result: { status: 'incorrect', ratio: 0 },
+      msSpent: item.msSpent + Math.max(0, msSpent),
+      skipped: true,
+      answer: null,
+    },
+  );
 }
 
 export function toggleFlag(session: Session): Session {
@@ -147,7 +161,8 @@ export function gradeSession(session: Session, grader: Grader = defaultGrader, n
     const result = grader(item.entry.question, item.answer);
     return { ...item, result, skipped: result.status === 'pending' };
   });
-  return { ...session, items, endedAt: now, finished: true };
+  // Exams are marked as one batch, so no answer run exists to celebrate.
+  return { ...session, items, endedAt: now, finished: true, answerStreak: 0, bestAnswerStreak: 0 };
 }
 
 export function goTo(session: Session, index: number): Session {
@@ -267,6 +282,7 @@ export function summarize(session: Session): SessionSummary {
     skipped,
     score: total === 0 ? 0 : Math.round((ratio / total) * 100),
     msSpent,
+    bestAnswerStreak: session.mode === 'exam' ? 0 : Math.max(0, session.bestAnswerStreak),
     byTag,
   };
 }

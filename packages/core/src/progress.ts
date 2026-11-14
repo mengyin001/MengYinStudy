@@ -18,6 +18,10 @@ export interface Settings {
   showTimer: boolean;
   /** Reveal the answer immediately in practice mode. */
   revealInPractice: boolean;
+  /** A short chime when consecutive correct answers start adding up. */
+  soundEffects: boolean;
+  /** Confetti and the milestone card at 3, 5, 10… correct answers in a row. */
+  streakEffects: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -30,6 +34,8 @@ export const DEFAULT_SETTINGS: Settings = {
   shuffleOptions: true,
   showTimer: true,
   revealInPractice: true,
+  soundEffects: true,
+  streakEffects: true,
 };
 
 /**

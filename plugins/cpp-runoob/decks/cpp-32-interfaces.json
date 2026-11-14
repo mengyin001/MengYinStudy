@@ -1,0 +1,242 @@
+{
+  "id": "cpp-32-interfaces",
+  "title": "C++ Interfaces (Abstract Classes)",
+  "titleI18n": { "zh-Hant": "C++ 介面（抽象類）" },
+  "description": "How C++ expresses interfaces with pure virtual functions and abstract classes: declaring a contract, implementing it, multiple inheritance for interfaces, and destroying polymorphic objects safely.",
+  "descriptionI18n": {
+    "zh-Hant": "C++ 如何以純虛擬函式與抽象類表達介面：宣告契約、實作介面、以多重繼承組合介面，以及安全地銷毀多型物件。"
+  },
+  "tags": ["C++", "Interfaces"],
+  "examMinutes": 14,
+  "questions": [
+    {
+      "id": "cpp-32-q01",
+      "type": "single",
+      "prompt": "What makes a class abstract in C++?",
+      "i18n": {
+        "prompt": { "zh-Hant": "在 C++ 中，是甚麼讓一個類別成為抽象類？" },
+        "options": {
+          "a": { "zh-Hant": "它宣告了至少一個純虛擬函式" },
+          "b": { "zh-Hant": "它的所有成員函式都是虛擬函式" },
+          "c": { "zh-Hant": "它的建構函式被宣告為 private" },
+          "d": { "zh-Hant": "它以 `abstract` 關鍵字宣告" }
+        },
+        "explanation": {
+          "zh-Hant": "只要宣告或繼承至少一個純虛擬函式（以 `= 0` 宣告），類別就是抽象類。私有建構函式只是限制建立物件的方式，C++ 並沒有 `abstract` 關鍵字。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "It declares at least one pure virtual function." },
+        { "id": "b", "text": "All of its member functions are virtual." },
+        { "id": "c", "text": "Its constructor is declared private." },
+        { "id": "d", "text": "It is declared with the `abstract` keyword." }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "A class is abstract when it declares or inherits at least one pure virtual function (declared with `= 0`). A private constructor only restricts how objects are created, and C++ has no `abstract` keyword.",
+      "tags": ["Abstract classes", "Pure virtual"],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-32-q02",
+      "type": "single",
+      "prompt": "`Shape` declares a pure virtual function. What happens when you write `Shape s;`?",
+      "i18n": {
+        "prompt": { "zh-Hant": "`Shape` 宣告了一個純虛擬函式。若寫下 `Shape s;` 會怎樣？" },
+        "options": {
+          "a": { "zh-Hant": "編譯錯誤：抽象類不可建立物件" },
+          "b": { "zh-Hant": "可以編譯，但呼叫純虛擬函式時在執行期拋出例外" },
+          "c": { "zh-Hant": "可以編譯，物件的虛擬表是空的" },
+          "d": { "zh-Hant": "只有在 Shape 有虛擬解構函式時才能編譯" }
+        },
+        "explanation": {
+          "zh-Hant": "抽象類別無法實體化，編譯器會直接拒絕 `Shape s;`；只能宣告 Shape 的指標或參考，並讓它們指向具體的衍生類別物件。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "A compile error: an abstract class cannot be instantiated." },
+        { "id": "b", "text": "It compiles, but calling the pure virtual function throws at run time." },
+        { "id": "c", "text": "It compiles, and the object's virtual table is empty." },
+        { "id": "d", "text": "It compiles only if Shape has a virtual destructor." }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "Abstract classes cannot be instantiated, so the compiler rejects `Shape s;`. You may only declare pointers or references to Shape and bind them to concrete derived objects.",
+      "tags": ["Abstract classes", "Instantiation"],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-32-q03",
+      "type": "boolean",
+      "prompt": "An abstract class may still have data members and ordinary (non-virtual) member functions that derived classes inherit.",
+      "i18n": {
+        "prompt": { "zh-Hant": "抽象類仍然可以有資料成員與一般（非虛擬）成員函式，供衍生類別繼承。" },
+        "explanation": {
+          "zh-Hant": "抽象與否只取決於是否有純虛擬函式；抽象類仍可擁有狀態、輔助函式，甚至建構函式（由衍生類別的建構函式呼叫）。"
+        }
+      },
+      "answer": { "kind": "boolean", "value": true },
+      "explanation": "Abstractness only depends on having a pure virtual function. The class can still carry state, helper functions and even a constructor, which derived constructors call.",
+      "tags": ["Abstract classes"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-32-q04",
+      "type": "boolean",
+      "prompt": "C++ provides an `interface` keyword for declaring interfaces.",
+      "i18n": {
+        "prompt": { "zh-Hant": "C++ 提供了 `interface` 關鍵字來宣告介面。" },
+        "explanation": {
+          "zh-Hant": "C++ 沒有 `interface` 關鍵字（Java、C# 才有）；介面是一種慣例——只含純虛擬函式與虛擬解構函式的抽象類。"
+        }
+      },
+      "answer": { "kind": "boolean", "value": false },
+      "explanation": "C++ has no `interface` keyword (unlike Java or C#). An interface is a convention: an abstract class with only pure virtual functions plus a virtual destructor.",
+      "tags": ["Interfaces", "Syntax"],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-32-q05",
+      "type": "multi",
+      "prompt": "Which statements about pure virtual functions are correct? Select all that apply.",
+      "i18n": {
+        "prompt": { "zh-Hant": "下列關於純虛擬函式的敘述，哪些正確？可多選。" },
+        "options": {
+          "a": { "zh-Hant": "在函式宣告後加上 `= 0` 即可宣告" },
+          "b": { "zh-Hant": "仍可在類別外提供定義，供衍生類別明確呼叫" },
+          "c": { "zh-Hant": "宣告它的類別會成為抽象類" },
+          "d": { "zh-Hant": "必須是 private，衍生類別才無法覆寫" }
+        },
+        "explanation": {
+          "zh-Hant": "`virtual void draw() = 0;` 會使類別成為抽象類。純虛擬函式仍可在類別外提供本體（例如 `void Base::draw() {}`），衍生類別可用 `Base::draw()` 明確呼叫；存取權限與抽象性無關。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "They are declared by appending `= 0` to the function declaration." },
+        { "id": "b", "text": "They may still have a definition outside the class that derived classes can call explicitly." },
+        { "id": "c", "text": "A class that declares one becomes abstract." },
+        { "id": "d", "text": "They must be private, otherwise derived classes could override them." }
+      ],
+      "answer": { "kind": "multi", "optionIds": ["a", "b", "c"] },
+      "explanation": "`virtual void draw() = 0;` makes the class abstract, yet the function may still have an out-of-class body such as `void Base::draw() {}` that a derived override calls as `Base::draw()`. Access specifiers do not affect abstractness.",
+      "tags": ["Pure virtual", "Abstract classes"],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-32-q06",
+      "type": "multi",
+      "prompt": "Which statements about implementing several interfaces with multiple inheritance are correct? Select all that apply.",
+      "i18n": {
+        "prompt": { "zh-Hant": "下列關於以多重繼承實作多個介面的敘述，哪些正確？可多選。" },
+        "options": {
+          "a": { "zh-Hant": "一個類別可以繼承多個介面類" },
+          "b": { "zh-Hant": "若介面沒有資料成員，就不會出現典型的菱形資料問題" },
+          "c": { "zh-Hant": "一個覆寫可同時滿足兩個介面宣告的相同純虛擬函式" },
+          "d": { "zh-Hant": "基底清單中的每個介面都必須以虛擬繼承，否則無法編譯" }
+        },
+        "explanation": {
+          "zh-Hant": "多重介面繼承合法且常見。兩個基底宣告相同簽章的純虛擬函式，可由衍生類別的一個覆寫同時滿足；只有當共用的非虛擬基底會被重複複製（例如含資料成員）時才需要虛擬繼承，並非一律要求。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "A class may inherit from more than one interface class." },
+        { "id": "b", "text": "If the interfaces have no data members, the classic diamond data problem does not arise." },
+        { "id": "c", "text": "One override can satisfy the same pure virtual function declared in two different interfaces." },
+        { "id": "d", "text": "Every interface in the base list must be inherited virtually, or the program will not compile." }
+      ],
+      "answer": { "kind": "multi", "optionIds": ["a", "b", "c"] },
+      "explanation": "Multiple interface inheritance is legal and common. The same signature inherited from two bases is overridden by a single derived function, and virtual inheritance is only needed when a shared non-virtual base would be duplicated, not as a blanket rule.",
+      "tags": ["Multiple inheritance", "Interfaces"],
+      "difficulty": 4
+    },
+    {
+      "id": "cpp-32-q07",
+      "type": "fill",
+      "prompt": "A pure virtual function is declared by appending `= ____` to its declaration.",
+      "i18n": {
+        "prompt": { "zh-Hant": "純虛擬函式是在宣告後加上 `= ____` 來表示。" },
+        "explanation": {
+          "zh-Hant": "`= 0` 語法把函式標記為純虛擬，並使類別成為抽象類；它不是函式的初始值。"
+        }
+      },
+      "answer": { "kind": "fill", "accept": ["0", "zero", "零"], "ignoreSpaces": true },
+      "explanation": "The `= 0` syntax marks the function pure virtual and makes the class abstract. It is a declarator, not an initializer for the function.",
+      "tags": ["Pure virtual", "Syntax"],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-32-q08",
+      "type": "short",
+      "prompt": "Why should an abstract base class that is deleted through a base-class pointer have a virtual destructor?",
+      "i18n": {
+        "prompt": { "zh-Hant": "為甚麼透過基底類別指標刪除物件時，抽象基底類別必須有虛擬解構函式？" },
+        "model": {
+          "zh-Hant": "透過基底指標刪除物件時，若解構函式不是虛擬的，只會靜態呼叫基底解構函式，衍生類別的成員與資源不會被釋放，行為未定義。加上虛擬解構函式後會先執行衍生解構函式，再執行基底解構函式，因此介面通常宣告 `virtual ~Interface() = default;`。"
+        },
+        "explanation": {
+          "zh-Hant": "沒有 `virtual` 時，`delete basePtr` 只會執行基底解構函式，衍生部分會洩漏；加上後會先執行衍生解構函式，再執行基底解構函式。"
+        }
+      },
+      "answer": {
+        "kind": "short",
+        "model": "Deleting through a base pointer calls the destructor statically unless it is virtual. A virtual destructor makes the derived destructor run, so derived members and their resources are released; otherwise the behaviour is undefined. An interface therefore normally declares `virtual ~Interface() = default;`.",
+        "keywords": ["virtual destructor", "base pointer", "derived destructor", "undefined behaviour", "cleanup"]
+      },
+      "explanation": "Without `virtual`, `delete basePtr` runs only the base destructor and the derived part leaks; with it, the derived destructor runs first, then the base destructor.",
+      "tags": ["Virtual destructor", "Polymorphism"],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-32-q09",
+      "type": "single",
+      "prompt": "How does a general C++ abstract class differ from a pure interface (a protocol)?",
+      "i18n": {
+        "prompt": { "zh-Hant": "一般的 C++ 抽象類與純介面（協定）有甚麼差別？" },
+        "options": {
+          "a": { "zh-Hant": "抽象類可以有資料與已實作的成員，純介面只宣告契約" },
+          "b": { "zh-Hant": "抽象類不能有建構函式，介面則可以" },
+          "c": { "zh-Hant": "抽象類必須標記 `final` 才能被繼承" },
+          "d": { "zh-Hant": "純介面必須以 `interface` 關鍵字宣告" }
+        },
+        "explanation": {
+          "zh-Hant": "介面是抽象類的特例：只含純虛擬函式（加上虛擬解構函式）。一般抽象類還可以有狀態、protected 輔助函式與已實作的方法，因此混合了契約與實作。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "An abstract class may carry data and implemented members, while a pure interface only declares a contract." },
+        { "id": "b", "text": "An abstract class cannot have a constructor, but an interface can." },
+        { "id": "c", "text": "An abstract class must be marked `final` before it can be inherited." },
+        { "id": "d", "text": "A pure interface must be declared with the `interface` keyword." }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "An interface is the limiting case of an abstract class: only pure virtual functions plus a virtual destructor. A general abstract class can also hold state, protected helpers and implemented methods, mixing contract with implementation.",
+      "tags": ["Interfaces", "Abstract classes"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-32-q10",
+      "type": "single",
+      "prompt": "A derived class declares new members but does not override the base's pure virtual function. What is the result?",
+      "i18n": {
+        "prompt": { "zh-Hant": "衍生類別宣告了新成員，但沒有覆寫基底的純虛擬函式，結果是？" },
+        "options": {
+          "a": { "zh-Hant": "衍生類別仍是抽象類，建立其物件會編譯失敗" },
+          "b": { "zh-Hant": "衍生類別變成具體類，呼叫時在執行期中止" },
+          "c": { "zh-Hant": "只有在呼叫該函式時，連結器才回報缺少符號" },
+          "d": { "zh-Hant": "編譯器會產生一個不做事項的預設本體" }
+        },
+        "explanation": {
+          "zh-Hant": "抽象性會繼承：在每個純虛擬函式都被覆寫之前，衍生類別仍是抽象類，無法建立物件，但仍可宣告其指標或參考。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "The derived class is itself abstract, and creating an object of it is a compile error." },
+        { "id": "b", "text": "The derived class becomes concrete and the call aborts at run time." },
+        { "id": "c", "text": "The linker reports a missing symbol only when the function is called." },
+        { "id": "d", "text": "The compiler generates a default body that does nothing." }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "Abstractness is inherited: the derived class stays abstract until every pure virtual function has an override. Only then can it be instantiated, although pointers and references to it are still allowed.",
+      "tags": ["Abstract classes", "Override"],
+      "difficulty": 2
+    }
+  ]
+}

@@ -13,7 +13,9 @@ import {
   type PlazaPackView,
   type PlazaSort,
 } from '@/domain/plaza';
+import { OFFICIAL_PACK_COLLECTION_PREFIX } from '@/domain/collections';
 import { entriesForDeck, type DeckView } from '@/domain/library';
+import { localizeDeck } from '@/domain/localize';
 import { questionTypeLabel } from '@/domain/registry';
 import { describeBackendError } from '@/i18n/backend';
 import type { MessageKey } from '@/i18n/messages';
@@ -21,6 +23,7 @@ import { formatDate, pct, shorten } from '@/lib/format';
 import { navigate } from '@/lib/router';
 import { useApp } from '@/state/AppContext';
 import { useAuth } from '@/state/AuthContext';
+import { useCollections } from '@/state/CollectionsContext';
 import { useOfficialContent } from '@/state/OfficialContentContext';
 import { officialDeckKey, useUserLibrary } from '@/state/UserLibraryContext';
 
@@ -37,6 +40,7 @@ export function PlazaPage() {
   const { state: auth } = useAuth();
   const { state: official, sync } = useOfficialContent();
   const { state: library, keys, actions: libraryActions } = useUserLibrary();
+  const { state: collections, actions: collectionActions } = useCollections();
   const [query, setQuery] = useState('');
   const [tag, setTag] = useState<string | null>(null);
   const [sort, setSort] = useState<PlazaSort>('recommended');
@@ -44,7 +48,16 @@ export function PlazaPage() {
   const [sheetId, setSheetId] = useState<string | null>(null);
   const [previewKey, setPreviewKey] = useState<string | null>(null);
 
-  const packs = useMemo(() => buildPlazaPacks(official.packs), [official.packs]);
+  // The catalogue ships bilingual decks; show the interface language.
+  const localizedPacks = useMemo(
+    () =>
+      official.packs.map((pack) => ({
+        ...pack,
+        decks: pack.decks.map((deck) => localizeDeck(deck, locale)),
+      })),
+    [official.packs, locale],
+  );
+  const packs = useMemo(() => buildPlazaPacks(localizedPacks), [localizedPacks]);
   const tags = useMemo(() => collectTags(packs, 6), [packs]);
   const viewByKey = useMemo(
     () => new Map<string, DeckProgressLookup>(deckViews.map((view) => [view.deck.key, view])),
@@ -179,6 +192,26 @@ export function PlazaPage() {
     actions.notify('success', t('plaza.addedToast'));
   };
 
+  /**
+   * A catalogue pack is also a collection in the learner's library. The decks
+   * stay hidden from the flat deck list and are browsed through this card.
+   */
+  const syncPackCollection = async (pack: PlazaPackView, userId: string) => {
+    const id = `${userId}:${OFFICIAL_PACK_COLLECTION_PREFIX}${pack.id}`;
+    const deckKeys = pack.decks.map((item) => item.deck.key);
+    const existing = collections.collections.find((item) => item.id === id);
+    if (existing) {
+      const merged = [...new Set([...existing.deckKeys, ...deckKeys])];
+      return collectionActions.setDecks(id, merged);
+    }
+    return collectionActions.create({
+      id,
+      name: pack.name,
+      description: pack.description ?? null,
+      deckKeys,
+    });
+  };
+
   const addPack = async (pack: PlazaPackView, deckIds: readonly string[]) => {
     if (!auth.user) {
       login();
@@ -191,6 +224,10 @@ export function PlazaPage() {
     if (!result.ok) {
       actions.notify('error', describeBackendError(result.error, t));
       return;
+    }
+    const collection = await syncPackCollection(pack, auth.user.id);
+    if (!collection.ok) {
+      actions.notify('error', describeBackendError(collection.error, t));
     }
     const { added, failed } = result.value;
     if (failed > 0) {
@@ -240,6 +277,10 @@ export function PlazaPage() {
       actions.notify('error', describeBackendError(result.error, t));
       return;
     }
+    const collection = await syncPackCollection(pack, auth.user.id);
+    if (!collection.ok) {
+      actions.notify('error', describeBackendError(collection.error, t));
+    }
     const value = result.value;
     if (value.failed > 0) {
       actions.notify('error', t('plaza.batchPartialToast', { added: value.added, failed: value.failed }));
@@ -264,15 +305,9 @@ export function PlazaPage() {
     const batchKey = `pack:${pack.id}`;
 
     if (missing.length > 0) {
-      const label = !auth.user
-        ? t('plaza.signInToAdd')
-        : missing.length === pack.deckCount
-          ? missing.length === 1
-            ? t('plaza.addOne')
-            : t('plaza.addAll', { n: missing.length })
-          : missing.length === 1
-            ? t('plaza.addRestOne')
-            : t('plaza.addRest', { n: missing.length });
+      // A catalogue pack is one course: add every missing deck in one action
+      // instead of asking the learner to add banks one at a time.
+      const label = !auth.user ? t('plaza.signInToAdd') : t('plaza.addCollection');
       return (
         <button
           type="button"
@@ -456,7 +491,6 @@ export function PlazaPage() {
               {filtering
                 ? t('plaza.showing', { shown: visiblePacks.length, total: packsLabel })
                 : t('plaza.count', { packs: packsLabel, added: addedDecksLabel })}
-              {official.version ? ` · ${t('plaza.catalogueVersion', { version: official.version })}` : ''}
             </span>
           </div>
 
@@ -544,7 +578,6 @@ export function PlazaPage() {
                           {pack.name}
                         </button>
                         <span className="badge badge--official">{t('official.badge')}</span>
-                        <span className="course__version">v{pack.version}</span>
                         {progress?.complete ? (
                           <span className="badge badge--ok">{t('plaza.complete')}</span>
                         ) : null}

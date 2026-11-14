@@ -16,6 +16,7 @@ describe('SEO files', () => {
       'https://study.mengyin.online/',
       'https://study.mengyin.online/privacy/',
       'https://study.mengyin.online/terms/',
+      'https://study.mengyin.online/guide/',
     ]);
 
     for (const loc of locs) {
@@ -25,11 +26,34 @@ describe('SEO files', () => {
     }
   });
 
+  it('emits a sitemap document, never an HTML page', () => {
+    const xml = renderSitemap(FALLBACK_SITE_ORIGIN);
+    expect(xml.startsWith('<?xml version="1.0" encoding="UTF-8"?>')).toBe(true);
+    expect(xml).not.toMatch(/<html[\s>]/i);
+    expect(xml).not.toContain('<body');
+  });
+
   it('gives every URL a real lastmod date', () => {
     const xml = renderSitemap(FALLBACK_SITE_ORIGIN);
     expect(xml.match(/<lastmod>\d{4}-\d{2}-\d{2}<\/lastmod>/g)).toHaveLength(
       sitemapRoutes().length,
     );
+  });
+
+  it('appends official collection and bank routes without duplicates', () => {
+    const routes = sitemapRoutes([
+      { path: '/banks/', lastmod: '2026-11-08' },
+      { path: '/banks/cpp-runoob/', lastmod: '2026-11-08' },
+      { path: '/banks/cpp-runoob/cpp-01-tutorial/', lastmod: '2026-11-08' },
+      { path: '/guide/', lastmod: '2026-11-15' },
+    ]);
+    const xml = renderSitemap(FALLBACK_SITE_ORIGIN, routes);
+
+    expect(routes.filter((route) => route.path === '/guide/')).toHaveLength(1);
+    expect(xml).toContain('https://study.mengyin.online/banks/');
+    expect(xml).toContain('https://study.mengyin.online/banks/cpp-runoob/');
+    expect(xml).toContain('https://study.mengyin.online/banks/cpp-runoob/cpp-01-tutorial/');
+    expect(xml.match(/<url>/g)).toHaveLength(routes.length);
   });
 
   it('points robots.txt at the sitemap without blocking the app shell', () => {

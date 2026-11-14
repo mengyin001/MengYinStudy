@@ -164,6 +164,68 @@ describe('deleting a cloud deck', () => {
   });
 });
 
+describe('updating an existing generated deck', () => {
+  it('replaces the title and questions and keeps the plugin module', async () => {
+    let updateValues: Record<string, unknown> | null = null;
+    const prunedQuestion = { ...question, id: 'q2', prompt: 'Which number is odd?' };
+    const client = {
+      auth: {
+        getSession: async () => ({ data: { session: { user: { id: 'u1' } } }, error: null }),
+      },
+      storage: {
+        from: () => ({
+          remove: async () => ({ error: null }),
+        }),
+      },
+      from: () => ({
+        select: () => ({
+          eq: () => ({
+            maybeSingle: async () => ({ data: { id: 'row-1', questions: [question] }, error: null }),
+          }),
+        }),
+        update: (values: Record<string, unknown>) => {
+          updateValues = values;
+          return {
+            eq: () => ({
+              select: () => ({
+                single: async () => ({
+                  data: row({
+                    title: values.title,
+                    questions: values.questions,
+                    entry_source: values.entry_source,
+                    exam_minutes: values.exam_minutes,
+                  }),
+                  error: null,
+                }),
+              }),
+            }),
+          };
+        },
+      }),
+    } as unknown as SupabaseClientLike;
+
+    const saved = await createSupabaseUserDeckService(client).upsert({
+      clientKey: 'ai.numbers::basics',
+      pluginId: 'ai.numbers',
+      deckId: 'basics',
+      title: 'Renamed deck',
+      tags: ['Numbers'],
+      questions: [prunedQuestion] as never,
+      examMinutes: 1,
+      entrySource: 'export default {}',
+    });
+
+    expect(updateValues).toMatchObject({
+      title: 'Renamed deck',
+      questions: [prunedQuestion],
+      exam_minutes: 1,
+      entry_source: 'export default {}',
+    });
+    expect(saved.title).toBe('Renamed deck');
+    expect(saved.questions.map((item) => item.id)).toEqual(['q2']);
+  });
+});
+
 describe('uploading a deck another writer just created', () => {
   it('falls back to an update when the insert hits the unique key', async () => {
     let selects = 0;

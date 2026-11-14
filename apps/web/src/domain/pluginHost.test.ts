@@ -5,6 +5,7 @@ import {
   canSeeLocalPlugin,
   isGeneratedLocalPlugin,
   removeDeckFromLocalPlugins,
+  updateDeckInLocalPlugins,
   type LocalPluginRecord,
 } from './pluginHost';
 
@@ -71,5 +72,85 @@ describe('removing a local deck', () => {
     const result = removeDeckFromLocalPlugins([record({ decks: [one] })], two.key);
     expect(result.removed).toBe(false);
     expect(result.records).toHaveLength(1);
+  });
+});
+
+describe('editing a local deck', () => {
+  const question = (id: string) => ({
+    id,
+    type: 'single',
+    prompt: `Question ${id}`,
+    options: [
+      { id: 'a', text: 'A' },
+      { id: 'b', text: 'B' },
+    ],
+    answer: { kind: 'single', optionId: 'a' },
+    tags: [],
+    difficulty: 1,
+  });
+  const q1 = question('q1');
+  const q2 = question('q2');
+  const q3 = question('q3');
+  const deck = {
+    key: 'ai.test::one',
+    id: 'one',
+    pluginId: 'ai.test',
+    title: 'Old name',
+    tags: [],
+    questions: [q1, q2, q3],
+    examMinutes: 99,
+  } as unknown as Deck;
+
+  it('renames the deck, drops the removed question and keeps the others by identity', () => {
+    const result = updateDeckInLocalPlugins([record({ decks: [deck] })], deck.key, {
+      title: 'New name',
+      questionIds: ['q1', 'q3'],
+    });
+
+    expect(result.updated).toBe(true);
+    const edited = result.records[0]?.decks[0];
+    expect(edited?.title).toBe('New name');
+    expect(edited?.questions.map((item) => item.id)).toEqual(['q1', 'q3']);
+    expect(edited?.questions[0]).toBe(q1);
+    expect(edited?.questions[1]).toBe(q3);
+    // The old declared length no longer matches the pruned question set.
+    expect(edited?.examMinutes).not.toBe(99);
+    expect(edited?.examMinutes).toBeGreaterThan(0);
+  });
+
+  it('keeps the generated plugin name in step with its only deck', () => {
+    const result = updateDeckInLocalPlugins([record({ decks: [deck] })], deck.key, {
+      title: 'New name',
+      questionIds: ['q1', 'q2', 'q3'],
+    });
+    expect(result.records[0]?.manifest.name).toBe('New name');
+  });
+
+  it('does not rename the plugin of an imported folder', () => {
+    const result = updateDeckInLocalPlugins(
+      [record({ origin: 'imported', decks: [deck] })],
+      deck.key,
+      { title: 'New name', questionIds: ['q1', 'q2', 'q3'] },
+    );
+    expect(result.records[0]?.decks[0]?.title).toBe('New name');
+    expect(result.records[0]?.manifest.name).toBe('Test');
+  });
+
+  it('never writes an empty question list', () => {
+    const result = updateDeckInLocalPlugins([record({ decks: [deck] })], deck.key, {
+      title: 'New name',
+      questionIds: ['gone'],
+    });
+    expect(result.updated).toBe(false);
+    expect(result.records[0]?.decks[0]?.title).toBe('Old name');
+  });
+
+  it('leaves records that do not contain the deck alone', () => {
+    const result = updateDeckInLocalPlugins([record({ decks: [deck] })], 'ai.test::other', {
+      title: 'New name',
+      questionIds: ['q1'],
+    });
+    expect(result.updated).toBe(false);
+    expect(result.records[0]?.decks[0]?.title).toBe('Old name');
   });
 });

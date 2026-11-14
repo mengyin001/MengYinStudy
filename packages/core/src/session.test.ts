@@ -8,6 +8,7 @@ import {
   gradeSession,
   progressOf,
   setDraftAnswer,
+  skipCurrent,
   submitAnswer,
   summarize,
 } from './session';
@@ -105,6 +106,42 @@ describe('session flow', () => {
     session = submitAnswer(session, { kind: 'single', optionId: 'x' }, 10);
     expect(session.items[0]?.result?.status).toBe('incorrect');
     expect(session).toEqual(graded);
+  });
+});
+
+describe('answer streak', () => {
+  it('counts a run and keeps the best after a miss', () => {
+    let session = createSession({ mode: 'practice', entries, shuffle: false });
+    expect(session.answerStreak).toBe(0);
+    expect(session.bestAnswerStreak).toBe(0);
+
+    session = submitAnswer(session, { kind: 'single', optionId: 'x' }, 10);
+    expect(session.answerStreak).toBe(1);
+    session = advance(session);
+    session = submitAnswer(session, { kind: 'boolean', value: false }, 10);
+    expect(session.answerStreak).toBe(0);
+    expect(session.bestAnswerStreak).toBe(1);
+
+    expect(summarize(session).bestAnswerStreak).toBe(1);
+  });
+
+  it('resets the run when a question is skipped', () => {
+    let session = createSession({ mode: 'practice', entries, shuffle: false });
+    session = submitAnswer(session, { kind: 'single', optionId: 'x' }, 10);
+    session = advance(session);
+    session = skipCurrent(session, 10);
+    expect(session.answerStreak).toBe(0);
+    expect(session.bestAnswerStreak).toBe(1);
+  });
+
+  it('keeps exams out of the streak', () => {
+    let session = createSession({ mode: 'exam', entries, shuffle: false });
+    session = setDraftAnswer(session, 0, { kind: 'single', optionId: 'x' });
+    session = setDraftAnswer(session, 1, { kind: 'boolean', value: true });
+    session = gradeSession(session);
+    expect(session.answerStreak).toBe(0);
+    expect(session.bestAnswerStreak).toBe(0);
+    expect(summarize(session).bestAnswerStreak).toBe(0);
   });
 });
 

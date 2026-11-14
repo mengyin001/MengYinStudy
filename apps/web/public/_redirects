@@ -8,3 +8,14 @@
 /terms /terms/ 301
 /privacy.html /privacy/ 301
 /terms.html /terms/ 301
+
+# The guide and official catalogue are static pages with directory indexes.
+/banks /banks/ 301
+/guide /guide/ 301
+
+# Common sitemap typos should still reach the XML file. Submitting the bare
+# domain, or robots.txt, is not a sitemap and Search Console reports it as HTML.
+/sitemap /sitemap.xml 301
+/sitemap.xml/ /sitemap.xml 301
+/sitemap_index.xml /sitemap.xml 301
+/sitemap-index.xml /sitemap.xml 301

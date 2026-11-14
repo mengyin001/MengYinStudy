@@ -1,0 +1,242 @@
+{
+  "id": "cpp-40-multithreading",
+  "title": "C++ Multithreading",
+  "titleI18n": { "zh-Hant": "C++ 多執行緒" },
+  "description": "Concurrency in modern C++: std::thread, join and detach, mutexes and locks, atomics, condition variables, async and future, plus the causes of data races and deadlock.",
+  "descriptionI18n": {
+    "zh-Hant": "現代 C++ 的併發：std::thread、join 與 detach、互斥鎖與鎖管理器、原子操作、條件變數、async 與 future，以及資料競爭與死鎖的成因。"
+  },
+  "tags": ["C++", "Concurrency"],
+  "examMinutes": 17,
+  "questions": [
+    {
+      "id": "cpp-40-q01",
+      "type": "single",
+      "prompt": "Which header must be included to use std::thread?",
+      "i18n": {
+        "prompt": { "zh-Hant": "要使用 std::thread，必須包含哪一個標頭檔？" },
+        "options": {
+          "a": { "zh-Hant": "<thread>" },
+          "b": { "zh-Hant": "<mutex>" },
+          "c": { "zh-Hant": "<future>" },
+          "d": { "zh-Hant": "<atomic>" }
+        },
+        "explanation": {
+          "zh-Hant": "<thread> 宣告 std::thread 與 std::this_thread；<mutex> 提供鎖，<future> 提供非同步結果，<atomic> 提供原子型別。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "<thread>" },
+        { "id": "b", "text": "<mutex>" },
+        { "id": "c", "text": "<future>" },
+        { "id": "d", "text": "<atomic>" }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "<thread> declares std::thread and std::this_thread. <mutex> supplies locks, <future> supplies asynchronous results, and <atomic> supplies atomic types.",
+      "tags": ["Threads", "Headers"],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-40-q02",
+      "type": "single",
+      "prompt": "What does calling t.join() on a std::thread do?",
+      "i18n": {
+        "prompt": { "zh-Hant": "對 std::thread 呼叫 t.join() 會做甚麼？" },
+        "options": {
+          "a": { "zh-Hant": "阻塞呼叫端，直到該執行緒結束。" },
+          "b": { "zh-Hant": "分離該執行緒，讓它獨立執行。" },
+          "c": { "zh-Hant": "立刻取消該執行緒。" },
+          "d": { "zh-Hant": "回傳該執行緒產生的值。" }
+        },
+        "explanation": {
+          "zh-Hant": "join 會等待執行緒結束；每個可 join 的執行緒必須 join 或 detach 一次，否則解構時會呼叫 std::terminate。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "It blocks the caller until the thread finishes." },
+        { "id": "b", "text": "It detaches the thread so it runs independently." },
+        { "id": "c", "text": "It cancels the thread immediately." },
+        { "id": "d", "text": "It returns the value produced by the thread." }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "join waits for the thread to finish. Every joinable thread must be joined or detached exactly once; destroying a joinable std::thread without either calls std::terminate.",
+      "tags": ["Threads", "join"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-40-q03",
+      "type": "single",
+      "prompt": "Which declaration gives a counter that several threads can increment safely without a mutex?",
+      "i18n": {
+        "prompt": { "zh-Hant": "哪一個宣告能讓多個執行緒在不用互斥鎖的情況下安全地遞增計數器？" },
+        "options": {
+          "a": { "zh-Hant": "std::atomic<int> counter{0};" },
+          "b": { "zh-Hant": "int counter = 0;" },
+          "c": { "zh-Hant": "volatile int counter = 0;" },
+          "d": { "zh-Hant": "static int counter = 0;" }
+        },
+        "explanation": {
+          "zh-Hant": "std::atomic<int> 的 ++ 是單一不可分割的讀-改-寫；volatile 不提供原子性，只用於特殊記憶體存取。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "std::atomic<int> counter{0};" },
+        { "id": "b", "text": "int counter = 0;" },
+        { "id": "c", "text": "volatile int counter = 0;" },
+        { "id": "d", "text": "static int counter = 0;" }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "Incrementing a std::atomic<int> is one indivisible read-modify-write, so two threads cannot lose an update. volatile only prevents some optimisations and gives no atomicity; plain int and static int race.",
+      "tags": ["Threads", "atomic"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-40-q04",
+      "type": "single",
+      "prompt": "What does std::async(std::launch::async, work) return?",
+      "i18n": {
+        "prompt": { "zh-Hant": "std::async(std::launch::async, work) 會回傳甚麼？" },
+        "options": {
+          "a": { "zh-Hant": "一個 std::future，之後可取得 work 的結果。" },
+          "b": { "zh-Hant": "一個 std::thread 物件。" },
+          "c": { "zh-Hant": "立刻回傳 work 的結果值。" },
+          "d": { "zh-Hant": "一個 std::promise。" }
+        },
+        "explanation": {
+          "zh-Hant": "std::async 回傳 std::future，get() 會等待並取得結果；std::launch::async 要求真的開新執行緒執行。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "A std::future that will hold the result of work." },
+        { "id": "b", "text": "A std::thread object." },
+        { "id": "c", "text": "The result of work, returned immediately." },
+        { "id": "d", "text": "A std::promise." }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "std::async returns a std::future; calling get() waits for the task and yields its result. std::launch::async forces a new thread instead of allowing deferred execution.",
+      "tags": ["Threads", "async", "future"],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-40-q05",
+      "type": "multi",
+      "prompt": "Which of these prevent data races on shared data? Select all that apply.",
+      "i18n": {
+        "prompt": { "zh-Hant": "下列哪些做法可以避免共用資料發生資料競爭？可多選。" },
+        "options": {
+          "a": { "zh-Hant": "以 std::mutex 搭配 std::lock_guard 保護每一次存取。" },
+          "b": { "zh-Hant": "計數器之類的簡單共享值改用 std::atomic。" },
+          "c": { "zh-Hant": "把共用變數宣告為 volatile。" },
+          "d": { "zh-Hant": "讓每個執行緒各自持有資料的副本。" }
+        },
+        "explanation": {
+          "zh-Hant": "互斥鎖、原子操作與「不共用」都能消除資料競爭；volatile 不提供原子性也不建立 happens-before 關係。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "Guarding every access with a std::mutex and std::lock_guard." },
+        { "id": "b", "text": "Using std::atomic for a simple shared counter." },
+        { "id": "c", "text": "Declaring the shared variable volatile." },
+        { "id": "d", "text": "Giving each thread its own copy of the data." }
+      ],
+      "answer": { "kind": "multi", "optionIds": ["a", "b", "d"] },
+      "explanation": "A mutex, an atomic operation, or removing the sharing entirely all rule out a data race. volatile does not make access atomic and establishes no happens-before relationship, so it is not a synchronisation tool in C++.",
+      "tags": ["Threads", "Data races", "Synchronisation"],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-40-q06",
+      "type": "multi",
+      "prompt": "Which practices help avoid deadlock? Select all that apply.",
+      "i18n": {
+        "prompt": { "zh-Hant": "下列哪些做法有助於避免死鎖？可多選。" },
+        "options": {
+          "a": { "zh-Hant": "用 std::scoped_lock 或 std::lock 一次取得多個互斥鎖。" },
+          "b": { "zh-Hant": "所有執行緒都依相同的全域順序取得鎖。" },
+          "c": { "zh-Hant": "持有鎖時等待使用者輸入或網路回應。" },
+          "d": { "zh-Hant": "縮短臨界區，並避免在持鎖時呼叫未知的程式碼。" }
+        },
+        "explanation": {
+          "zh-Hant": "一致的取得順序與原子式多鎖取得可避免循環等待；持鎖做長時間等待或呼叫未知程式碼則會增加死鎖風險。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "Acquiring several mutexes at once with std::scoped_lock or std::lock." },
+        { "id": "b", "text": "Having every thread acquire mutexes in the same global order." },
+        { "id": "c", "text": "Holding a lock while waiting for user input or a network reply." },
+        { "id": "d", "text": "Keeping critical sections short and avoiding unknown code while holding a lock." }
+      ],
+      "answer": { "kind": "multi", "optionIds": ["a", "b", "d"] },
+      "explanation": "A consistent lock order and atomic multi-lock acquisition rule out the circular wait that causes deadlock, and short critical sections reduce the window. Holding a lock across a slow wait or a callback is exactly what creates deadlocks.",
+      "tags": ["Threads", "Deadlock"],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-40-q07",
+      "type": "boolean",
+      "prompt": "After detach() the std::thread object is no longer joinable, and the underlying thread continues running independently.",
+      "i18n": {
+        "prompt": { "zh-Hant": "呼叫 detach() 之後，std::thread 物件不再是可 join 的，而底層執行緒會繼續獨立執行。" },
+        "explanation": {
+          "zh-Hant": "detach 把執行緒與 thread 物件分離，之後不能再 join；程式結束時分離的執行緒會被強制結束，因此要自行確保它不再碰已銷毀的資料。"
+        }
+      },
+      "answer": { "kind": "boolean", "value": true },
+      "explanation": "detach severs the association: the std::thread object becomes non-joinable while the thread keeps running. The program must then guarantee that the detached thread does not touch objects that have already been destroyed.",
+      "tags": ["Threads", "detach"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-40-q08",
+      "type": "boolean",
+      "prompt": "std::condition_variable::wait can be called with a std::lock_guard<std::mutex>.",
+      "i18n": {
+        "prompt": { "zh-Hant": "std::condition_variable::wait 可以接受 std::lock_guard<std::mutex> 作為參數。" },
+        "explanation": {
+          "zh-Hant": "wait 必須在等待時解鎖、醒來後重新上鎖，因此需要 std::unique_lock；lock_guard 無法解鎖，編譯不會通過。"
+        }
+      },
+      "answer": { "kind": "boolean", "value": false },
+      "explanation": "wait must unlock the mutex while waiting and lock it again on wake-up, so it requires std::unique_lock. A std::lock_guard cannot be unlocked and does not compile here.",
+      "tags": ["Threads", "condition_variable"],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-40-q09",
+      "type": "fill",
+      "prompt": "The static member function std::thread::____ returns a hint at the number of threads the hardware can run concurrently.",
+      "i18n": {
+        "prompt": { "zh-Hant": "靜態成員函式 std::thread::____ 會回傳硬體可同時執行的執行緒數量提示。" },
+        "explanation": {
+          "zh-Hant": "std::thread::hardware_concurrency() 回傳邏輯處理器數量的提示值，也可能回傳 0 表示無法判斷。"
+        }
+      },
+      "answer": { "kind": "fill", "accept": ["hardware_concurrency", "hardware_concurrency()"], "ignoreCase": true },
+      "explanation": "std::thread::hardware_concurrency() returns a hint at the number of logical processors, and may return 0 when the value cannot be determined. Treat it as an upper bound, not a guarantee.",
+      "tags": ["Threads", "hardware_concurrency"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-40-q10",
+      "type": "short",
+      "prompt": "Explain the difference between a data race and a race condition.",
+      "i18n": {
+        "prompt": { "zh-Hant": "說明「資料競爭」與「競態條件」的差別。" },
+        "model": {
+          "zh-Hant": "資料競爭是明確的未定義行為：兩個執行緒同時存取同一記憶體位置，至少有一個寫入，且沒有同步機制排序這些存取。競態條件範圍更廣：即使每次存取都正確上鎖，只要結果取決於時序，就仍是競態條件；因此用互斥鎖修掉資料競爭，不一定消除邏輯上的競態條件。"
+        },
+        "explanation": {
+          "zh-Hant": "資料競爭是語言層級的記憶體存取問題；競態條件是設計層級的時序問題，兩者常同時出現但並不相等。"
+        }
+      },
+      "answer": {
+        "kind": "short",
+        "model": "A data race is specific undefined behaviour: two threads access the same memory location concurrently, at least one writes, and no synchronisation orders the accesses. A race condition is broader: the result depends on timing even when every access is properly locked. Fixing the data race with a mutex does not necessarily remove the logical race condition.",
+        "keywords": ["undefined behaviour", "concurrent", "write", "timing", "synchronisation"]
+      },
+      "explanation": "A data race is a language-level memory access defect, while a race condition is a design-level timing defect. They often appear together but are not the same thing.",
+      "tags": ["Threads", "Data races", "Race conditions"],
+      "difficulty": 4
+    }
+  ]
+}

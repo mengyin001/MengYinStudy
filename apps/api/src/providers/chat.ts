@@ -52,6 +52,11 @@ export interface ChatOptions {
   jsonMode?: boolean;
   /** Retry transient failures; default true (up to five attempts). */
   retry?: boolean;
+  /**
+   * Force a non-streaming JSON reply. The key test uses this because a provider
+   * that holds an SSE connection open would otherwise look like a hang.
+   */
+  stream?: boolean;
 }
 
 export interface ChatModel {
@@ -480,7 +485,7 @@ export function createOpenAiChatModel(config: OpenAiChatConfig): ChatModel {
       let lastError: unknown;
       for (let attempt = 0; attempt < attempts; attempt += 1) {
         try {
-          return await postChat(config, messages, options, true);
+          return await postChat(config, messages, options, true, options.stream !== false);
         } catch (error) {
           lastError = error;
           const retryable = error instanceof AiError && error.retryable;

@@ -1,0 +1,468 @@
+{
+  "id": "cpp-37-templates",
+  "title": "C++ Templates",
+  "titleI18n": {
+    "zh-Hant": "C++ 樣板"
+  },
+  "description": "Function and class templates: how generic code is declared, deduced, specialised and instantiated. Covers non-type parameters, variadic templates, concepts, and why template code lives in headers.",
+  "descriptionI18n": {
+    "zh-Hant": "函式樣板與類別樣板：泛型程式碼如何宣告、推導、特化與具現化。涵蓋非型別參數、可變參數樣板、概念（concepts），以及為何樣板程式碼要放在標頭檔。"
+  },
+  "tags": [
+    "C++",
+    "Templates"
+  ],
+  "examMinutes": 16,
+  "questions": [
+    {
+      "id": "cpp-37-q01",
+      "type": "single",
+      "prompt": "Which keyword introduces a template declaration in C++?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "在 C++ 中，哪一個關鍵字用來引入樣板宣告？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "template"
+          },
+          "b": {
+            "zh-Hant": "typename"
+          },
+          "c": {
+            "zh-Hant": "class"
+          },
+          "d": {
+            "zh-Hant": "concept"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "template 開始一個樣板宣告，參數列放在角括號內，例如 template <typename T> T twice(T v)。typename 或 class 只是用來宣告型別參數。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "template"
+        },
+        {
+          "id": "b",
+          "text": "typename"
+        },
+        {
+          "id": "c",
+          "text": "class"
+        },
+        {
+          "id": "d",
+          "text": "concept"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "template begins the declaration; the parameter list follows in angle brackets, for example template <typename T> T twice(T value). typename and class only introduce a type parameter inside that list.",
+      "tags": [
+        "Templates",
+        "Syntax"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-37-q02",
+      "type": "single",
+      "prompt": "Given template <typename T> T maxOf(T a, T b); which call relies on template argument deduction?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "已知 template <typename T> T maxOf(T a, T b);，下列哪一個呼叫依賴樣板引數推導？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "maxOf(3, 5)"
+          },
+          "b": {
+            "zh-Hant": "maxOf<int>(3, 5)"
+          },
+          "c": {
+            "zh-Hant": "maxOf<int, int>(3, 5)"
+          },
+          "d": {
+            "zh-Hant": "maxOf(3, 5.0)"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "maxOf(3, 5) 由引數推導出 T = int。maxOf<int>(3, 5) 是明確指定、不靠推導；maxOf<int, int> 給了太多樣板引數；maxOf(3, 5.0) 對 T 推導出衝突的型別而失敗。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "maxOf(3, 5)"
+        },
+        {
+          "id": "b",
+          "text": "maxOf<int>(3, 5)"
+        },
+        {
+          "id": "c",
+          "text": "maxOf<int, int>(3, 5)"
+        },
+        {
+          "id": "d",
+          "text": "maxOf(3, 5.0)"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "maxOf(3, 5) lets the compiler deduce T = int from the two arguments. maxOf<int>(3, 5) names the argument explicitly, maxOf<int, int> passes more template arguments than the template declares, and maxOf(3, 5.0) deduces conflicting types for T and fails.",
+      "tags": [
+        "Templates",
+        "Deduction"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-37-q03",
+      "type": "single",
+      "prompt": "Which of these can be partially specialised?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "下列哪一項可以部分特化？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "類別樣板"
+          },
+          "b": {
+            "zh-Hant": "函式樣板"
+          },
+          "c": {
+            "zh-Hant": "非樣板的普通函式"
+          },
+          "d": {
+            "zh-Hant": "命名空間"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "只有類別樣板（與變數樣板）可以部分特化。函式樣板只能全部特化，或改用多載；C++ 不允許函式樣板的部分特化。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "A class template"
+        },
+        {
+          "id": "b",
+          "text": "A function template"
+        },
+        {
+          "id": "c",
+          "text": "A non-template function"
+        },
+        {
+          "id": "d",
+          "text": "A namespace"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "Only class templates (and variable templates) support partial specialisation. A function template may be fully specialised or simply overloaded, but the language has no partial specialisation for function templates.",
+      "tags": [
+        "Templates",
+        "Specialisation"
+      ],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-37-q04",
+      "type": "single",
+      "prompt": "In `template <typename... Ts> void f(Ts... args);`, what is `Ts`?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "在 `template <typename... Ts> void f(Ts... args);` 中，`Ts` 是甚麼？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "樣板參數包"
+          },
+          "b": {
+            "zh-Hant": "函式參數包"
+          },
+          "c": {
+            "zh-Hant": "初始化清單"
+          },
+          "d": {
+            "zh-Hant": "摺疊運算式"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "Ts 是樣板參數包；`Ts... args` 把它展開成函式參數包 args，sizeof...(Ts) 可取得引數數量。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "A template parameter pack"
+        },
+        {
+          "id": "b",
+          "text": "A function parameter pack"
+        },
+        {
+          "id": "c",
+          "text": "An initializer list"
+        },
+        {
+          "id": "d",
+          "text": "A fold expression"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "Ts is the template parameter pack; `Ts... args` expands it into the function parameter pack args, and sizeof...(Ts) yields the number of arguments.",
+      "tags": [
+        "Templates",
+        "Variadic"
+      ],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-37-q05",
+      "type": "multi",
+      "prompt": "Which statements about template definitions and headers are correct? Select all that apply.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "關於樣板定義與標頭檔，下列哪些敘述正確？可多選。"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "定義通常寫在標頭檔，讓每個編譯單元都能具現化。"
+          },
+          "b": {
+            "zh-Hant": "編譯器在具現化點必須看得見完整定義。"
+          },
+          "c": {
+            "zh-Hant": "在標頭留下宣告並在某個 .cpp 明確具現化，定義就可以放在該 .cpp。"
+          },
+          "d": {
+            "zh-Hant": "樣板會像普通函式一樣只編譯一次並連結。"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "樣板在每個使用它的編譯單元各自具現化，因此定義必須可見。若在某個 .cpp 用 template class Foo<int>; 明確具現化，其他地方只需看到宣告。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "The definition is usually placed in a header so every translation unit can instantiate it."
+        },
+        {
+          "id": "b",
+          "text": "The compiler must see the complete definition at the point of instantiation."
+        },
+        {
+          "id": "c",
+          "text": "A declaration in the header plus explicit instantiation in one .cpp file allows the definition to live in that .cpp file."
+        },
+        {
+          "id": "d",
+          "text": "A template is compiled exactly once into a shared object and then linked like an ordinary function."
+        }
+      ],
+      "answer": {
+        "kind": "multi",
+        "optionIds": [
+          "a",
+          "b",
+          "c"
+        ]
+      },
+      "explanation": "Templates are instantiated separately in each translation unit that uses them, so the definition must be visible there. Explicit instantiation such as template class Foo<int>; lets one .cpp provide the generated code while other files only see the declaration.",
+      "tags": [
+        "Templates",
+        "Headers",
+        "Instantiation"
+      ],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-37-q06",
+      "type": "multi",
+      "prompt": "Which statements about C++20 concepts are correct? Select all that apply.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "關於 C++20 的概念（concepts），下列哪些敘述正確？可多選。"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "概念限制樣板可以接受哪些型別。"
+          },
+          "b": {
+            "zh-Hant": "加上概念限制後，引數不符時通常能得到更清楚的診斷訊息。"
+          },
+          "c": {
+            "zh-Hant": "概念在編譯期檢查，程式執行前就完成。"
+          },
+          "d": {
+            "zh-Hant": "概念是每次呼叫時執行的執行期斷言。"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "概念是編譯期的具名限制，例如 template <std::integral T>；它不會產生執行期檢查，也不會取代樣板本身。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "A concept restricts which types a template accepts."
+        },
+        {
+          "id": "b",
+          "text": "A constrained template usually gives clearer diagnostics when an argument does not satisfy the constraint."
+        },
+        {
+          "id": "c",
+          "text": "A concept is checked at compile time, before the program runs."
+        },
+        {
+          "id": "d",
+          "text": "A concept is a runtime assertion evaluated on every call."
+        }
+      ],
+      "answer": {
+        "kind": "multi",
+        "optionIds": [
+          "a",
+          "b",
+          "c"
+        ]
+      },
+      "explanation": "Concepts are named compile-time constraints, for example template <std::integral T> T add(T a, T b). They add no runtime check, cost nothing at run time, and do not replace templates; they make template errors far easier to read.",
+      "tags": [
+        "Templates",
+        "Concepts",
+        "C++20"
+      ],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-37-q07",
+      "type": "boolean",
+      "prompt": "A non-type template parameter such as template <int N> may be supplied at run time by an ordinary function argument.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "像 template <int N> 這樣的非型別樣板參數，可以由一般函式引數在執行期提供。"
+        },
+        "explanation": {
+          "zh-Hant": "非型別樣板參數必須是編譯期常數運算式，例如 3 或 sizeof(int)；執行期才決定的值不能拿來具現化樣板。"
+        }
+      },
+      "answer": {
+        "kind": "boolean",
+        "value": false
+      },
+      "explanation": "A non-type template argument must be a constant expression known at compile time, such as 3, sizeof(int) or a constexpr value. A value that only exists at run time cannot instantiate a template.",
+      "tags": [
+        "Templates",
+        "Non-type parameters"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-37-q08",
+      "type": "boolean",
+      "prompt": "A class template may declare several type parameters, for example template <typename K, typename V> class Map, and a full specialisation provides a complete definition for one exact argument list.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "類別樣板可以宣告多個型別參數，例如 template <typename K, typename V> class Map；而全部特化會為某一組確切的引數提供完整定義。"
+        },
+        "explanation": {
+          "zh-Hant": "類別樣板可以有多個型別參數，也可以有非型別參數；全部特化 template <> class Map<int, int> 就是為該組合另寫一份完整定義。"
+        }
+      },
+      "answer": {
+        "kind": "boolean",
+        "value": true
+      },
+      "explanation": "Class templates accept any number of type and non-type parameters. A full specialisation such as template <> class Map<int, int> { ... }; replaces the whole definition for exactly that argument list.",
+      "tags": [
+        "Templates",
+        "Specialisation",
+        "Parameters"
+      ],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-37-q09",
+      "type": "fill",
+      "prompt": "The C++17 expression that applies an operator across every element of a parameter pack is called a ____ expression.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "C++17 中把運算子套用到參數包每個元素的運算式稱為 ____ 運算式。"
+        },
+        "explanation": {
+          "zh-Hant": "摺疊運算式例如 `(args + ...)`，會把參數包展開並以指定運算子合併。"
+        }
+      },
+      "answer": {
+        "kind": "fill",
+        "accept": [
+          "fold",
+          "摺疊",
+          "折疊"
+        ],
+        "ignoreCase": true,
+        "ignoreSpaces": true
+      },
+      "explanation": "A fold expression such as `(args + ...)` expands a pack over an operator.",
+      "tags": [
+        "Templates",
+        "C++17"
+      ],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-37-q10",
+      "type": "short",
+      "prompt": "In one or two sentences, explain why template definitions are usually placed in header files.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "用一至兩句說明為何樣板的定義通常放在標頭檔。"
+        },
+        "model": {
+          "zh-Hant": "因為編譯器必須看到完整定義，才能為每一組引數在該編譯單元具現化樣板，而每個編譯單元是各自獨立編譯的。把定義放在標頭檔可讓所有使用處都看得見；替代做法是在單一 .cpp 明確具現化，標頭只留宣告。"
+        },
+        "explanation": {
+          "zh-Hant": "關鍵在於樣板不是先編譯成機器碼再連結，而是在使用處即時具現化，所以定義必須可見。"
+        }
+      },
+      "answer": {
+        "kind": "short",
+        "model": "The compiler must see the complete definition to instantiate the template for each set of arguments, and every translation unit is compiled independently. Putting the definition in a header makes it visible wherever the template is used; the alternative is explicit instantiation in one .cpp file with only a declaration in the header.",
+        "keywords": [
+          "instantiate",
+          "definition",
+          "translation unit",
+          "header",
+          "visible"
+        ]
+      },
+      "explanation": "Templates are not compiled ahead of time into a single object; they are instantiated where they are used, so the definition must be visible in every translation unit that instantiates them.",
+      "tags": [
+        "Templates",
+        "Headers",
+        "Instantiation"
+      ],
+      "difficulty": 4
+    }
+  ]
+}

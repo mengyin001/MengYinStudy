@@ -38,6 +38,30 @@ function oneOf<T extends string>(value: unknown, allowed: readonly T[], fallback
     : fallback;
 }
 
+/** The learner's own provider credentials, from a request body. */
+export function parseOwnProvider(body: Record<string, unknown>): {
+  apiKey?: string;
+  apiBaseUrl?: string;
+  apiContextTokens?: number;
+} {
+  const apiKey = optionalApiKey(body.apiKey);
+  const apiBaseUrl = optionalPublicBaseUrl(body.apiBaseUrl);
+  const rawContext = body.apiContextTokens;
+  let apiContextTokens: number | undefined;
+  if (rawContext !== undefined && rawContext !== null && rawContext !== '') {
+    const parsed = Number(rawContext);
+    if (!Number.isSafeInteger(parsed) || parsed < 1_024 || parsed > 2_000_000) {
+      throw badRequest('apiContextTokens must be between 1,024 and 2,000,000.');
+    }
+    apiContextTokens = parsed;
+  }
+  return {
+    ...(apiKey ? { apiKey } : {}),
+    ...(apiBaseUrl ? { apiBaseUrl } : {}),
+    ...(apiContextTokens ? { apiContextTokens } : {}),
+  };
+}
+
 export interface NormalizedQuestionRequest {
   topic: string;
   count: number;
@@ -55,6 +79,67 @@ export interface NormalizedQuestionRequest {
   imageMode: AiImageMode;
   imageModel?: string;
   imageMax?: number;
+  /**
+   * The learner's own provider key for this request. Present means the server
+   * uses it instead of its own key and charges nothing.
+   */
+  apiKey?: string;
+  /** The learner's own OpenAI-compatible base URL, when they brought one. */
+  apiBaseUrl?: string;
+  /** The context window they said that model has, in tokens. */
+  apiContextTokens?: number;
+}
+
+/** Provider keys are single opaque tokens; anything else is rejected. */
+const API_KEY_PATTERN = /^[A-Za-z0-9._~+/=-]{8,200}$/;
+
+function optionalApiKey(value: unknown): string | undefined {
+  if (value === undefined || value === null || value === '') return undefined;
+  if (typeof value !== 'string') throw badRequest('apiKey must be a string.');
+  const trimmed = value.trim();
+  if (!API_KEY_PATTERN.test(trimmed)) {
+    throw badRequest('apiKey does not look like a provider key.');
+  }
+  return trimmed;
+}
+
+/**
+ * The base URL of a learner's own OpenAI-compatible provider.
+ *
+ * Only HTTPS to a public host is accepted: the Worker fetches this URL, so a
+ * loopback orprivate target would turn the endpoint into a request proxy.
+ */
+function optionalPublicBaseUrl(value: unknown): string | undefined {
+  if (value === undefined || value === null || value === '') return undefined;
+  if (typeof value !== 'string') throw badRequest('apiBaseUrl must be a string.');
+  let url: URL;
+  try {
+    url = new URL(value.trim().slice(0, 300));
+  } catch {
+    throw badRequest('apiBaseUrl must be a valid URL.');
+  }
+  if (url.protocol !== 'https:') throw badRequest('apiBaseUrl must use https.');
+  if (url.username || url.password) {
+    throw badRequest('apiBaseUrl must not contain credentials.');
+  }
+  const host = url.hostname.toLowerCase().replace(/^\[|\]$/g, '');
+  const privateV4 =
+    /^(0|10|127)\./.test(host) ||
+    /^192\.168\./.test(host) ||
+    /^169\.254\./.test(host) ||
+    /^172\.(1[6-9]|2\d|3[01])\./.test(host);
+  const blocked =
+    host === 'localhost' ||
+    host.endsWith('.localhost') ||
+    host.endsWith('.local') ||
+    host.endsWith('.internal') ||
+    host === '::1' ||
+    host.startsWith('fc') ||
+    host.startsWith('fd') ||
+    host.startsWith('fe80') ||
+    privateV4;
+  if (blocked) throw badRequest('apiBaseUrl must point at a public host.');
+  return `${url.origin}${url.pathname.replace(/\/+$/, '')}`;
 }
 
 export function parseQuestionRequest(value: unknown): NormalizedQuestionRequest {
@@ -97,6 +182,10 @@ export function parseQuestionRequest(value: unknown): NormalizedQuestionRequest 
   if (!model || model === 'auto') {
     throw badRequest('Choose a model for this generation.');
   }
+  const own = parseOwnProvider(body);
+  const apiKey = own.apiKey;
+  const apiBaseUrl = own.apiBaseUrl;
+  const apiContextTokens = own.apiContextTokens;
   // The deck has no separate image quota; one picture per question is the
   // natural ceiling. Storage (30 MB per account, including text) is the budget.
   const rawImageMax = body.imageMax === undefined ? undefined : Number(body.imageMax);
@@ -148,6 +237,9 @@ export function parseQuestionRequest(value: unknown): NormalizedQuestionRequest 
       : {}),
     model,
     imageMode,
+    ...(apiKey ? { apiKey } : {}),
+    ...(apiBaseUrl ? { apiBaseUrl } : {}),
+    ...(apiContextTokens ? { apiContextTokens } : {}),
     ...(optionalText(body.imageModel, 200) && optionalText(body.imageModel, 200) !== 'auto'
       ? { imageModel: optionalText(body.imageModel, 200) }
       : {}),

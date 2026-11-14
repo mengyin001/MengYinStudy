@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Icon } from '@/components/Icons';
 import { Meter, NumField, PageHead, Seg, Sheet, Switch } from '@/components/ui';
+import { testAiService } from '@/ai/api';
 import { docsUrl } from '@/lib/docs';
 import { formatBytes } from '@/lib/format';
 import { appStore } from '@/lib/storage';
@@ -11,6 +12,9 @@ import { USER_MEDIA_LIMIT_BYTES } from '@/services/supabase/userMedia';
 import { useApp } from '@/state/AppContext';
 import { useAuth } from '@/state/AuthContext';
 
+/** A key test is a health check; never leave the button spinning for minutes. */
+const KEY_TEST_TIMEOUT_MS = 25_000;
+
 export function SettingsPage() {
   const { state, entries, plugins, sync, t, actions } = useApp();
   const { state: auth } = useAuth();
@@ -18,6 +22,29 @@ export function SettingsPage() {
   const importInput = useRef<HTMLInputElement>(null);
   const [resetOpen, setResetOpen] = useState(false);
   const [mediaUsage, setMediaUsage] = useState<UserMediaUsage | null>(null);
+  const [apiKeyDraft, setApiKeyDraft] = useState(state.aiSettings.apiKey ?? '');
+  const [apiBaseDraft, setApiBaseDraft] = useState(state.aiSettings.apiBaseUrl ?? '');
+  const [apiModelDraft, setApiModelDraft] = useState(state.aiSettings.apiModel ?? '');
+  const [apiContextDraft, setApiContextDraft] = useState(
+    state.aiSettings.apiContextTokens ? String(state.aiSettings.apiContextTokens) : '',
+  );
+  const [keyTest, setKeyTest] = useState<{ ok: boolean; message: string } | null>(null);
+  const [testingKey, setTestingKey] = useState(false);
+
+  // Keep the fields in step when the key is cleared elsewhere or settings reload.
+  useEffect(() => {
+    setApiKeyDraft(state.aiSettings.apiKey ?? '');
+    setApiBaseDraft(state.aiSettings.apiBaseUrl ?? '');
+    setApiModelDraft(state.aiSettings.apiModel ?? '');
+    setApiContextDraft(
+      state.aiSettings.apiContextTokens ? String(state.aiSettings.apiContextTokens) : '',
+    );
+  }, [
+    state.aiSettings.apiKey,
+    state.aiSettings.apiBaseUrl,
+    state.aiSettings.apiModel,
+    state.aiSettings.apiContextTokens,
+  ]);
 
   useEffect(() => {
     let active = true;
@@ -42,6 +69,64 @@ export function SettingsPage() {
 
   const storageKind =
     appStore.kind === 'indexeddb' ? t('settings.storageIndexedDb') : t('settings.storageMemory');
+
+  /**
+   * Try the drafts (not the saved values) against the server's test endpoint,
+   * so a key can be checked before it is stored.
+   */
+  const testOwnKey = async () => {
+    if (!auth.user) return;
+    const key = apiKeyDraft.trim();
+    const model = apiModelDraft.trim();
+    if (!key || !model) {
+      setKeyTest({ ok: false, message: t('settings.testKeyNeed') });
+      return;
+    }
+    setTestingKey(true);
+    setKeyTest(null);
+    const controller = new AbortController();
+    let timedOut = false;
+    let rejectTimeout: (error: Error) => void = () => undefined;
+    const timeout = new Promise<never>((_, reject) => {
+      rejectTimeout = reject;
+    });
+    const timer = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+      rejectTimeout(new Error('timeout'));
+    }, KEY_TEST_TIMEOUT_MS);
+    try {
+      const result = await Promise.race([
+        testAiService(
+          {
+            model: 'own',
+            imageMode: state.aiSettings.imageMode,
+            imageModel: state.aiSettings.imageModel,
+            apiKey: key,
+            apiModel: model,
+            ...(apiBaseDraft.trim() ? { apiBaseUrl: apiBaseDraft.trim() } : {}),
+            ...(apiContextDraft.trim() ? { apiContextTokens: Number(apiContextDraft) } : {}),
+          },
+          controller.signal,
+        ),
+        timeout,
+      ]);
+      setKeyTest({ ok: true, message: t('settings.testKeyOk', { model: result.model }) });
+    } catch (caught) {
+      setKeyTest({
+        ok: false,
+        message:
+          timedOut || controller.signal.aborted
+            ? t('settings.testKeyTimeout')
+            : t('settings.testKeyFail', {
+                message: caught instanceof Error ? caught.message : String(caught),
+              }),
+      });
+    } finally {
+      clearTimeout(timer);
+      setTestingKey(false);
+    }
+  };
 
   return (
     <div className="page">
@@ -132,6 +217,30 @@ export function SettingsPage() {
 
           <div className="setting">
             <div className="setting__text">
+              <span className="setting__label">{t('settings.sound')}</span>
+              <span className="setting__hint">{t('settings.soundHint')}</span>
+            </div>
+            <Switch
+              checked={settings.soundEffects}
+              onChange={(soundEffects) => actions.updateSettings({ soundEffects })}
+              label={t('settings.sound')}
+            />
+          </div>
+
+          <div className="setting">
+            <div className="setting__text">
+              <span className="setting__label">{t('settings.streakEffects')}</span>
+              <span className="setting__hint">{t('settings.streakEffectsHint')}</span>
+            </div>
+            <Switch
+              checked={settings.streakEffects}
+              onChange={(streakEffects) => actions.updateSettings({ streakEffects })}
+              label={t('settings.streakEffects')}
+            />
+          </div>
+
+          <div className="setting">
+            <div className="setting__text">
               <span className="setting__label">{t('settings.timer')}</span>
             </div>
             <Switch
@@ -157,6 +266,123 @@ export function SettingsPage() {
 
       <section className="panel">
         <div className="panel__head">
+          <h2 className="panel__title">{t('settings.ownKey')}</h2>
+        </div>
+        <p className="footnote">{t('settings.ownKeyHint')}</p>
+        <div className="field-grid">
+          <label className="field">
+            <span className="field__label">{t('settings.ownKeyBase')}</span>
+            <input
+              type="url"
+              value={apiBaseDraft}
+              placeholder="https://api.deepseek.com/v1"
+              autoComplete="off"
+              spellCheck={false}
+              disabled={!auth.user}
+              onChange={(event) => setApiBaseDraft(event.target.value)}
+            />
+          </label>
+          <label className="field">
+            <span className="field__label">{t('settings.ownKeyModel')}</span>
+            <input
+              type="text"
+              value={apiModelDraft}
+              placeholder="deepseek-chat"
+              autoComplete="off"
+              spellCheck={false}
+              disabled={!auth.user}
+              onChange={(event) => setApiModelDraft(event.target.value)}
+            />
+          </label>
+          <label className="field">
+            <span className="field__label">{t('settings.ownKeyContext')}</span>
+            <input
+              type="number"
+              min={1024}
+              max={2000000}
+              step={1024}
+              value={apiContextDraft}
+              placeholder="128000"
+              disabled={!auth.user}
+              onChange={(event) => setApiContextDraft(event.target.value)}
+            />
+            <span className="field__hint">{t('settings.ownKeyContextHint')}</span>
+          </label>
+          <label className="field">
+            <span className="field__label">{t('settings.ownKeyLabel')}</span>
+            <input
+              type="password"
+              value={apiKeyDraft}
+              placeholder="sk-…"
+              autoComplete="off"
+              spellCheck={false}
+              disabled={!auth.user}
+              onChange={(event) => setApiKeyDraft(event.target.value)}
+            />
+            <span className="field__hint">
+              {auth.user
+                ? state.aiSettings.apiKey
+                  ? t('settings.ownKeySaved')
+                  : t('settings.ownKeyLocal')
+                : t('settings.ownKeySignIn')}
+            </span>
+          </label>
+        </div>
+        <div className="actions-row">
+          <button
+            type="button"
+            className="btn btn--sm"
+            disabled={!auth.user}
+            onClick={() =>
+              actions.updateAiSettings({
+                apiBaseUrl: apiBaseDraft.trim() || undefined,
+                apiModel: apiModelDraft.trim() || undefined,
+                apiContextTokens: apiContextDraft.trim() ? Number(apiContextDraft) : undefined,
+                apiKey: apiKeyDraft.trim() || undefined,
+              })
+            }
+          >
+            {t('settings.ownKeySave')}
+          </button>
+          <button
+            type="button"
+            className="btn btn--quiet btn--sm"
+            disabled={!auth.user || testingKey}
+            onClick={() => void testOwnKey()}
+          >
+            {testingKey ? t('settings.testingKey') : t('settings.testKey')}
+          </button>
+          {state.aiSettings.apiKey ? (
+            <button
+              type="button"
+              className="text-btn"
+              onClick={() => {
+                setApiKeyDraft('');
+                setApiBaseDraft('');
+                setApiModelDraft('');
+                setApiContextDraft('');
+                setKeyTest(null);
+                actions.updateAiSettings({
+                  apiKey: undefined,
+                  apiBaseUrl: undefined,
+                  apiModel: undefined,
+                  apiContextTokens: undefined,
+                });
+              }}
+            >
+              {t('settings.ownKeyClear')}
+            </button>
+          ) : null}
+        </div>
+        {keyTest ? (
+          <p className={`notice ${keyTest.ok ? '' : 'notice--warn'}`} role="status">
+            {keyTest.message}
+          </p>
+        ) : null}
+      </section>
+
+      <section className="panel">
+        <div className="panel__head">
           <h2 className="panel__title">{t('settings.goals')}</h2>
         </div>
 
@@ -173,13 +399,6 @@ export function SettingsPage() {
             step={5}
             onChange={(dailyTarget) => actions.updateSettings({ dailyTarget })}
           />
-        </div>
-
-        <div className="setting">
-          <div className="setting__text">
-            <span className="setting__label">{t('settings.examLength')}</span>
-            <span className="setting__hint">{t('settings.examLengthHint')}</span>
-          </div>
         </div>
 
         <div className="setting">

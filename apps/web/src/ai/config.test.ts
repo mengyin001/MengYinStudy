@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { aiApiBase, normalizeAiSettings } from './config';
 
 describe('AI settings', () => {
-  it('defaults to the free model instead of a server default', () => {
+  it('starts with nothing selected', () => {
     expect(normalizeAiSettings(undefined)).toEqual({
-      model: 'glm-4.7-flash',
+      model: '',
       imageMode: 'auto',
       imageModel: 'auto',
     });
@@ -22,27 +22,37 @@ describe('AI settings', () => {
     });
   });
 
-  it('migrates an old BYO-key configuration and drops the key', () => {
+  it('keeps the own provider fields and the old provider is dropped', () => {
     const migrated = normalizeAiSettings({
       baseUrl: 'https://api.deepseek.com/v1',
-      apiKey: 'sk-should-not-stay',
-      model: 'deepseek-chat',
+      apiKey: 'sk-own-key-123456',
+      apiBaseUrl: 'https://open.bigmodel.cn/api/paas/v4/',
+      apiModel: 'glm-4.7-flash',
+      apiContextTokens: '128000',
+      model: 'own',
       temperature: 0.4,
       jsonMode: true,
     });
     expect(migrated).toEqual({
-      model: 'glm-4.7-flash',
+      model: 'own',
       imageMode: 'auto',
       imageModel: 'auto',
+      apiKey: 'sk-own-key-123456',
+      apiBaseUrl: 'https://open.bigmodel.cn/api/paas/v4',
+      apiModel: 'glm-4.7-flash',
+      apiContextTokens: 128000,
     });
-    expect(JSON.stringify(migrated)).not.toContain('sk-should-not-stay');
+    expect(normalizeAiSettings({ apiKey: '   ' }).apiKey).toBeUndefined();
+    expect(normalizeAiSettings({ apiBaseUrl: 'http://insecure.test' }).apiBaseUrl).toBeUndefined();
+    expect(normalizeAiSettings({ apiContextTokens: 10 }).apiContextTokens).toBeUndefined();
   });
 
   it('drops models this release no longer sells', () => {
-    expect(normalizeAiSettings({ model: 'glm-4.6' }).model).toBe('glm-4.7-flash');
-    expect(normalizeAiSettings({ model: 'glm-5.3-flash' }).model).toBe('glm-4.7-flash');
-    expect(normalizeAiSettings({ model: 'auto' }).model).toBe('glm-4.7-flash');
+    expect(normalizeAiSettings({ model: 'glm-4.6' }).model).toBe('');
+    expect(normalizeAiSettings({ model: 'glm-5.3-flash' }).model).toBe('');
+    expect(normalizeAiSettings({ model: 'auto' }).model).toBe('');
     expect(normalizeAiSettings({ model: 'deepseek-flash' }).model).toBe('deepseek-flash');
+    expect(normalizeAiSettings({ model: 'own' }).model).toBe('own');
   });
 
   it('falls back to auto for an invalid image mode', () => {

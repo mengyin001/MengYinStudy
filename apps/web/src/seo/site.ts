@@ -16,15 +16,18 @@ export const FALLBACK_SITE_ORIGIN = 'https://study.mengyin.online';
  */
 export const LANDING_UPDATED = '2026-11-07';
 
+/** The study guide is a real static page; update this when its copy changes. */
+export const GUIDE_UPDATED = '2026-11-15';
+
 /**
  * Only these URLs are separate HTTP resources.
  *
  * The app is hash-routed, so `/#/today`, `/#/privacy` and `/#/terms` all return
  * the same document as `/`. Search engines do not index fragments as pages,
  * and a sitemap must not pretend they are separate URLs. The legal documents
- * are emitted as real static HTML by `vite.config.ts`.
+ * and the public guide are emitted as real static HTML by `vite.config.ts`.
  */
-export type SitemapPath = '/' | '/privacy/' | '/terms/';
+export type SitemapPath = string;
 
 export interface SitemapRoute {
   path: SitemapPath;
@@ -35,15 +38,23 @@ export function normalizeSiteOrigin(value: string | undefined): string {
   return (value ?? '').trim().replace(/\/+$/, '') || FALLBACK_SITE_ORIGIN;
 }
 
-export function sitemapRoutes(): SitemapRoute[] {
-  return [
+export function sitemapRoutes(extra: SitemapRoute[] = []): SitemapRoute[] {
+  const routes: SitemapRoute[] = [
     { path: '/', lastmod: LANDING_UPDATED },
     { path: '/privacy/', lastmod: LEGAL_UPDATED },
     { path: '/terms/', lastmod: LEGAL_UPDATED },
+    { path: '/guide/', lastmod: GUIDE_UPDATED },
   ];
+  const seen = new Set(routes.map((route) => route.path));
+  for (const route of extra) {
+    if (seen.has(route.path)) continue;
+    seen.add(route.path);
+    routes.push(route);
+  }
+  return routes;
 }
 
-const escapeXml = (value: string): string =>
+export const escapeHtml = (value: string): string =>
   value
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -51,9 +62,11 @@ const escapeXml = (value: string): string =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&apos;');
 
-export function renderSitemap(origin: string): string {
+const escapeXml = escapeHtml;
+
+export function renderSitemap(origin: string, routes: SitemapRoute[] = sitemapRoutes()): string {
   const base = normalizeSiteOrigin(origin);
-  const urls = sitemapRoutes()
+  const urls = routes
     .map(
       (route) =>
         `  <url>\n    <loc>${escapeXml(`${base}${route.path}`)}</loc>\n    <lastmod>${escapeXml(

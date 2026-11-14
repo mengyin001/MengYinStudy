@@ -151,6 +151,22 @@ export interface AiQuestionRequest {
   imageModel?: string;
   /** Upper bound on generated photos; diagrams are free and not counted. */
   imageMax?: number;
+  /**
+   * The learner's own provider key. When sent, the server uses it for this one
+   * request instead of its own key and charges no points; the key is never
+   * stored server-side. A free plan may use it to generate at its own cost.
+   */
+  apiKey?: string;
+  /**
+   * OpenAI-compatible base URL for the learner's own provider. With a key it
+   * lets any compatible model id through, not just the ones this server sells.
+   */
+  apiBaseUrl?: string;
+  /**
+   * The learner's statement of that model's context window in tokens. The
+   * server uses it to keep the completion budget inside the window.
+   */
+  apiContextTokens?: number;
 }
 
 export type AiProgressStage =
@@ -215,6 +231,10 @@ export interface AiImageResult {
 export interface AiTestRequest {
   provider?: string;
   model?: string;
+  /** The learner's own provider key, used for this test only. */
+  apiKey?: string;
+  /** OpenAI-compatible base URL for the learner's own provider. */
+  apiBaseUrl?: string;
 }
 
 export interface AiTestResult {

@@ -1,0 +1,248 @@
+{
+  "id": "cpp-18-strings",
+  "title": "C++ Strings",
+  "titleI18n": { "zh-Hant": "C++ 字串" },
+  "description": "C-style character arrays and std::string in C++: null termination, <cstring> functions, concatenation, searching and slicing, comparison, getline, numeric conversion, and std::string_view.",
+  "descriptionI18n": {
+    "zh-Hant": "C++ 的 C 風格字元陣列與 std::string：空字元結尾、<cstring> 函式、串接、搜尋與截取、比較、getline、數值轉換，以及 std::string_view。"
+  },
+  "tags": ["C++", "Strings"],
+  "examMinutes": 15,
+  "questions": [
+    {
+      "id": "cpp-18-q01",
+      "type": "single",
+      "prompt": "Which character marks the end of a C-style string in memory?",
+      "i18n": {
+        "prompt": { "zh-Hant": "在記憶體中，哪一個字元代表 C 風格字串的結尾？" },
+        "options": {
+          "a": { "zh-Hant": "'\\0'（空字元）" },
+          "b": { "zh-Hant": "'\\n'（換行）" },
+          "c": { "zh-Hant": "EOF" },
+          "d": { "zh-Hant": "' '（空格）" }
+        },
+        "explanation": {
+          "zh-Hant": "C 風格字串以空字元 '\\0' 結尾；strlen、strcpy 等函式都靠它判斷字串在哪裡結束。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "'\\0' (the null character)" },
+        { "id": "b", "text": "'\\n' (newline)" },
+        { "id": "c", "text": "EOF" },
+        { "id": "d", "text": "' ' (space)" }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "A C-style string is a char array terminated by the null character `'\\0'`. Functions such as `strlen` and `strcpy` rely on it to find the end.",
+      "tags": ["Strings", "Null terminator"],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-18-q02",
+      "type": "single",
+      "prompt": "Which header declares the C-style string functions `strlen`, `strcpy` and `strcmp`?",
+      "i18n": {
+        "prompt": { "zh-Hant": "哪一個標頭檔宣告了 C 風格字串函式 `strlen`、`strcpy` 與 `strcmp`？" },
+        "options": {
+          "a": { "zh-Hant": "<string>" },
+          "b": { "zh-Hant": "<cstring>" },
+          "c": { "zh-Hant": "<cstdlib>" },
+          "d": { "zh-Hant": "<cstdio>" }
+        },
+        "explanation": {
+          "zh-Hant": "<cstring> 提供 strlen、strcpy、strcmp 等 C 字串函式；<string> 定義的是 std::string 類別。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "<string>" },
+        { "id": "b", "text": "<cstring>" },
+        { "id": "c", "text": "<cstdlib>" },
+        { "id": "d", "text": "<cstdio>" }
+      ],
+      "answer": { "kind": "single", "optionId": "b" },
+      "explanation": "`<cstring>` declares `strlen`, `strcpy`, `strcmp` and friends. `<string>` defines the `std::string` class, not the C string functions.",
+      "tags": ["Strings", "Headers"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-18-q03",
+      "type": "single",
+      "prompt": "Given `std::string s = \"banana\";`, what does `s.find(\"na\")` return?",
+      "i18n": {
+        "prompt": { "zh-Hant": "已知 `std::string s = \"banana\";`，`s.find(\"na\")` 會傳回甚麼？" },
+        "options": {
+          "a": { "zh-Hant": "0" },
+          "b": { "zh-Hant": "2" },
+          "c": { "zh-Hant": "4" },
+          "d": { "zh-Hant": "std::string::npos" }
+        },
+        "explanation": {
+          "zh-Hant": "find 傳回第一次出現的起始索引；「na」在索引 2 首次出現（b=0, a=1, n=2）。找不到時才傳回 npos。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "0" },
+        { "id": "b", "text": "2" },
+        { "id": "c", "text": "4" },
+        { "id": "d", "text": "std::string::npos" }
+      ],
+      "answer": { "kind": "single", "optionId": "b" },
+      "explanation": "`find` returns the index where the first match starts: in \"banana\" the substring \"na\" first appears at index 2. It returns `npos` only when there is no match.",
+      "tags": ["std::string", "find"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-18-q04",
+      "type": "single",
+      "prompt": "Which call reads a complete line, including spaces, from `std::cin` into a `std::string s`?",
+      "i18n": {
+        "prompt": { "zh-Hant": "哪一個呼叫可以從 `std::cin` 讀入包含空格的整行文字到 `std::string s`？" },
+        "options": {
+          "a": { "zh-Hant": "std::getline(std::cin, s)" },
+          "b": { "zh-Hant": "std::cin >> s" },
+          "c": { "zh-Hant": "std::cin.getline(s)" },
+          "d": { "zh-Hant": "std::readline(std::cin, s)" }
+        },
+        "explanation": {
+          "zh-Hant": "std::getline 讀到換行為止並保留空格；`std::cin >> s` 只讀到空白為止，另外兩個呼叫根本不存在。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "std::getline(std::cin, s)" },
+        { "id": "b", "text": "std::cin >> s" },
+        { "id": "c", "text": "std::cin.getline(s)" },
+        { "id": "d", "text": "std::readline(std::cin, s)" }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "`std::getline` reads up to the newline and keeps spaces. `std::cin >> s` stops at the first whitespace, and the other two calls do not exist.",
+      "tags": ["std::string", "getline"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-18-q05",
+      "type": "multi",
+      "prompt": "Given `std::string s = \"hello\";`, which statements are true? Select all that apply.",
+      "i18n": {
+        "prompt": { "zh-Hant": "已知 `std::string s = \"hello\";`，下列哪些敘述正確？可多選。" },
+        "options": {
+          "a": { "zh-Hant": "`s.substr(1, 3)` 等於 \"ell\"" },
+          "b": { "zh-Hant": "`s.replace(0, 1, \"y\")` 會把 s 變成 \"yello\"" },
+          "c": { "zh-Hant": "`s.length()` 等於 5" },
+          "d": { "zh-Hant": "`s.find(\"z\")` 等於 0" }
+        },
+        "explanation": {
+          "zh-Hant": "substr(1, 3) 從索引 1 取 3 個字元；replace(0, 1, \"y\") 換掉第 1 個字元；length() 與 size() 相同。find 找不到時傳回 npos，不是 0。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "`s.substr(1, 3)` equals \"ell\"" },
+        { "id": "b", "text": "`s.replace(0, 1, \"y\")` turns `s` into \"yello\"" },
+        { "id": "c", "text": "`s.length()` equals 5" },
+        { "id": "d", "text": "`s.find(\"z\")` equals 0" }
+      ],
+      "answer": { "kind": "multi", "optionIds": ["a", "b", "c"] },
+      "explanation": "`substr(1, 3)` takes three characters starting at index 1, `replace(0, 1, \"y\")` substitutes the first character, and `length()` is the same as `size()`. A failed `find` returns `npos`, never 0.",
+      "tags": ["std::string", "substr", "replace"],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-18-q06",
+      "type": "multi",
+      "prompt": "Which statements about `std::string_view` are true? Select all that apply.",
+      "i18n": {
+        "prompt": { "zh-Hant": "關於 `std::string_view`，下列哪些敘述正確？可多選。" },
+        "options": {
+          "a": { "zh-Hant": "它不擁有字元，只是一個檢視" },
+          "b": { "zh-Hant": "複製成本很低，適合當唯讀參數" },
+          "c": { "zh-Hant": "從暫時的 std::string 建立後，即使該字串已銷毀仍可安全使用" },
+          "d": { "zh-Hant": "底層緩衝區的存活期必須比這個 view 更長" }
+        },
+        "explanation": {
+          "zh-Hant": "string_view 只保存指標與長度，不擁有資料；若來源字串（尤其是暫時物件）先被銷毀，view 就會懸空。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "It does not own the characters; it only views them" },
+        { "id": "b", "text": "Copying it is cheap, which suits read-only parameters" },
+        { "id": "c", "text": "A view built from a temporary std::string stays safe after that string is destroyed" },
+        { "id": "d", "text": "The underlying buffer must outlive the view" }
+      ],
+      "answer": { "kind": "multi", "optionIds": ["a", "b", "d"] },
+      "explanation": "`std::string_view` stores only a pointer and a length, so copying is trivial but it never owns the characters. The buffer must outlive the view; keeping a view of a destroyed temporary dangles.",
+      "tags": ["std::string_view", "Lifetime"],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-18-q07",
+      "type": "boolean",
+      "prompt": "`std::strlen(\"hello\")` returns 6 because the null terminator is counted.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "`std::strlen(\"hello\")` 會傳回 6，因為把空字元也計算在內。"
+        },
+        "explanation": {
+          "zh-Hant": "strlen 只計算空字元之前的字元數，所以傳回 5；結尾的空字元不算在長度內。"
+        }
+      },
+      "answer": { "kind": "boolean", "value": false },
+      "explanation": "`strlen` counts characters up to, but not including, the terminating null, so it returns 5. The terminator is storage, not length.",
+      "tags": ["Strings", "strlen"],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-18-q08",
+      "type": "boolean",
+      "prompt": "For two `char` arrays, the expression `a == b` compares their characters.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "對兩個 `char` 陣列而言，運算式 `a == b` 會比較它們的字元內容。"
+        },
+        "explanation": {
+          "zh-Hant": "陣列會退化為指標，所以 `a == b` 比較的是位址；要比較內容請用 std::strcmp 或改用 std::string 的 ==。"
+        }
+      },
+      "answer": { "kind": "boolean", "value": false },
+      "explanation": "The arrays decay to pointers, so `a == b` compares addresses. Use `std::strcmp` for C strings, or `std::string`, whose `==` compares contents.",
+      "tags": ["C strings", "Comparison"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-18-q09",
+      "type": "fill",
+      "prompt": "The standard function that converts a `std::string` such as \"42\" into an `int` is `std::____`.",
+      "i18n": {
+        "prompt": { "zh-Hant": "把 `std::string`（例如 \"42\"）轉成 `int` 的標準函式是 `std::____`。" },
+        "explanation": {
+          "zh-Hant": "std::stoi 解析字串開頭的整數，失敗時拋出 std::invalid_argument 或 std::out_of_range；反方向是 std::to_string。"
+        }
+      },
+      "answer": { "kind": "fill", "accept": ["stoi", "std::stoi"], "ignoreCase": true, "ignoreSpaces": true },
+      "explanation": "`std::stoi` parses the leading integer and throws `std::invalid_argument` or `std::out_of_range` on failure. `std::to_string` performs the reverse conversion.",
+      "tags": ["std::string", "Conversion"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-18-q10",
+      "type": "short",
+      "prompt": "Explain the difference between a C-style string and `std::string`, and say what `std::string_view` adds.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "說明 C 風格字串與 `std::string` 的差別，並指出 `std::string_view` 額外提供了甚麼。"
+        },
+        "model": {
+          "zh-Hant": "C 風格字串是以 '\\0' 結尾的 char 陣列，長度要每次用 strlen 重算，複製與比較都得手動處理，容易越界。std::string 會自行管理記憶體、記錄長度，支援 =、+、==、substr 等操作，複製與傳值較安全但可能產生額外複製。std::string_view 則是 C++17 起的非擁有檢視，只存指標與長度，讓函式能以低成本接收字串片段，但不可讓它活得比來源資料久。"
+        },
+        "explanation": {
+          "zh-Hant": "重點是「誰擁有記憶體」：C 字串由程式設計師負責，std::string 自己管理，string_view 完全不擁有。"
+        }
+      },
+      "answer": {
+        "kind": "short",
+        "model": "A C-style string is a char array ending in `'\\0'`; its length must be recomputed with `strlen`, copying and comparing are manual, and it is easy to overflow. `std::string` manages its own buffer, knows its length, and supports `=`, `+`, `==`, `substr` and more, at the cost of possible copies. `std::string_view` (C++17) is a non-owning pointer-and-length view that lets functions accept string data cheaply, but it must not outlive the buffer it refers to.",
+        "keywords": ["null terminator", "std::string", "owns", "string_view", "lifetime"]
+      },
+      "explanation": "The key question is ownership: a C string is the programmer's responsibility, `std::string` owns and manages its buffer, and `std::string_view` owns nothing.",
+      "tags": ["Strings", "std::string", "std::string_view"],
+      "difficulty": 3
+    }
+  ]
+}

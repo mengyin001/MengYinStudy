@@ -1,0 +1,426 @@
+{
+  "id": "cpp-44-standard-library",
+  "title": "The C++ Standard Library",
+  "titleI18n": {
+    "zh-Hant": "C++ 標準程式庫"
+  },
+  "description": "What ships in std, how the headers are organised, and how the standard library differs from the language itself.",
+  "descriptionI18n": {
+    "zh-Hant": "std 裡有甚麼、標頭檔如何組織，以及標準程式庫與語言本身的分別。"
+  },
+  "tags": [
+    "C++",
+    "STL"
+  ],
+  "examMinutes": 15,
+  "questions": [
+    {
+      "id": "cpp-44-q01",
+      "type": "single",
+      "prompt": "Which namespace contains the standard library?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "標準程式庫放在哪一個命名空間？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "std"
+          },
+          "b": {
+            "zh-Hant": "cstdlib"
+          },
+          "c": {
+            "zh-Hant": "lib"
+          },
+          "d": {
+            "zh-Hant": "global"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "幾乎所有標準程式庫名稱都在 std；<cstdlib> 只是其中一個標頭檔。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "std"
+        },
+        {
+          "id": "b",
+          "text": "cstdlib"
+        },
+        {
+          "id": "c",
+          "text": "lib"
+        },
+        {
+          "id": "d",
+          "text": "global"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "Almost every standard library name lives in std. <cstdlib> is just one of its headers.",
+      "tags": [
+        "Namespaces"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-44-q02",
+      "type": "single",
+      "prompt": "Which part of the standard library provides std::sort?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "標準程式庫的哪一部分提供 std::sort？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "演算法"
+          },
+          "b": {
+            "zh-Hant": "容器"
+          },
+          "c": {
+            "zh-Hant": "串流"
+          },
+          "d": {
+            "zh-Hant": "數值"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "sort 是 <algorithm> 中的演算法；容器只負責儲存元素。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "Algorithms"
+        },
+        {
+          "id": "b",
+          "text": "Containers"
+        },
+        {
+          "id": "c",
+          "text": "Streams"
+        },
+        {
+          "id": "d",
+          "text": "Numerics"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "sort is an algorithm declared in <algorithm>; containers only store elements.",
+      "tags": [
+        "Algorithms"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-44-q03",
+      "type": "boolean",
+      "prompt": "The C++ standard library is specified by the C++ standard, not by an individual compiler vendor.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "C++ 標準程式庫由 C++ 標準規定，而不是由個別編譯器廠商決定。"
+        },
+        "explanation": {
+          "zh-Hant": "ISO C++ 標準定義程式庫的行為；各家實作（libstdc++、libc++、MSVC STL）遵循同一份規格。"
+        }
+      },
+      "answer": {
+        "kind": "boolean",
+        "value": true
+      },
+      "explanation": "The ISO C++ standard specifies the library's behaviour. Implementations such as libstdc++, libc++ and MSVC STL all follow that specification.",
+      "tags": [
+        "Standards"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-44-q04",
+      "type": "boolean",
+      "prompt": "libstdc++ and libc++ are two implementations of the C++ standard library.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "libstdc++ 與 libc++ 是 C++ 標準程式庫的兩種實作。"
+        },
+        "explanation": {
+          "zh-Hant": "libstdc++ 隨 GCC，libc++ 隨 Clang/LLVM；兩者都實作同一份標準介面。"
+        }
+      },
+      "answer": {
+        "kind": "boolean",
+        "value": true
+      },
+      "explanation": "libstdc++ ships with GCC and libc++ with Clang/LLVM. Both implement the same standard interface.",
+      "tags": [
+        "Implementations"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-44-q05",
+      "type": "multi",
+      "prompt": "Which of these are standard library headers? Select all that apply.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "下列哪些是標準程式庫標頭檔？可多選。"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "<memory>"
+          },
+          "b": {
+            "zh-Hant": "<thread>"
+          },
+          "c": {
+            "zh-Hant": "<regex>"
+          },
+          "d": {
+            "zh-Hant": "<windows.h>"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "<memory>、<thread>、<regex> 都是標準標頭；<windows.h> 是 Windows 平台 API。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "<memory>"
+        },
+        {
+          "id": "b",
+          "text": "<thread>"
+        },
+        {
+          "id": "c",
+          "text": "<regex>"
+        },
+        {
+          "id": "d",
+          "text": "<windows.h>"
+        }
+      ],
+      "answer": {
+        "kind": "multi",
+        "optionIds": [
+          "a",
+          "b",
+          "c"
+        ]
+      },
+      "explanation": "<memory>, <thread> and <regex> are standard headers. <windows.h> is a platform API, not part of std.",
+      "tags": [
+        "Headers"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-44-q06",
+      "type": "multi",
+      "prompt": "Which of these belong to the C++ standard library? Select all that apply.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "下列哪些屬於 C++ 標準程式庫？可多選。"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "容器與迭代器"
+          },
+          "b": {
+            "zh-Hant": "演算法"
+          },
+          "c": {
+            "zh-Hant": "串流與字串"
+          },
+          "d": {
+            "zh-Hant": "圖形使用者介面工具包"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "容器、演算法、串流與字串都是標準程式庫的一部分；GUI 工具包（如 Qt）不是。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "Containers and iterators"
+        },
+        {
+          "id": "b",
+          "text": "Algorithms"
+        },
+        {
+          "id": "c",
+          "text": "Streams and strings"
+        },
+        {
+          "id": "d",
+          "text": "A graphical user interface toolkit"
+        }
+      ],
+      "answer": {
+        "kind": "multi",
+        "optionIds": [
+          "a",
+          "b",
+          "c"
+        ]
+      },
+      "explanation": "Containers, algorithms, streams and strings are all part of the standard library. GUI toolkits such as Qt are third-party libraries.",
+      "tags": [
+        "Library"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-44-q07",
+      "type": "fill",
+      "prompt": "The standard library implementation shipped with GCC is called lib____.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "隨 GCC 發佈的標準程式庫實作稱為 lib____。"
+        },
+        "explanation": {
+          "zh-Hant": "GCC 使用 libstdc++；Clang 預設常用 libc++。"
+        }
+      },
+      "answer": {
+        "kind": "fill",
+        "accept": [
+          "stdc++",
+          "libstdc++"
+        ],
+        "ignoreCase": true,
+        "ignoreSpaces": true
+      },
+      "explanation": "GCC ships libstdc++; Clang commonly uses libc++.",
+      "tags": [
+        "Implementations"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-44-q08",
+      "type": "fill",
+      "prompt": "The standard library implementation shipped with Clang/LLVM is lib____.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "隨 Clang/LLVM 發佈的標準程式庫實作是 lib____。"
+        },
+        "explanation": {
+          "zh-Hant": "Clang 通常配 libc++，GCC 則配 libstdc++；兩者都實作同一份標準介面。"
+        }
+      },
+      "answer": {
+        "kind": "fill",
+        "accept": [
+          "c++",
+          "libc++"
+        ],
+        "ignoreCase": true,
+        "ignoreSpaces": true
+      },
+      "explanation": "Clang commonly uses libc++; GCC ships libstdc++. Both implement the same standard interface.",
+      "tags": [
+        "Implementations"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-44-q09",
+      "type": "short",
+      "prompt": "Why should production code avoid `<bits/stdc++.h>`?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "為何正式專案應避免使用 `<bits/stdc++.h>`？"
+        },
+        "model": {
+          "zh-Hant": "它不是標準標頭，只有部分編譯器提供，移植到其他編譯器會失敗；而且它一次引入大量標頭，令編譯變慢、相依關係不明。"
+        },
+        "explanation": {
+          "zh-Hant": "可移植性與編譯時間是兩大理由；應只包含實際用到的標準標頭。"
+        }
+      },
+      "answer": {
+        "kind": "short",
+        "model": "It is not a standard header and is only provided by some compilers, so the code fails to build elsewhere. It also pulls in a large number of headers at once, which slows compilation and hides real dependencies.",
+        "keywords": [
+          "non-standard",
+          "portable",
+          "compilation",
+          "headers"
+        ]
+      },
+      "explanation": "Portability and build time are the two main reasons. Include only the standard headers you actually use.",
+      "tags": [
+        "Headers",
+        "Best practices"
+      ],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-44-q10",
+      "type": "single",
+      "prompt": "Which C++ version added the <numbers> header?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "哪一個 C++ 版本加入了 <numbers> 標頭檔？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "C++11"
+          },
+          "b": {
+            "zh-Hant": "C++17"
+          },
+          "c": {
+            "zh-Hant": "C++20"
+          },
+          "d": {
+            "zh-Hant": "C++23"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "<numbers> 在 C++20 引入，提供 std::numbers::pi 等數學常數。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "C++11"
+        },
+        {
+          "id": "b",
+          "text": "C++17"
+        },
+        {
+          "id": "c",
+          "text": "C++20"
+        },
+        {
+          "id": "d",
+          "text": "C++23"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "c"
+      },
+      "explanation": "<numbers> arrived in C++20 and provides mathematical constants such as std::numbers::pi.",
+      "tags": [
+        "Standards"
+      ],
+      "difficulty": 2
+    }
+  ]
+}

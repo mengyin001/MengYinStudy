@@ -30,8 +30,15 @@ export interface OfficialPack extends LoadedPlugin {
   updatedAt: string;
 }
 
+/**
+ * Bumped when the cached deck shape changes. Version 1 caches were written
+ * before `i18n` existed, so a v55 catalogue could be reused without any
+ * bilingual text; rejecting them forces one clean refetch.
+ */
+export const OFFICIAL_CACHE_SCHEMA_VERSION = 2 as const;
+
 export interface OfficialCache {
-  schemaVersion: 1;
+  schemaVersion: typeof OFFICIAL_CACHE_SCHEMA_VERSION;
   /** Project the cache came from, so switching Supabase projects cannot reuse it. */
   sourceUrl: string | null;
   version: string;
@@ -73,7 +80,7 @@ function parseCachedPack(raw: unknown): CachedOfficialPack | null {
 
 export function parseOfficialCache(raw: unknown): OfficialCache | null {
   if (!isRecord(raw)) return null;
-  if (raw.schemaVersion !== 1) return null;
+  if (raw.schemaVersion !== OFFICIAL_CACHE_SCHEMA_VERSION) return null;
   if (typeof raw.version !== 'string' || !raw.version) return null;
   if (typeof raw.syncedAt !== 'number' || !Number.isFinite(raw.syncedAt)) return null;
   if (!Array.isArray(raw.packs)) return null;
@@ -87,7 +94,7 @@ export function parseOfficialCache(raw: unknown): OfficialCache | null {
   }
 
   return {
-    schemaVersion: 1,
+    schemaVersion: OFFICIAL_CACHE_SCHEMA_VERSION,
     sourceUrl: typeof raw.sourceUrl === 'string' ? raw.sourceUrl : null,
     version: raw.version,
     syncedAt: raw.syncedAt,

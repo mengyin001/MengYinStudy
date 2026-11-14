@@ -1,0 +1,242 @@
+{
+  "id": "cpp-20-references",
+  "title": "C++ References",
+  "titleI18n": { "zh-Hant": "C++ 參考" },
+  "description": "References in C++: binding rules, references as aliases, pass by reference, const references, returning references, the difference from pointers, auto& in range-for and dangling references.",
+  "descriptionI18n": {
+    "zh-Hant": "C++ 參考：綁定規則、以別名方式作用、傳參考、const 參考、回傳參考、與指標的差異、範圍 for 中的 auto&，以及懸空參考。"
+  },
+  "tags": ["C++", "References"],
+  "examMinutes": 15,
+  "questions": [
+    {
+      "id": "cpp-20-q01",
+      "type": "single",
+      "prompt": "After `int x = 1; int& r = x; r = 7;`, what is the value of `x`?",
+      "i18n": {
+        "prompt": { "zh-Hant": "執行 `int x = 1; int& r = x; r = 7;` 之後，`x` 的值是甚麼？" },
+        "options": {
+          "a": { "zh-Hant": "1" },
+          "b": { "zh-Hant": "7" },
+          "c": { "zh-Hant": "未定義" },
+          "d": { "zh-Hant": "r 的位址" }
+        },
+        "explanation": {
+          "zh-Hant": "`r` 只是 `x` 的別名，對 `r` 賦值就是對 `x` 賦值，所以 `x` 變成 7。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "1" },
+        { "id": "b", "text": "7" },
+        { "id": "c", "text": "Unspecified" },
+        { "id": "d", "text": "The address of `r`" }
+      ],
+      "answer": { "kind": "single", "optionId": "b" },
+      "explanation": "`r` is just another name for `x`, so assigning to `r` assigns to `x`; the value becomes 7.",
+      "tags": ["References", "Alias"],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-20-q02",
+      "type": "single",
+      "prompt": "Which statement about declaring a reference is correct?",
+      "i18n": {
+        "prompt": { "zh-Hant": "關於參考的宣告，下列哪一個敘述正確？" },
+        "options": {
+          "a": { "zh-Hant": "可以先宣告，之後再綁定到物件" },
+          "b": { "zh-Hant": "必須在宣告的同時初始化" },
+          "c": { "zh-Hant": "綁定後可以改綁到另一個物件" },
+          "d": { "zh-Hant": "未初始化時預設為空參考" }
+        },
+        "explanation": {
+          "zh-Hant": "參考一定要在宣告時綁定到一個既存物件，而且終生不能再改綁；C++ 沒有「空參考」。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "It can be declared first and bound to an object later" },
+        { "id": "b", "text": "It must be initialised in its declaration" },
+        { "id": "c", "text": "It can be rebound to another object later" },
+        { "id": "d", "text": "If uninitialised it defaults to a null reference" }
+      ],
+      "answer": { "kind": "single", "optionId": "b" },
+      "explanation": "A reference must be bound to an existing object when it is declared and can never be rebound; C++ has no null reference.",
+      "tags": ["References", "Declaration"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-20-q03",
+      "type": "single",
+      "prompt": "What does declaring a function parameter as `int&` achieve?",
+      "i18n": {
+        "prompt": { "zh-Hant": "把函式參數宣告為 `int&` 有甚麼效果？" },
+        "options": {
+          "a": { "zh-Hant": "函式內操作的是呼叫端傳入的物件，修改會反映回去" },
+          "b": { "zh-Hant": "引數一定會被複製一份到函式內" },
+          "c": { "zh-Hant": "呼叫端只能傳入常數" },
+          "d": { "zh-Hant": "引數必須是指標" }
+        },
+        "explanation": {
+          "zh-Hant": "`int&` 讓參數成為引數的別名，函式內的修改直接作用在呼叫端的物件上，不會產生複本。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "The function works on the caller's own object, so changes are visible to the caller" },
+        { "id": "b", "text": "The argument is always copied into the function" },
+        { "id": "c", "text": "The caller may only pass a literal constant" },
+        { "id": "d", "text": "The argument must be a pointer" }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "An `int&` parameter is an alias for the caller's argument, so modifications act on the original object and no copy is made.",
+      "tags": ["References", "Pass by reference"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-20-q04",
+      "type": "single",
+      "prompt": "Which function safely returns a reference?",
+      "i18n": {
+        "prompt": { "zh-Hant": "下列哪一個函式可以安全地回傳參考？" },
+        "options": {
+          "a": { "zh-Hant": "回傳區域變數的參考" },
+          "b": { "zh-Hant": "回傳靜態物件或成員的參考，該物件活得比呼叫更久" },
+          "c": { "zh-Hant": "回傳函式內建立的暫時物件參考" },
+          "d": { "zh-Hant": "回傳已 delete 的堆積物件參考" }
+        },
+        "explanation": {
+          "zh-Hant": "回傳的參考必須指向呼叫結束後仍存在的物件；區域變數與暫時物件在函式結束時就銷毀，會形成懸空參考。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "Return a reference to a local variable" },
+        { "id": "b", "text": "Return a reference to a static object or a member that outlives the call" },
+        { "id": "c", "text": "Return a reference to a temporary created inside the function" },
+        { "id": "d", "text": "Return a reference to heap memory that was already deleted" }
+      ],
+      "answer": { "kind": "single", "optionId": "b" },
+      "explanation": "A returned reference must designate an object that still exists after the call returns. Locals and temporaries die with the function, leaving a dangling reference.",
+      "tags": ["References", "Return values"],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-20-q05",
+      "type": "multi",
+      "prompt": "Which statements about `const` references are true? Select all that apply.",
+      "i18n": {
+        "prompt": { "zh-Hant": "關於 `const` 參考，下列哪些敘述正確？可多選。" },
+        "options": {
+          "a": { "zh-Hant": "`const int&` 可以綁定到暫時物件" },
+          "b": { "zh-Hant": "不能透過該參考修改被參考的物件" },
+          "c": { "zh-Hant": "被參考的物件從此對所有人都是唯讀" },
+          "d": { "zh-Hant": "常用來傳遞大型物件而避免複製" }
+        },
+        "explanation": {
+          "zh-Hant": "const 參考可綁定暫時物件、延長其壽命，且只限制「透過這個參考」的修改；其他人仍可經由非 const 途徑修改原物件。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "`const int&` can bind to a temporary" },
+        { "id": "b", "text": "The referred-to object cannot be modified through that reference" },
+        { "id": "c", "text": "The referred-to object becomes read-only for everyone" },
+        { "id": "d", "text": "It is commonly used to pass large objects without copying" }
+      ],
+      "answer": { "kind": "multi", "optionIds": ["a", "b", "d"] },
+      "explanation": "A `const` reference can bind to a temporary (extending its lifetime) and only restricts modification through that reference; other non-const paths can still change the object. It is the standard way to pass large objects cheaply.",
+      "tags": ["References", "const"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-20-q06",
+      "type": "multi",
+      "prompt": "Which statements about references versus pointers are true? Select all that apply.",
+      "i18n": {
+        "prompt": { "zh-Hant": "關於參考與指標的比較，下列哪些敘述正確？可多選。" },
+        "options": {
+          "a": { "zh-Hant": "合法的參考一定指向某個物件，不會是空值" },
+          "b": { "zh-Hant": "指標可以改指向別的物件，參考不行" },
+          "c": { "zh-Hant": "對參考套用 `&` 會得到被參考物件的位址" },
+          "d": { "zh-Hant": "`sizeof(r)` 得到的是參考本身的位元組數" }
+        },
+        "explanation": {
+          "zh-Hant": "參考是物件的別名，沒有獨立身分：`&r` 就是原物件位址，`sizeof(r)` 是原物件大小；改綁與空值都只屬於指標。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "A valid reference always designates an object and is never null" },
+        { "id": "b", "text": "A pointer can be reseated to another object; a reference cannot" },
+        { "id": "c", "text": "Applying `&` to a reference yields the address of the referred-to object" },
+        { "id": "d", "text": "`sizeof(r)` yields the size of the reference itself" }
+      ],
+      "answer": { "kind": "multi", "optionIds": ["a", "b", "c"] },
+      "explanation": "A reference is an alias with no separate identity: `&r` is the referent's address and `sizeof(r)` is the referent's size. Only pointers can be null or reseated.",
+      "tags": ["References", "Pointers"],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-20-q07",
+      "type": "boolean",
+      "prompt": "A reference can be reseated to refer to a different object after it has been bound.",
+      "i18n": {
+        "prompt": { "zh-Hant": "參考綁定之後，可以改綁到另一個物件。" },
+        "explanation": {
+          "zh-Hant": "`int& r = a; r = b;` 是把 b 的值指派給 a，不是改綁；參考一旦綁定就固定指向同一物件。"
+        }
+      },
+      "answer": { "kind": "boolean", "value": false },
+      "explanation": "`int& r = a; r = b;` assigns b's value to a; it does not rebind. Once bound, a reference always designates the same object.",
+      "tags": ["References", "Binding"],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-20-q08",
+      "type": "boolean",
+      "prompt": "Using `auto&` in a range-for loop allows the loop body to modify the container's elements in place.",
+      "i18n": {
+        "prompt": { "zh-Hant": "在範圍 for 迴圈中使用 `auto&`，可以讓迴圈本體直接修改容器的元素。" },
+        "explanation": {
+          "zh-Hant": "`for (auto& x : v)` 讓 x 成為每個元素的參考，因此 `x *= 2` 會改到容器本身；用 `auto` 只會拿到複本。"
+        }
+      },
+      "answer": { "kind": "boolean", "value": true },
+      "explanation": "`for (auto& x : v)` binds `x` to each element, so `x *= 2` changes the container itself. Plain `auto` copies each element and leaves the container untouched.",
+      "tags": ["References", "Range-for"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-20-q09",
+      "type": "fill",
+      "prompt": "A parameter declared as `const std::string&` avoids a ____ of the argument when the function is called.",
+      "i18n": {
+        "prompt": { "zh-Hant": "參數宣告為 `const std::string&` 可以避免呼叫函式時對引數進行一次 ____。" },
+        "explanation": {
+          "zh-Hant": "傳值會複製整個字串；const 參考只傳別名，既省成本又保證函式內不改動原物件。"
+        }
+      },
+      "answer": { "kind": "fill", "accept": ["copy", "複製", "拷貝", "copies"], "ignoreCase": true, "ignoreSpaces": true },
+      "explanation": "Passing by value copies the whole string; a `const` reference passes only an alias, avoiding the copy while promising not to modify the original.",
+      "tags": ["References", "const"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-20-q10",
+      "type": "short",
+      "prompt": "What is a dangling reference? Give one example of how it is created.",
+      "i18n": {
+        "prompt": { "zh-Hant": "甚麼是懸空參考（dangling reference）？舉出一個產生它的例子。" },
+        "model": {
+          "zh-Hant": "懸空參考是指參考仍然存在，但所綁定的物件已經結束存活期，此時透過它存取就是未定義行為。例如函式回傳區域變數的參考：`int& f() { int x = 1; return x; }`，呼叫端拿到 `f()` 後 x 已銷毀；或是保留了區域容器元素的參考，容器之後被解構。"
+        },
+        "explanation": {
+          "zh-Hant": "重點是「參考不比它所綁定的物件活得更久」；回傳區域變數參考、綁定已 delete 的物件都是典型例子。"
+        }
+      },
+      "answer": {
+        "kind": "short",
+        "model": "A dangling reference is a reference whose referent has already been destroyed; using it afterwards is undefined behaviour. A typical example is returning a reference to a local: `int& f() { int x = 1; return x; }` — `x` dies when `f` returns, so the caller's reference dangles. Keeping a reference to an element of a container that is later destroyed has the same effect.",
+        "keywords": ["lifetime", "destroyed", "return", "local", "undefined behaviour"]
+      },
+      "explanation": "The rule is that a reference must never outlive its referent; returning a local reference and binding to deleted storage are the classic cases.",
+      "tags": ["References", "Lifetime", "Dangling"],
+      "difficulty": 3
+    }
+  ]
+}

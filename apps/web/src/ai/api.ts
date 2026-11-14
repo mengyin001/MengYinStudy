@@ -86,10 +86,20 @@ export async function testAiService(
   settings: AiSettings,
   signal?: AbortSignal,
 ): Promise<AiTestResult> {
+  const own = settings.model === 'own' && settings.apiKey && settings.apiModel;
   const response = await fetch(aiApiUrl(AI_ROUTES.test), {
     method: 'POST',
     headers: await requestHeaders({ 'Content-Type': 'application/json', Accept: 'application/json' }),
-    body: JSON.stringify({ model: settings.model }),
+    body: JSON.stringify({
+      model: own ? settings.apiModel : settings.model,
+      ...(own
+        ? {
+            apiKey: settings.apiKey,
+            ...(settings.apiBaseUrl ? { apiBaseUrl: settings.apiBaseUrl } : {}),
+            ...(settings.apiContextTokens ? { apiContextTokens: settings.apiContextTokens } : {}),
+          }
+        : {}),
+    }),
     ...(signal ? { signal } : {}),
   });
   if (!response.ok) throw await readApiError(response);
@@ -208,6 +218,9 @@ export async function generateQuestionsWithApi(
   options: GenerateApiOptions = {},
 ): Promise<AiQuestionResult> {
   const packed = packMaterialsForApi(materials, request.topic);
+  // `own` means the learner's configured provider; anything else is a catalogue
+  // model served by this API.
+  const own = settings.model === 'own' && settings.apiKey && settings.apiModel;
   const body: AiQuestionRequest = {
     topic: request.topic,
     count: request.count,
@@ -218,9 +231,16 @@ export async function generateQuestionsWithApi(
     ...(request.focus ? { focus: request.focus } : {}),
     ...(request.description ? { description: request.description } : {}),
     materials: packed.materials,
-    model: settings.model,
+    model: own ? (settings.apiModel ?? '') : settings.model,
     imageMode: settings.imageMode,
     ...(settings.imageModel !== 'auto' ? { imageModel: settings.imageModel } : {}),
+    ...(own
+      ? {
+          apiKey: settings.apiKey,
+          ...(settings.apiBaseUrl ? { apiBaseUrl: settings.apiBaseUrl } : {}),
+          ...(settings.apiContextTokens ? { apiContextTokens: settings.apiContextTokens } : {}),
+        }
+      : {}),
   };
 
   let response: Response;

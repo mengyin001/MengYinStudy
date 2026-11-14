@@ -1,0 +1,461 @@
+{
+  "id": "cpp-23-struct",
+  "title": "C++ Structures",
+  "titleI18n": {
+    "zh-Hant": "C++ 結構體"
+  },
+  "description": "Defining structs, working with members, aggregate initialisation, arrays of structs, pointers and the arrow operator, nested structs, typedef and using, and how a struct differs from a class.",
+  "descriptionI18n": {
+    "zh-Hant": "定義結構體、使用成員、聚合初始化、結構體陣列、指標與箭頭運算子、巢狀結構體、typedef 與 using，以及結構體與類別的分別。"
+  },
+  "tags": [
+    "C++",
+    "Structs"
+  ],
+  "examMinutes": 14,
+  "questions": [
+    {
+      "id": "cpp-23-q01",
+      "type": "single",
+      "prompt": "What is the default access level for members of a struct declared with the struct keyword?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "以 struct 關鍵字宣告的結構體，其成員預設的存取層級是甚麼？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "public"
+          },
+          "b": {
+            "zh-Hant": "private"
+          },
+          "c": {
+            "zh-Hant": "protected"
+          },
+          "d": {
+            "zh-Hant": "由編譯器自行決定"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "struct 的成員預設為 public，class 的成員預設為 private；其餘語法幾乎相同。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "public"
+        },
+        {
+          "id": "b",
+          "text": "private"
+        },
+        {
+          "id": "c",
+          "text": "protected"
+        },
+        {
+          "id": "d",
+          "text": "It is chosen by the compiler."
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "Members of a struct are public by default, whereas members of a class are private by default. In C++ the two keywords otherwise introduce the same kind of type.",
+      "tags": [
+        "Structs",
+        "Access"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-23-q02",
+      "type": "single",
+      "prompt": "Given a valid pointer `Point* p`, which expression reads the member x?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "已知 `Point* p` 指向有效的物件，哪一個運算式可以讀取成員 x？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "p->x"
+          },
+          "b": {
+            "zh-Hant": "p.x"
+          },
+          "c": {
+            "zh-Hant": "*p->x"
+          },
+          "d": {
+            "zh-Hant": "p::x"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "p->x 等價於 (*p).x；p.x 需要物件而不是指標，p::x 是命名空間或類別範圍的寫法。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "p->x"
+        },
+        {
+          "id": "b",
+          "text": "p.x"
+        },
+        {
+          "id": "c",
+          "text": "*p->x"
+        },
+        {
+          "id": "d",
+          "text": "p::x"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "p->x is shorthand for (*p).x. The dot operator needs an object or reference, and p::x would name something in a class or namespace scope.",
+      "tags": [
+        "Structs",
+        "Pointers"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-23-q03",
+      "type": "single",
+      "prompt": "For `struct Point { int x; int y; };`, what does `Point p{1, 2};` do?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "對於 `struct Point { int x; int y; };`，`Point p{1, 2};` 會做甚麼？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "依宣告順序把 x 設為 1、y 設為 2"
+          },
+          "b": {
+            "zh-Hant": "把 y 設為 1、x 設為 2"
+          },
+          "c": {
+            "zh-Hant": "建立兩個 Point 物件"
+          },
+          "d": {
+            "zh-Hant": "呼叫必須自行撰寫的雙參數建構函式"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "這是聚合初始化：大括號內的初始值依成員宣告順序套用，不需要自己寫建構函式。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "It initialises x to 1 and y to 2, in declaration order."
+        },
+        {
+          "id": "b",
+          "text": "It initialises y to 1 and x to 2."
+        },
+        {
+          "id": "c",
+          "text": "It creates two Point objects."
+        },
+        {
+          "id": "d",
+          "text": "It calls a two-argument constructor that you must write yourself."
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "This is aggregate initialisation: the values in the braces are applied to the members in declaration order. An aggregate needs no hand-written constructor.",
+      "tags": [
+        "Structs",
+        "Initialisation"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-23-q04",
+      "type": "single",
+      "prompt": "A function is declared `void move(Point p)` and changes p.x inside its body. What happens to the caller's Point object?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "某函式宣告為 `void move(Point p)`，並在函式內修改 p.x。呼叫端原本的 Point 物件會怎樣？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "不會改變，因為函式改的是副本"
+          },
+          "b": {
+            "zh-Hant": "會被改成相同的值"
+          },
+          "c": {
+            "zh-Hant": "會產生編譯錯誤"
+          },
+          "d": {
+            "zh-Hant": "只有靜態成員會改變"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "以值傳遞會複製整個結構體，函式內修改的是副本；要修改原物件需傳參考 `Point&` 或指標。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "Nothing changes, because the function modifies a copy."
+        },
+        {
+          "id": "b",
+          "text": "It is updated to the same values."
+        },
+        {
+          "id": "c",
+          "text": "The program fails to compile."
+        },
+        {
+          "id": "d",
+          "text": "Only static members change."
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "Passing by value copies the whole struct, so the function edits its own copy. Use a reference parameter such as `Point&` (or a pointer) when the caller's object must change.",
+      "tags": [
+        "Structs",
+        "Functions"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-23-q05",
+      "type": "multi",
+      "prompt": "Which statements about struct and class in C++ are true? Select all that apply.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "下列關於 C++ 中 struct 與 class 的敘述，哪些是正確的？可多選。"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "struct 的成員預設為 public"
+          },
+          "b": {
+            "zh-Hant": "class 的成員預設為 private"
+          },
+          "c": {
+            "zh-Hant": "struct 不能有成員函式"
+          },
+          "d": {
+            "zh-Hant": "struct 不能有建構函式"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "struct 與 class 都能有成員函式、建構函式和繼承，唯一差別是預設存取層級與預設繼承方式。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "struct members are public by default."
+        },
+        {
+          "id": "b",
+          "text": "class members are private by default."
+        },
+        {
+          "id": "c",
+          "text": "A struct cannot have member functions."
+        },
+        {
+          "id": "d",
+          "text": "A struct cannot have constructors."
+        }
+      ],
+      "answer": {
+        "kind": "multi",
+        "optionIds": [
+          "a",
+          "b"
+        ]
+      },
+      "explanation": "The only difference between struct and class is the default access level (and default inheritance). Both can declare member functions, constructors and destructors.",
+      "tags": [
+        "Structs",
+        "Classes"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-23-q06",
+      "type": "multi",
+      "prompt": "For `struct Point { int x; int y; };`, which of these give x the value 1 and y the value 2? Select all that apply.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "對於 `struct Point { int x; int y; };`，下列哪些寫法可以讓 x 為 1、y 為 2？可多選。"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "Point p{1, 2};"
+          },
+          "b": {
+            "zh-Hant": "Point p = {1, 2};"
+          },
+          "c": {
+            "zh-Hant": "Point p; p.x = 1; p.y = 2;"
+          },
+          "d": {
+            "zh-Hant": "Point p = (1, 2);"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "大括號初始化（直接或搭配 =）與逐成員指派都有效；(1, 2) 是逗號運算式，結果是整數 2，不能初始化 Point。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "Point p{1, 2};"
+        },
+        {
+          "id": "b",
+          "text": "Point p = {1, 2};"
+        },
+        {
+          "id": "c",
+          "text": "Point p; p.x = 1; p.y = 2;"
+        },
+        {
+          "id": "d",
+          "text": "Point p = (1, 2);"
+        }
+      ],
+      "answer": {
+        "kind": "multi",
+        "optionIds": [
+          "a",
+          "b",
+          "c"
+        ]
+      },
+      "explanation": "Brace initialisation works with or without `=`, and assigning each member individually also works. `(1, 2)` is a comma expression whose value is the int 2, so it cannot initialise a Point.",
+      "tags": [
+        "Structs",
+        "Initialisation"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-23-q07",
+      "type": "boolean",
+      "prompt": "For `Point pts[3];`, the statement `pts[1].x = 5;` modifies the x member of the second element.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "對 `Point pts[3];` 而言，`pts[1].x = 5;` 會修改第二個元素的 x 成員。"
+        },
+        "explanation": {
+          "zh-Hant": "C++ 陣列索引從 0 開始，所以 pts[1] 是第二個元素；先索引再以 . 存取成員。"
+        }
+      },
+      "answer": {
+        "kind": "boolean",
+        "value": true
+      },
+      "explanation": "Array indices start at 0, so pts[1] is the second element; the dot then selects its x member.",
+      "tags": [
+        "Structs",
+        "Arrays"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-23-q08",
+      "type": "boolean",
+      "prompt": "If a struct contains another struct as a member, the inner members can be reached without naming the inner member, for example `outer.x` for `outer.inner.x`.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "若一個結構體以另一個結構體作為成員，可以不寫出內層成員名稱就直接存取，例如用 `outer.x` 取得 `outer.inner.x`。"
+        },
+        "explanation": {
+          "zh-Hant": "巢狀結構體必須逐層存取：outer.inner.x。C++ 沒有自動攤平成員名稱的規則。"
+        }
+      },
+      "answer": {
+        "kind": "boolean",
+        "value": false
+      },
+      "explanation": "Nested members must be reached level by level: outer.inner.x. C++ has no rule that flattens member names into the enclosing object.",
+      "tags": [
+        "Structs",
+        "Nesting"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-23-q09",
+      "type": "fill",
+      "prompt": "The C keyword that gives an existing type another name, as in `typedef struct Point Point;`, is ____ (C++11 offers `using` as an alternative).",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "為既有型別取另一個名稱的 C 關鍵字，例如 `typedef struct Point Point;`，是 ____（C++11 起可用 `using` 代替）。"
+        },
+        "explanation": {
+          "zh-Hant": "typedef 建立型別別名；C++11 的 `using Point = ...;` 語法較易讀，功能相同。"
+        }
+      },
+      "answer": {
+        "kind": "fill",
+        "accept": [
+          "typedef"
+        ],
+        "ignoreCase": true,
+        "ignoreSpaces": true
+      },
+      "explanation": "typedef introduces a type alias. The C++11 form `using Name = Type;` does the same job with syntax that is easier to read.",
+      "tags": [
+        "Structs",
+        "typedef"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-23-q10",
+      "type": "short",
+      "prompt": "In one or two sentences, explain the difference between `p.x` and `p->x`, and write the equivalent of `p->x` using `*`.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "用一至兩句說明 `p.x` 與 `p->x` 的分別，並用 `*` 寫出 `p->x` 的等價寫法。"
+        },
+        "model": {
+          "zh-Hant": "`p.x` 用於物件或參考，直接存取成員；`p->x` 用於指向結構體的指標，等價於 `(*p).x`，也就是先解參考再取成員。"
+        },
+        "explanation": {
+          "zh-Hant": "箭頭運算子只是「解參考加點號」的簡寫，兩者存取的是同一個成員。"
+        }
+      },
+      "answer": {
+        "kind": "short",
+        "model": "The dot operator p.x accesses a member of an object or reference, while the arrow p->x is used with a pointer and is exactly equivalent to (*p).x: dereference the pointer, then select the member.",
+        "keywords": [
+          "dot",
+          "arrow",
+          "pointer",
+          "dereference",
+          "(*p).x"
+        ]
+      },
+      "explanation": "The arrow is shorthand for dereference-then-dot; both expressions name the same member.",
+      "tags": [
+        "Structs",
+        "Pointers"
+      ],
+      "difficulty": 2
+    }
+  ]
+}

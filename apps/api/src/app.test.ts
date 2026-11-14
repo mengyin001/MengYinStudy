@@ -3,6 +3,7 @@ import type { AiQuestionResult } from '@mengyin/ai-contract';
 import { createApp } from './app';
 import type { Env } from './env';
 import type { KvNamespaceLike } from './env';
+import { AiError } from './providers/chat';
 
 const env: Env = {
   AI_MOCK: '1',
@@ -153,6 +154,64 @@ describe('AI service routes', () => {
     expect(await response.json()).toMatchObject({ ok: true, provider: 'demo' });
   });
 
+  it('bounds a hanging key test instead of leaving it open', async () => {
+    const hanging = createApp({
+      authenticate: async () => ({ userId: 'user-1', token: null }),
+      testTimeoutMs: 10,
+      createChat: () => ({
+        provider: 'byo',
+        providerLabel: 'Your provider',
+        model: 'test-model',
+        complete: () => new Promise(() => {}),
+      }),
+    });
+    const response = await hanging.fetch(
+      new Request('https://app.test/api/ai/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'test-model',
+          apiKey: 'sk-abcdefgh12345678',
+          apiBaseUrl: 'https://example.com/v1',
+        }),
+      }),
+      { ...env, AUTH_REQUIRED: 'true' },
+    );
+    expect(response.status).toBe(504);
+    expect(await response.json()).toMatchObject({ error: { code: 'provider_timeout' } });
+  });
+
+  it('treats an output-limit reply as a valid key', async () => {
+    const limited = createApp({
+      authenticate: async () => ({ userId: 'user-1', token: null }),
+      createChat: () => ({
+        provider: 'byo',
+        providerLabel: 'Your provider',
+        model: 'reasoning-model',
+        complete: async () => {
+          throw new AiError(
+            'truncated',
+            'The provider stopped at its output limit before writing a reply',
+          );
+        },
+      }),
+    });
+    const response = await limited.fetch(
+      new Request('https://app.test/api/ai/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'reasoning-model',
+          apiKey: 'sk-abcdefgh12345678',
+          apiBaseUrl: 'https://example.com/v1',
+        }),
+      }),
+      { ...env, AUTH_REQUIRED: 'true' },
+    );
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ ok: true, provider: 'byo' });
+  });
+
   it('rejects malformed requests and unknown API paths', async () => {
     const bad = await request('/api/ai/questions', { method: 'POST', body: '{' });
     expect(bad.status).toBe(400);
@@ -227,8 +286,8 @@ describe('access control and quotas', () => {
       release = resolve;
     });
     const model = {
-      provider: 'glm',
-      providerLabel: 'GLM',
+      provider: 'deepseek',
+      providerLabel: 'DeepSeek',
       model: 'test',
       async complete() {
         await gate;
@@ -252,9 +311,9 @@ describe('access control and quotas', () => {
       new Request('https://app.test/api/ai/questions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream' },
-        body: JSON.stringify({ topic: 'Tests', count: 1, types: ['boolean'], model: 'glm-4.7-flash' }),
+        body: JSON.stringify({ topic: 'Tests', count: 1, types: ['boolean'], model: 'deepseek-flash' }),
       }),
-      { ...env, AI_MOCK: '', GLM_API_KEY: 'test', IMAGE_PROVIDER: 'none' },
+      { ...env, AI_MOCK: '', DEEPSEEK_API_KEY: 'test', IMAGE_PROVIDER: 'none' },
     );
     expect(response.status).toBe(200);
     const reader = response.body!.getReader();
@@ -286,8 +345,8 @@ describe('diagram pipeline', () => {
     elements: [{ kind: 'plot', expr: 'x^2' }],
   };
   const model = {
-    provider: 'glm',
-    providerLabel: 'GLM',
+    provider: 'deepseek',
+    providerLabel: 'DeepSeek',
     model: 'test',
     async complete() {
       return {
@@ -312,7 +371,7 @@ describe('diagram pipeline', () => {
     },
   };
   const appWithModel = createApp({ createChat: () => model });
-  const modelEnv: Env = { ...env, AI_MOCK: '', GLM_API_KEY: 'test', IMAGE_PROVIDER: 'none' };
+  const modelEnv: Env = { ...env, AI_MOCK: '', DEEPSEEK_API_KEY: 'test', IMAGE_PROVIDER: 'none' };
 
   it('attaches a figure without calling an image model', async () => {
     const response = await appWithModel.fetch(
@@ -324,7 +383,7 @@ describe('diagram pipeline', () => {
           count: 1,
           types: ['single'],
           imageMode: 'auto',
-          model: 'glm-4.7-flash',
+          model: 'deepseek-flash',
         }),
       }),
       modelEnv,
@@ -342,8 +401,8 @@ describe('diagram pipeline', () => {
 
 describe('scene image pipeline', () => {
   const model = {
-    provider: 'glm',
-    providerLabel: 'GLM',
+    provider: 'deepseek',
+    providerLabel: 'DeepSeek',
     model: 'test',
     async complete() {
       return {
@@ -391,7 +450,7 @@ describe('scene image pipeline', () => {
   const sceneEnv: Env = {
     ...env,
     AI_MOCK: '',
-    GLM_API_KEY: 'test',
+    DEEPSEEK_API_KEY: 'test',
     IMAGE_PROVIDER: 'none',
     IMAGE_SEARCH: 'wikimedia',
   };
@@ -406,7 +465,7 @@ describe('scene image pipeline', () => {
           count: 1,
           types: ['single'],
           imageMode: 'auto',
-          model: 'glm-4.7-flash',
+          model: 'deepseek-flash',
         }),
       }),
       sceneEnv,

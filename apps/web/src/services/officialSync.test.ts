@@ -69,6 +69,39 @@ describe('buildOfficialPacks', () => {
     expect(result.packs[0]?.decks[0]?.examMinutes).toBe(40);
   });
 
+  it('keeps bilingual deck text from the catalogue', () => {
+    const base = catalog().packs[0];
+    if (!base) throw new Error('test catalogue must have a pack');
+    const result = buildOfficialPacks(
+      catalog({
+        packs: [
+          {
+            ...base,
+            decks: [
+              deck({
+                titleI18n: { 'zh-Hant': '指標' },
+                descriptionI18n: { 'zh-Hant': '指標入門。' },
+                questions: [
+                  {
+                    ...question,
+                    i18n: {
+                      prompt: { 'zh-Hant': '哪個數字是偶數？' },
+                      options: { a: { 'zh-Hant': '3' }, b: { 'zh-Hant': '4' } },
+                    },
+                  },
+                ],
+              }),
+            ],
+          },
+        ],
+      }),
+    );
+    const built = result.packs[0]?.decks[0];
+    expect(built?.titleI18n).toEqual({ 'zh-Hant': '指標' });
+    expect(built?.descriptionI18n).toEqual({ 'zh-Hant': '指標入門。' });
+    expect(built?.questions[0]?.i18n?.prompt).toEqual({ 'zh-Hant': '哪個數字是偶數？' });
+  });
+
   it('resolves relative media against the deck media base URL', () => {
     const result = buildOfficialPacks(
       catalog({

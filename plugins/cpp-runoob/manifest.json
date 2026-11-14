@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "cpp.runoob",
+  "name": "C++ Programming · 程式設計入門",
+  "version": "1.0.2",
+  "description": "44 bilingual decks covering C++ from the first program through classes, templates, concurrency and the standard library. Every question switches between English and Traditional Chinese. ／ 44 個雙語題庫，由第一個程式到類別、樣板、併發與標準程式庫，每題均提供中英雙語。",
+  "author": "MengYin Study",
+  "license": "CC BY-SA 4.0",
+  "tags": ["C++", "Programming", "Beginner"],
+  "content": ["./decks/*.json"]
+}

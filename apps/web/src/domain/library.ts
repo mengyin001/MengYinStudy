@@ -11,7 +11,11 @@ import {
 } from '@mengyin/core';
 import type { LoadedPlugin } from '@mengyin/plugin-sdk';
 import type { OfficialDeckRef } from '@/services/types';
-import type { LocalPluginRecord, PluginIssue } from './pluginHost';
+import {
+  isGeneratedLocalPlugin,
+  type LocalPluginRecord,
+  type PluginIssue,
+} from './pluginHost';
 
 export interface DeckView {
   deck: Deck;
@@ -74,6 +78,29 @@ export function selectOfficialDecks(
     }
   }
   return decks;
+}
+
+/**
+ * Decks the learner may rename and prune.
+ *
+ * Only AI-generated decks are learner-authored content: official and bundled
+ * decks belong to the catalogue, and an imported plugin folder keeps its source
+ * of truth outside the app. A generated deck is included whether its current
+ * copy is local or already in the cloud.
+ */
+export function editableDeckKeys(
+  local: readonly LocalPluginRecord[],
+  cloudDecks: readonly Deck[],
+): Set<string> {
+  const keys = new Set<string>();
+  for (const record of local) {
+    if (!isGeneratedLocalPlugin(record)) continue;
+    for (const deck of record.decks) keys.add(deck.key);
+  }
+  for (const deck of cloudDecks) {
+    if (deck.pluginId.startsWith('ai.')) keys.add(deck.key);
+  }
+  return keys;
 }
 
 export function deckViews(

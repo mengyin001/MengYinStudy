@@ -85,7 +85,9 @@ describe('official catalogue mapping', () => {
           {
             id: 'd1',
             title: 'Deck 1',
+            title_i18n: { 'zh-Hant': '題庫一' },
             description: null,
+            description_i18n: { 'zh-Hant': '第一個題庫。' },
             tags: ['t'],
             questions: [{ id: 'q' }],
             media_base_url: null,
@@ -122,6 +124,8 @@ describe('official catalogue mapping', () => {
     expect(catalog.packs[0]?.tags).toEqual(['x']);
     expect(catalog.packs[0]?.decks.map((deck) => deck.id)).toEqual(['d1']);
     expect(catalog.packs[0]?.decks[0]?.examMinutes).toBe(24);
+    expect(catalog.packs[0]?.decks[0]?.titleI18n).toEqual({ 'zh-Hant': '題庫一' });
+    expect(catalog.packs[0]?.decks[0]?.descriptionI18n).toEqual({ 'zh-Hant': '第一個題庫。' });
   });
 
   it('rejects a non-array response', () => {

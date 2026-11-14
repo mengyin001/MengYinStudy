@@ -1,0 +1,455 @@
+{
+  "id": "cpp-02-intro",
+  "title": "C++ Introduction",
+  "titleI18n": {
+    "zh-Hant": "C++ 簡介"
+  },
+  "description": "Where C++ came from, what it is designed for, and how the ISO standard shapes the language, from C++98 to C++20.",
+  "descriptionI18n": {
+    "zh-Hant": "C++ 的起源、設計目標，以及 ISO 標準如何形塑這門語言：由 C++98 到 C++20。"
+  },
+  "tags": [
+    "C++",
+    "Introduction"
+  ],
+  "examMinutes": 12,
+  "questions": [
+    {
+      "id": "cpp-02-q01",
+      "type": "single",
+      "prompt": "Who created C++, and where was it developed?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "誰發明了 C++？它是在哪裡開發的？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "Bjarne Stroustrup 在貝爾實驗室"
+          },
+          "b": {
+            "zh-Hant": "Dennis Ritchie 在貝爾實驗室"
+          },
+          "c": {
+            "zh-Hant": "James Gosling 在昇陽電腦"
+          },
+          "d": {
+            "zh-Hant": "Guido van Rossum 在荷蘭數學與電腦科學研究中心"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "Bjarne Stroustrup 於 1979 年在 AT&T 貝爾實驗室開始開發 C++。Dennis Ritchie 發明 C，James Gosling 發明 Java，Guido van Rossum 發明 Python。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "Bjarne Stroustrup at Bell Labs"
+        },
+        {
+          "id": "b",
+          "text": "Dennis Ritchie at Bell Labs"
+        },
+        {
+          "id": "c",
+          "text": "James Gosling at Sun Microsystems"
+        },
+        {
+          "id": "d",
+          "text": "Guido van Rossum at CWI"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "Bjarne Stroustrup began C++ at AT&T Bell Labs in 1979. Dennis Ritchie created C, James Gosling created Java, and Guido van Rossum created Python.",
+      "tags": [
+        "History"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-02-q02",
+      "type": "single",
+      "prompt": "What was C++ called before it was given the name C++?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "C++ 在被命名為 C++ 之前叫甚麼？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "C with Classes（帶類別的 C）"
+          },
+          "b": {
+            "zh-Hant": "Objective-C"
+          },
+          "c": {
+            "zh-Hant": "C--"
+          },
+          "d": {
+            "zh-Hant": "ANSI C"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "Stroustrup 的專案原名 “C with Classes”，1983 年才改名 C++。Objective-C 是 Brad Cox 的另一門語言，ANSI C 則是 C 的標準。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "C with Classes"
+        },
+        {
+          "id": "b",
+          "text": "Objective-C"
+        },
+        {
+          "id": "c",
+          "text": "C--"
+        },
+        {
+          "id": "d",
+          "text": "ANSI C"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "Stroustrup's project was called \"C with Classes\" and was renamed C++ in 1983. Objective-C is a separate language by Brad Cox, and ANSI C is a C standard.",
+      "tags": [
+        "History"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-02-q03",
+      "type": "boolean",
+      "prompt": "C++ is a strict superset of C, so every valid C program is also a valid C++ program.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "C++ 是 C 的嚴格超集，因此每一份合法的 C 程式也都是合法的 C++ 程式。"
+        },
+        "explanation": {
+          "zh-Hant": "C++ 大致相容 C 原始碼，但不是嚴格超集：例如 C++ 不會把 void* 隱式轉成 T*，而 class、new 等識別字在 C++ 是關鍵字，在 C 卻可以當一般名稱。"
+        }
+      },
+      "answer": {
+        "kind": "boolean",
+        "value": false
+      },
+      "explanation": "C++ is largely source-compatible with C but not a strict superset: void* does not convert implicitly to T*, and identifiers such as class and new are keywords in C++ but ordinary names in C.",
+      "tags": [
+        "C compatibility"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-02-q04",
+      "type": "boolean",
+      "prompt": "A conforming C++ compiler must emit exactly the machine instructions prescribed by the ISO standard.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "符合標準的 C++ 編譯器必須產生 ISO 標準所規定的確切機器指令。"
+        },
+        "explanation": {
+          "zh-Hant": "標準規定的是可觀察行為，不是程式碼產生方式；在 as-if 規則下，只要可觀察行為不變，編譯器可以自由最佳化。"
+        }
+      },
+      "answer": {
+        "kind": "boolean",
+        "value": false
+      },
+      "explanation": "The standard prescribes observable behaviour, not code generation. Under the as-if rule a compiler may optimise freely as long as the program's observable behaviour is unchanged.",
+      "tags": [
+        "Standards"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-02-q05",
+      "type": "multi",
+      "prompt": "Which of these are published ISO C++ standards? Select all that apply.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "下列哪些是已發佈的 ISO C++ 標準？可多選。"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "C++98"
+          },
+          "b": {
+            "zh-Hant": "C++11"
+          },
+          "c": {
+            "zh-Hant": "C++17"
+          },
+          "d": {
+            "zh-Hant": "C++09"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "C++98、C++11、C++17 都是 ISO 標準（其後還有 C++03、C++14、C++20、C++23）。並沒有 C++09：該版本延期，最後以 C++11 發佈。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "C++98"
+        },
+        {
+          "id": "b",
+          "text": "C++11"
+        },
+        {
+          "id": "c",
+          "text": "C++17"
+        },
+        {
+          "id": "d",
+          "text": "C++09"
+        }
+      ],
+      "answer": {
+        "kind": "multi",
+        "optionIds": [
+          "a",
+          "b",
+          "c"
+        ]
+      },
+      "explanation": "C++98, C++11 and C++17 are ISO standards (C++03, C++14, C++20 and C++23 followed). There is no C++09: that work slipped and was published as C++11.",
+      "tags": [
+        "Standards"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-02-q06",
+      "type": "multi",
+      "prompt": "Which programming styles does C++ support directly? Select all that apply.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "C++ 直接支援下列哪些程式設計風格？可多選。"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "以自由函式進行的程序式程式設計"
+          },
+          "b": {
+            "zh-Hant": "以類別與虛擬函式進行的物件導向程式設計"
+          },
+          "c": {
+            "zh-Hant": "以樣板進行的泛型程式設計"
+          },
+          "d": {
+            "zh-Hant": "由語言強制提供、完全不必手動管理的垃圾回收"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "C++ 是多範式語言：程序式、物件導向、泛型與函式風格可以並存。語言仍保留 new/delete 手動記憶體管理，也不強制要求垃圾回收。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "Procedural programming with free functions"
+        },
+        {
+          "id": "b",
+          "text": "Object-oriented programming with classes and virtual functions"
+        },
+        {
+          "id": "c",
+          "text": "Generic programming with templates"
+        },
+        {
+          "id": "d",
+          "text": "Mandatory garbage collection with no manual memory management"
+        }
+      ],
+      "answer": {
+        "kind": "multi",
+        "optionIds": [
+          "a",
+          "b",
+          "c"
+        ]
+      },
+      "explanation": "C++ is multi-paradigm: procedural, object-oriented, generic and functional styles coexist. Manual memory management with new and delete remains, and the language does not require a garbage collector.",
+      "tags": [
+        "Design",
+        "Paradigms"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-02-q07",
+      "type": "single",
+      "prompt": "Which statement describes the C++ design principle known as \"zero-overhead abstraction\"?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "哪一句話描述了 C++ 的「零開銷抽象」設計原則？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "高階功能應編譯成與手寫低階程式碼同樣有效率的機器碼，而沒用到的功能不應付出成本。"
+          },
+          "b": {
+            "zh-Hant": "每一種抽象都必須付出少量執行期成本，以換取可讀性。"
+          },
+          "c": {
+            "zh-Hant": "程式必須避免類別與樣板，才能保持效能。"
+          },
+          "d": {
+            "zh-Hant": "編譯器會移除所有執行期檢查，包括你自己寫的檢查。"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "Stroustrup 的原則是「不需為沒用到的東西付出成本，用到的部分要和手寫程式碼一樣好」。它是設計準則，不是讓編譯器刪掉你自己寫的檢查。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "Higher-level features should compile to code as efficient as hand-written low-level code, and unused features should cost nothing."
+        },
+        {
+          "id": "b",
+          "text": "Every abstraction must pay a small run-time fee that is acceptable for readability."
+        },
+        {
+          "id": "c",
+          "text": "Programs must avoid classes and templates to stay fast."
+        },
+        {
+          "id": "d",
+          "text": "The compiler removes all run-time checks, including checks you write yourself."
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "Stroustrup's rule is that you do not pay for what you do not use, and what you do use should be as good as hand-written code. It is a design guideline, not a licence to delete your own checks.",
+      "tags": [
+        "Design"
+      ],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-02-q08",
+      "type": "single",
+      "prompt": "Which statement best describes where C++ is commonly used?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "哪一句最能描述 C++ 常見的應用領域？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "效能關鍵的軟體，例如遊戲引擎、瀏覽器、資料庫與嵌入式韌體。"
+          },
+          "b": {
+            "zh-Hant": "主要用於網頁的樣式與版面配置。"
+          },
+          "c": {
+            "zh-Hant": "只用於入門程式設計課程。"
+          },
+          "d": {
+            "zh-Hant": "只用於短的自動化腳本。"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "C++ 的典型領域是需要直接控制記憶體與效能的地方：遊戲引擎、瀏覽器、資料庫、交易系統、嵌入式與高效能運算。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "Performance-critical software such as game engines, browsers, databases and embedded firmware."
+        },
+        {
+          "id": "b",
+          "text": "Mainly for styling and layout of web pages."
+        },
+        {
+          "id": "c",
+          "text": "Only in introductory programming courses."
+        },
+        {
+          "id": "d",
+          "text": "Only for short automation scripts."
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "C++ is used where control over memory and performance matters: game engines, browsers, databases, trading systems, embedded firmware and high-performance computing.",
+      "tags": [
+        "Ecosystem"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-02-q09",
+      "type": "fill",
+      "prompt": "The first ISO C++ standard, usually called C++98, was published in the year ____.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "第一個 ISO C++ 標準（通稱 C++98）於 ____ 年發佈。"
+        },
+        "explanation": {
+          "zh-Hant": "ISO/IEC 14882:1998 是第一個標準化的 C++，因此通稱 C++98。"
+        }
+      },
+      "answer": {
+        "kind": "fill",
+        "accept": [
+          "1998",
+          "1998年",
+          "1998 年"
+        ],
+        "ignoreSpaces": true
+      },
+      "explanation": "ISO/IEC 14882:1998 was the first standardised C++, which is why it is called C++98.",
+      "tags": [
+        "Standards"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-02-q10",
+      "type": "short",
+      "prompt": "In one or two sentences, explain why C++ is described as a multi-paradigm language.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "用一至兩句說明為甚麼 C++ 被稱為多範式語言。"
+        },
+        "model": {
+          "zh-Hant": "C++ 允許在同一個程式庫中混合程序式程式碼、類別與繼承、樣板，以及函式風格的演算法，因此問題的每個部分都能採用最合適的風格，而不必被單一範式綁死。"
+        },
+        "explanation": {
+          "zh-Hant": "重點在於「可以混用」：語言刻意同時支援多種風格，而不是強制只用一種。"
+        }
+      },
+      "answer": {
+        "kind": "short",
+        "model": "C++ lets one codebase mix procedural code, classes and inheritance, templates and functional-style algorithms, so each part of a problem can use the style that fits it instead of being forced into a single paradigm.",
+        "keywords": [
+          "multi-paradigm",
+          "procedural",
+          "object-oriented",
+          "generic",
+          "templates"
+        ]
+      },
+      "explanation": "The key point is that the styles can be mixed: the language deliberately supports several at once instead of enforcing one.",
+      "tags": [
+        "Design",
+        "Paradigms"
+      ],
+      "difficulty": 2
+    }
+  ]
+}

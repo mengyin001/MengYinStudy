@@ -45,10 +45,9 @@ variables and never `VITE_*`. See [AI_API.md](./AI_API.md) for the complete list
 - `vars` — `AUTH_REQUIRED`, the Supabase URL/publishable key, CORS and the default/allowlisted image
   models.
 
-Do not put `GLM_API_KEY`, `DEEPSEEK_API_KEY` or a Supabase secret key in `vars`. Add them once:
+Do not put `DEEPSEEK_API_KEY` or a Supabase secret key in `vars`. Add it once:
 
 ```bash
-npx wrangler secret put GLM_API_KEY
 npx wrangler secret put DEEPSEEK_API_KEY
 ```
 

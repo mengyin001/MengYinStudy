@@ -1,0 +1,462 @@
+{
+  "id": "cpp-04-basic-syntax",
+  "title": "C++ Basic Syntax",
+  "titleI18n": {
+    "zh-Hant": "C++ 基本語法"
+  },
+  "description": "The rules that apply to every C++ file: case sensitivity, semicolons, blocks and scope, identifier rules, keywords, whitespace, and the shape of main.",
+  "descriptionI18n": {
+    "zh-Hant": "套用到每個 C++ 檔案的規則：大小寫敏感、分號、區塊與作用域、識別字規則、關鍵字、空白，以及 main 的長相。"
+  },
+  "tags": [
+    "C++",
+    "Syntax"
+  ],
+  "examMinutes": 12,
+  "questions": [
+    {
+      "id": "cpp-04-q01",
+      "type": "single",
+      "prompt": "Which statement about letter case in C++ is correct?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "關於 C++ 的大小寫，下列哪一句正確？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "Total 與 total 是兩個不同的識別字。"
+          },
+          "b": {
+            "zh-Hant": "關鍵字可以用任何大小寫書寫，所以 INT 等同 int。"
+          },
+          "c": {
+            "zh-Hant": "Main 也可以當作程式進入點。"
+          },
+          "d": {
+            "zh-Hant": "識別字不分大小寫，但關鍵字分。"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "C++ 區分大小寫，識別字與關鍵字都一樣：Total、total、TOTAL 是三個不同的名字，只有 main 才是進入點。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "Total and total are two different identifiers."
+        },
+        {
+          "id": "b",
+          "text": "Keywords may be written in any case, so INT works like int."
+        },
+        {
+          "id": "c",
+          "text": "Main is accepted as an alternative entry point."
+        },
+        {
+          "id": "d",
+          "text": "Identifiers are case-insensitive, but keywords are not."
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "C++ is case-sensitive for both identifiers and keywords: Total, total and TOTAL are three different names, and only main is the entry point.",
+      "tags": [
+        "Syntax",
+        "Identifiers"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-04-q02",
+      "type": "single",
+      "prompt": "Which of these is a valid C++ identifier?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "下列哪一個是合法的 C++ 識別字？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "count_2"
+          },
+          "b": {
+            "zh-Hant": "2count"
+          },
+          "c": {
+            "zh-Hant": "int"
+          },
+          "d": {
+            "zh-Hant": "my-var"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "識別字必須以字母或底線開頭，之後只能是字母、數字與底線。2count 以數字開頭，int 是關鍵字，my-var 含有減號。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "count_2"
+        },
+        {
+          "id": "b",
+          "text": "2count"
+        },
+        {
+          "id": "c",
+          "text": "int"
+        },
+        {
+          "id": "d",
+          "text": "my-var"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "An identifier must start with a letter or underscore and may then contain letters, digits and underscores. 2count starts with a digit, int is a keyword, and my-var contains a minus sign.",
+      "tags": [
+        "Identifiers"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-04-q03",
+      "type": "boolean",
+      "prompt": "Outside string and character literals, whitespace such as spaces, tabs and newlines is generally insignificant, except that it separates tokens.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "在字串與字元常值之外，空白、定位字元與換行一般而言不具意義，只負責分隔記號（token）。"
+        },
+        "explanation": {
+          "zh-Hant": "C++ 是自由格式語言：int x = 1; 與 int  x=1; 意義相同，但 intx 會變成另一個識別字，所以空白有時是必要的。"
+        }
+      },
+      "answer": {
+        "kind": "boolean",
+        "value": true
+      },
+      "explanation": "C++ is free-form: int x = 1; and int  x=1; mean the same, while intx would be a single different token, so whitespace sometimes matters as a separator.",
+      "tags": [
+        "Syntax",
+        "Whitespace"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-04-q04",
+      "type": "boolean",
+      "prompt": "main is a reserved keyword in C++.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "main 是 C++ 的保留關鍵字。"
+        },
+        "explanation": {
+          "zh-Hant": "main 只是具有特殊角色的普通識別字：標準要求實作提供全域函式 int main()，但它不在關鍵字表裡。"
+        }
+      },
+      "answer": {
+        "kind": "boolean",
+        "value": false
+      },
+      "explanation": "main is an ordinary identifier with a special role: the implementation must provide the global function int main(), but main is not in the keyword list.",
+      "tags": [
+        "Keywords",
+        "main"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-04-q05",
+      "type": "multi",
+      "prompt": "Which of these are C++ keywords? Select all that apply.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "下列哪些是 C++ 關鍵字？可多選。"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "class"
+          },
+          "b": {
+            "zh-Hant": "namespace"
+          },
+          "c": {
+            "zh-Hant": "const"
+          },
+          "d": {
+            "zh-Hant": "main"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "class、namespace、const 都在關鍵字表中；main 不是關鍵字，只是程式約定使用的進入點名稱。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "class"
+        },
+        {
+          "id": "b",
+          "text": "namespace"
+        },
+        {
+          "id": "c",
+          "text": "const"
+        },
+        {
+          "id": "d",
+          "text": "main"
+        }
+      ],
+      "answer": {
+        "kind": "multi",
+        "optionIds": [
+          "a",
+          "b",
+          "c"
+        ]
+      },
+      "explanation": "class, namespace and const are keywords. main is not a keyword; it is just the conventional name of the entry point.",
+      "tags": [
+        "Keywords"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-04-q06",
+      "type": "multi",
+      "prompt": "Which statements about `using namespace std;` are correct? Select all that apply.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "關於 `using namespace std;`，下列哪些敘述正確？可多選。"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "在它出現的作用域中，可以直接寫 cout 而不必寫 std::cout。"
+          },
+          "b": {
+            "zh-Hant": "它是一種 using 指示（using-directive），讓 std 中的名字不需限定即可使用。"
+          },
+          "c": {
+            "zh-Hant": "它必須出現在任何 #include 指示之前。"
+          },
+          "d": {
+            "zh-Hant": "通常避免寫在標頭檔中，因為它會影響每一個引入該標頭的檔案。"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "using 指示讓 std 的名字在該作用域可見，與 #include 的先後無關；放在標頭檔會把整個命名空間帶給所有引入者，容易造成名稱衝突，因此一般不建議。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "It lets you write cout instead of std::cout in the scope where it appears."
+        },
+        {
+          "id": "b",
+          "text": "It is a using-directive that makes names from std visible without qualification."
+        },
+        {
+          "id": "c",
+          "text": "It must appear before any #include directive."
+        },
+        {
+          "id": "d",
+          "text": "It is usually avoided in headers, because it affects every file that includes the header."
+        }
+      ],
+      "answer": {
+        "kind": "multi",
+        "optionIds": [
+          "a",
+          "b",
+          "d"
+        ]
+      },
+      "explanation": "A using-directive makes std names visible in that scope, regardless of where the #include lines are. In a header it leaks into every includer, so it is normally avoided there.",
+      "tags": [
+        "Namespaces",
+        "Syntax"
+      ],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-04-q07",
+      "type": "single",
+      "prompt": "What does a pair of braces `{ ... }` introduce in C++?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "在 C++ 中，一對大括號 `{ ... }` 會引入甚麼？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "一個複合陳述式：把多個陳述式群組起來，並開啟一個新的作用域。"
+          },
+          "b": {
+            "zh-Hant": "一段註釋區塊，編譯器會忽略其內容。"
+          },
+          "c": {
+            "zh-Hant": "一個陳述式，本身必須以分號結尾。"
+          },
+          "d": {
+            "zh-Hant": "一個前置處理區段，會在編譯前展開。"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "大括號構成複合陳述式（區塊），可用來群組陳述式並限制變數的作用域；它本身不需要分號，也不是註釋或前置處理。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "A compound statement that groups statements and opens a new scope."
+        },
+        {
+          "id": "b",
+          "text": "A comment block that the compiler ignores."
+        },
+        {
+          "id": "c",
+          "text": "A statement that must itself be terminated by a semicolon."
+        },
+        {
+          "id": "d",
+          "text": "A preprocessor section that is expanded before compilation."
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "Braces form a compound statement, or block, that groups statements and limits the scope of variables declared inside it. A block itself needs no semicolon.",
+      "tags": [
+        "Syntax",
+        "Scope"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-04-q08",
+      "type": "single",
+      "prompt": "You forget the semicolon at the end of a statement. What are you most likely to see?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "你忘了在陳述式結尾加上分號，最可能看到甚麼？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "錯誤指向下一行的開頭或下一個記號。"
+          },
+          "b": {
+            "zh-Hant": "連結器回報未定義符號。"
+          },
+          "c": {
+            "zh-Hant": "只有警告，執行檔仍可正常運作。"
+          },
+          "d": {
+            "zh-Hant": "編譯器會自動補上分號。"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "語法分析器要讀到下一個記號才發現前一個陳述式沒有結束，所以錯誤位置常落在下一行，實際問題卻在上一行。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "An error pointing at the beginning of the next line or the next token."
+        },
+        {
+          "id": "b",
+          "text": "A linker error about an undefined symbol."
+        },
+        {
+          "id": "c",
+          "text": "A warning only, with a working executable."
+        },
+        {
+          "id": "d",
+          "text": "The compiler silently inserts the semicolon."
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "The parser only notices the missing terminator when it reaches the next token, so the reported location is often the following line even though the real problem is on the previous one.",
+      "tags": [
+        "Syntax",
+        "Diagnostics"
+      ],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-04-q09",
+      "type": "fill",
+      "prompt": "Every expression statement in C++ ends with a ____.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "每個 C++ 運算式陳述式都以 ____ 結尾。"
+        },
+        "explanation": {
+          "zh-Hant": "分號代表運算式陳述式的結束；漏掉分號是最常見的編譯錯誤之一，而且錯誤訊息常指向下一行。"
+        }
+      },
+      "answer": {
+        "kind": "fill",
+        "accept": [
+          ";",
+          "semicolon",
+          "分號",
+          "；"
+        ],
+        "ignoreCase": true,
+        "ignoreSpaces": true
+      },
+      "explanation": "A semicolon terminates an expression statement. A missing semicolon is one of the most common compile errors, and the diagnostic often points at the next line.",
+      "tags": [
+        "Syntax"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-04-q10",
+      "type": "short",
+      "prompt": "Explain why `using namespace std;` is convenient in a small program but discouraged in a header file.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "說明為甚麼 `using namespace std;` 在小程式裡很方便，卻不建議寫在標頭檔中。"
+        },
+        "model": {
+          "zh-Hant": "在小程式裡它省去每次輸入 std:: 的麻煩；但在標頭檔中，它會把整個 std 命名空間帶進每一個引入該標頭的編譯單元，造成難以追蹤的名稱衝突與歧義，因此標頭檔應完整限定名稱，或只使用範圍較窄的 using 宣告。"
+        },
+        "explanation": {
+          "zh-Hant": "關鍵是影響範圍：單一 .cpp 的影響有限，標頭檔的影響會擴散到所有引入者，而且可能與程式庫的版本變化互動。"
+        }
+      },
+      "answer": {
+        "kind": "short",
+        "model": "In a small program it saves typing std:: on every name. In a header it leaks the whole std namespace into every translation unit that includes the header, which can create ambiguities and silent name collisions that are hard to trace, so headers should qualify names or use narrower using-declarations.",
+        "keywords": [
+          "namespace",
+          "header",
+          "collision",
+          "ambiguity",
+          "std::"
+        ]
+      },
+      "explanation": "The key is scope of effect: in one .cpp the blast radius is small, while in a header it reaches every includer and can interact badly with library changes.",
+      "tags": [
+        "Namespaces",
+        "Headers"
+      ],
+      "difficulty": 3
+    }
+  ]
+}

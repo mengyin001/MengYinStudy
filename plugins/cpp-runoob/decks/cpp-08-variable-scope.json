@@ -1,0 +1,245 @@
+{
+  "id": "cpp-08-variable-scope",
+  "title": "C++ Variable Scope",
+  "titleI18n": { "zh-Hant": "C++ 變數作用域" },
+  "description": "Where names are visible in C++: local, global and block scope, shadowing, static locals, initialisation order, the `::` operator, and how scope differs from lifetime.",
+  "descriptionI18n": {
+    "zh-Hant": "C++ 名稱在何處可見：區域、全域與區塊作用域、名稱遮蔽、靜態區域變數、初始化順序、`::` 運算子，以及作用域與存活期的差別。"
+  },
+  "tags": ["C++", "Scope"],
+  "examMinutes": 15,
+  "questions": [
+    {
+      "id": "cpp-08-q01",
+      "type": "single",
+      "prompt": "Inside a function that declares a local `count`, what does `::count` refer to?",
+      "i18n": {
+        "prompt": { "zh-Hant": "在一個宣告了區域變數 `count` 的函式內，`::count` 指向何者？" },
+        "options": {
+          "a": { "zh-Hant": "在全域（命名空間）範圍宣告的 `count`" },
+          "b": { "zh-Hant": "目前區塊中的區域 `count`" },
+          "c": { "zh-Hant": "新建立的暫存 `count`" },
+          "d": { "zh-Hant": "`count` 的建構函式" }
+        },
+        "explanation": {
+          "zh-Hant": "開頭的 `::` 是全域作用域解析運算子，因此 `::count` 會跳過區域作用域，指涉全域範圍宣告的變數。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "The `count` declared at global (namespace) scope" },
+        { "id": "b", "text": "The local `count` in the current block" },
+        { "id": "c", "text": "A newly created temporary `count`" },
+        { "id": "d", "text": "The constructor of `count`" }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "A leading `::` is the global scope-resolution operator, so `::count` skips the local scope and names the variable declared at global scope.",
+      "tags": ["Scope resolution", "Globals"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-08-q02",
+      "type": "single",
+      "prompt": "A variable declared inside the body of a `for` loop is visible where?",
+      "i18n": {
+        "prompt": { "zh-Hant": "在 `for` 迴圈本體內宣告的變數，其可見範圍為何？" },
+        "options": {
+          "a": { "zh-Hant": "從宣告處到該區塊結尾" },
+          "b": { "zh-Hant": "整份編譯單元" },
+          "c": { "zh-Hant": "僅限迴圈的條件運算式內" },
+          "d": { "zh-Hant": "同一檔案中之後定義的每個函式" }
+        },
+        "explanation": {
+          "zh-Hant": "迴圈本體是一個區塊，變數的作用域從宣告點開始，到該區塊的右大括號為止；每次迭代都是一個新的物件。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "From its declaration to the end of that block" },
+        { "id": "b", "text": "Throughout the entire translation unit" },
+        { "id": "c", "text": "Only inside the loop's condition expression" },
+        { "id": "d", "text": "In every function defined later in the same file" }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "The loop body is a block, so the variable's scope starts at its declaration and ends at the closing brace; each iteration creates a fresh object.",
+      "tags": ["Block scope", "Loops"],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-08-q03",
+      "type": "single",
+      "prompt": "A function contains `static int calls = 0;` followed by `++calls; return calls;`. What does the third call return?",
+      "i18n": {
+        "prompt": { "zh-Hant": "函式內有 `static int calls = 0;`，接著執行 `++calls; return calls;`。第三次呼叫會回傳甚麼？" },
+        "options": {
+          "a": { "zh-Hant": "3" },
+          "b": { "zh-Hant": "1" },
+          "c": { "zh-Hant": "0" },
+          "d": { "zh-Hant": "2" }
+        },
+        "explanation": {
+          "zh-Hant": "函式內的 `static` 變數只在第一次使用前初始化一次，之後保留數值，所以第三次呼叫時計數器已累加到 3。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "3" },
+        { "id": "b", "text": "1" },
+        { "id": "c", "text": "0" },
+        { "id": "d", "text": "2" }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "A function-local `static` is initialised once, before its first use, and keeps its value across calls, so the counter reaches 3 on the third call.",
+      "tags": ["Static locals", "Lifetime"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-08-q04",
+      "type": "single",
+      "prompt": "Which statement about scope and lifetime is correct?",
+      "i18n": {
+        "prompt": { "zh-Hant": "關於作用域與存活期，下列敘述何者正確？" },
+        "options": {
+          "a": { "zh-Hant": "物件的存活期可以超出其名稱可見的作用域。" },
+          "b": { "zh-Hant": "作用域與存活期是同一件事的兩種說法。" },
+          "c": { "zh-Hant": "具有全域作用域的變數一定是自動儲存期。" },
+          "d": { "zh-Hant": "名稱一旦離開作用域，它所指向的物件就永遠不能再使用。" }
+        },
+        "explanation": {
+          "zh-Hant": "作用域談的是名稱在原始碼中何處可見，存活期談的是物件在執行時何時存在。函式內的 `static` 只在區塊內可見，卻存活到程式結束；堆積物件也可以比指向它的指標活得更久。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "An object's lifetime can extend beyond the scope in which its name is visible." },
+        { "id": "b", "text": "Scope and lifetime are two names for the same property." },
+        { "id": "c", "text": "A variable with global scope always has automatic storage duration." },
+        { "id": "d", "text": "Once a name goes out of scope, the object it named can never be used again." }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "Scope is about where a name is visible; lifetime is about when the object exists. A function-local `static` is visible only in its block but lives until the program ends, and a heap object can outlive the pointer that refers to it.",
+      "tags": ["Scope", "Lifetime"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-08-q05",
+      "type": "multi",
+      "prompt": "Which of these introduce a new, nested scope? Select all that apply.",
+      "i18n": {
+        "prompt": { "zh-Hant": "下列哪些會建立新的巢狀作用域？可多選。" },
+        "options": {
+          "a": { "zh-Hant": "一對大括號 `{ }`" },
+          "b": { "zh-Hant": "函式本體" },
+          "c": { "zh-Hant": "`if` 或 `for` 敘述的本體" },
+          "d": { "zh-Hant": "`#include` 前置指示" }
+        },
+        "explanation": {
+          "zh-Hant": "大括號、函式本體與控制敘述的本體都會開啟區塊作用域；`#include` 只是前置處理動作，不會建立任何作用域。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "A pair of braces `{ }`" },
+        { "id": "b", "text": "A function body" },
+        { "id": "c", "text": "The body of an `if` or `for` statement" },
+        { "id": "d", "text": "A `#include` directive" }
+      ],
+      "answer": { "kind": "multi", "optionIds": ["a", "b", "c"] },
+      "explanation": "Braces, function bodies and control-statement bodies all open a block scope. `#include` is a preprocessor action and creates no scope at all.",
+      "tags": ["Block scope"],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-08-q06",
+      "type": "multi",
+      "prompt": "Which statements about shadowing are true? Select all that apply.",
+      "i18n": {
+        "prompt": { "zh-Hant": "關於名稱遮蔽（shadowing），下列敘述何者正確？可多選。" },
+        "options": {
+          "a": { "zh-Hant": "內層以相同名稱宣告的變數，會在其區塊內遮蔽外層變數。" },
+          "b": { "zh-Hant": "`::name` 可以取得被區域變數遮蔽的全域變數。" },
+          "c": { "zh-Hant": "編譯器會把所有遮蔽視為錯誤而拒絕編譯。" },
+          "d": { "zh-Hant": "內層區塊結束後，外層變數又會重新可見。" }
+        },
+        "explanation": {
+          "zh-Hant": "遮蔽是合法的：內層名稱會隱藏外層名稱，直到區塊結束。開頭的 `::` 可以取得全域變數，而多數編譯器只會在開啟 `-Wshadow` 時提出警告。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "An inner declaration with the same name hides the outer variable inside its block."
+        },
+        { "id": "b", "text": "`::name` can reach a global variable hidden by a local one." },
+        { "id": "c", "text": "The compiler rejects any shadowing as an error." },
+        { "id": "d", "text": "When the inner block ends, the outer variable is visible again." }
+      ],
+      "answer": { "kind": "multi", "optionIds": ["a", "b", "d"] },
+      "explanation": "Shadowing is legal: the inner name hides the outer one until the block ends. A leading `::` reaches the global one, and many compilers only warn, for example with `-Wshadow`.",
+      "tags": ["Shadowing", "Scope resolution"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-08-q07",
+      "type": "boolean",
+      "prompt": "The order in which namespace-scope objects in different translation units are initialised is unspecified.",
+      "i18n": {
+        "prompt": { "zh-Hant": "不同編譯單元中的命名空間範圍物件，其初始化順序是未指定的。" },
+        "explanation": {
+          "zh-Hant": "動態初始化在不同編譯單元之間的順序並未規定，所以一個全域物件不應依賴另一個檔案中的全域物件；同一編譯單元內則依定義順序初始化。"
+        }
+      },
+      "answer": { "kind": "boolean", "value": true },
+      "explanation": "Dynamic initialisation order between translation units is unspecified, so one global must not depend on another defined in a different file. Within a single translation unit it follows definition order.",
+      "tags": ["Initialisation order", "Globals"],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-08-q08",
+      "type": "boolean",
+      "prompt": "A function-local `static` variable is destroyed when its function returns.",
+      "i18n": {
+        "prompt": { "zh-Hant": "函式內的 `static` 變數會在函式返回時被銷毀。" },
+        "explanation": {
+          "zh-Hant": "它在程式結束、`main` 返回之後才被銷毀，順序與建構相反。只有自動區域變數會在函式返回時銷毀。"
+        }
+      },
+      "answer": { "kind": "boolean", "value": false },
+      "explanation": "It is destroyed at program exit, after `main` returns, in reverse order of construction. Only automatic locals are destroyed when the function returns.",
+      "tags": ["Static locals", "Lifetime"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-08-q09",
+      "type": "fill",
+      "prompt": "To reach the global `value` from a block that declares a local `value`, write ____value.",
+      "i18n": {
+        "prompt": { "zh-Hant": "要從宣告了區域變數 `value` 的區塊取得全域 `value`，需寫成 ____value。" },
+        "explanation": {
+          "zh-Hant": "`::value` 使用全域作用域解析運算子；不加 `::` 的 `value` 會指向區域變數。"
+        }
+      },
+      "answer": { "kind": "fill", "accept": ["::"], "ignoreSpaces": true },
+      "explanation": "`::value` uses the global scope-resolution operator, while the unqualified `value` names the local.",
+      "tags": ["Scope resolution", "Shadowing"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-08-q10",
+      "type": "short",
+      "prompt": "Explain the difference between the scope and the lifetime of a variable, and give one example in which they differ.",
+      "i18n": {
+        "prompt": { "zh-Hant": "說明變數的「作用域」與「存活期」有何不同，並舉一個兩者不一致的例子。" },
+        "model": {
+          "zh-Hant": "作用域是名稱在原始碼中可使用的範圍；存活期是物件在執行期間實際存在的期間。函式內的 `static` 變數就是兩者不同的例子：它的作用域僅限函式本體，存活期卻一直到程式結束。"
+        },
+        "explanation": {
+          "zh-Hant": "作用域是編譯期的文字範圍，存活期是執行期的時間範圍；兩者由不同的規則決定。"
+        }
+      },
+      "answer": {
+        "kind": "short",
+        "model": "Scope is the part of the source code in which a name can be used; lifetime is the period during execution in which the object exists. They differ for a function-local `static`: its scope is only the function body, but its lifetime lasts until the program ends.",
+        "keywords": ["scope", "lifetime", "static", "source code", "execution"]
+      },
+      "explanation": "Scope is a compile-time textual region, while lifetime is a run-time period; different rules govern each.",
+      "tags": ["Scope", "Lifetime"],
+      "difficulty": 3
+    }
+  ]
+}

@@ -1,0 +1,467 @@
+{
+  "id": "cpp-29-polymorphism",
+  "title": "C++ Polymorphism",
+  "titleI18n": {
+    "zh-Hant": "C++ 多型"
+  },
+  "description": "Compile-time and run-time polymorphism, virtual functions and the vtable/vptr mechanism, base pointers to derived objects, object slicing, virtual destructors, pure virtual functions, dynamic_cast, typeid and final.",
+  "descriptionI18n": {
+    "zh-Hant": "編譯期與執行期多型、虛擬函式與 vtable/vptr 機制、以基底指標指向衍生物件、物件切片、虛擬解構函式、純虛擬函式、dynamic_cast、typeid 與 final。"
+  },
+  "tags": [
+    "C++",
+    "Polymorphism"
+  ],
+  "examMinutes": 15,
+  "questions": [
+    {
+      "id": "cpp-29-polymorphism-q01",
+      "type": "single",
+      "prompt": "Which option correctly matches each mechanism to the kind of polymorphism it provides?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "下列哪一個選項正確配對「機制」與「多型種類」？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "函式重載 → 編譯期多型；virtual 函式 → 執行期多型"
+          },
+          "b": {
+            "zh-Hant": "函式重載 → 執行期多型；virtual 函式 → 編譯期多型"
+          },
+          "c": {
+            "zh-Hant": "樣板 → 執行期多型；virtual 函式 → 編譯期多型"
+          },
+          "d": {
+            "zh-Hant": "兩者都在執行期才決定"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "重載與樣板在編譯期就依靜態型別決定要呼叫哪個函式；virtual 函式則透過基底指標或參考，在執行期依物件實際型別決定，這才是執行期多型。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "Function overloading gives compile-time polymorphism; virtual functions give run-time polymorphism"
+        },
+        {
+          "id": "b",
+          "text": "Function overloading gives run-time polymorphism; virtual functions give compile-time polymorphism"
+        },
+        {
+          "id": "c",
+          "text": "Templates give run-time polymorphism; virtual functions give compile-time polymorphism"
+        },
+        {
+          "id": "d",
+          "text": "Both are resolved only at run time"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "Overloading and templates are resolved at compile time from the static types. Virtual functions are dispatched at run time from the object's dynamic type when called through a base pointer or reference.",
+      "tags": [
+        "Polymorphism",
+        "Virtual functions"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-29-polymorphism-q02",
+      "type": "single",
+      "prompt": "`Circle` derives from `Shape` and overrides the virtual `draw()`. What happens when a `Circle` object is passed by value to `void render(Shape s)`, which calls `s.draw()`?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "`Circle` 繼承 `Shape` 並覆寫了 virtual 的 `draw()`。若把 `Circle` 物件以傳值方式傳給 `void render(Shape s)`，而函式內呼叫 `s.draw()`，會發生甚麼事？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "Circle 被切片成 Shape，呼叫的是 Shape::draw"
+          },
+          "b": {
+            "zh-Hant": "因為 draw 是 virtual，所以呼叫 Circle::draw"
+          },
+          "c": {
+            "zh-Hant": "編譯錯誤：衍生物件不能傳值給基底參數"
+          },
+          "d": {
+            "zh-Hant": "兩個版本都會被呼叫"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "傳值會建立一個靜態型別為 Shape 的新物件，只複製基底子物件，Circle 的部分被「切片」丟棄。既然物件本身就是 Shape，虛擬呼叫只會到 Shape::draw。要保留多型必須用 `Shape&` 或 `Shape*`。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "The Circle is sliced to a Shape, so Shape::draw runs"
+        },
+        {
+          "id": "b",
+          "text": "Circle::draw runs because draw is virtual"
+        },
+        {
+          "id": "c",
+          "text": "A compile error: a derived object cannot be passed by value to a base parameter"
+        },
+        {
+          "id": "d",
+          "text": "Both versions are called"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "Passing by value constructs a new object of static type Shape and copies only the base subobject, discarding the Circle part, so the call is Shape::draw. Use `Shape&` or `Shape*` to keep polymorphism.",
+      "tags": [
+        "Polymorphism",
+        "Object slicing"
+      ],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-29-polymorphism-q03",
+      "type": "single",
+      "prompt": "Why should a base class that is used polymorphically declare a virtual destructor?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "為什麼被多型使用的基底類別應該宣告 virtual 解構函式？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "這樣 `delete basePtr` 刪除衍生物件時，才會一併執行衍生類別的解構函式"
+          },
+          "b": {
+            "zh-Hant": "這樣基底解構函式會比衍生解構函式先執行"
+          },
+          "c": {
+            "zh-Hant": "這樣解構函式就可以被重載"
+          },
+          "d": {
+            "zh-Hant": "這樣物件才能安全地被複製"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "若基底解構函式不是 virtual，透過基底指標 delete 衍生物件是未定義行為，通常只會執行基底解構函式，衍生部分洩漏。加上 virtual 後會先執行衍生解構函式，再執行基底解構函式。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "So that `delete basePtr` on a derived object also runs the derived destructor"
+        },
+        {
+          "id": "b",
+          "text": "So that the base destructor runs before the derived destructor"
+        },
+        {
+          "id": "c",
+          "text": "So that destructors can be overloaded"
+        },
+        {
+          "id": "d",
+          "text": "So that objects can be copied safely"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "Without a virtual destructor, deleting a derived object through a base pointer is undefined behaviour and typically runs only the base destructor. A virtual destructor dispatches to the derived destructor first, then the base destructor.",
+      "tags": [
+        "Polymorphism",
+        "Virtual destructor"
+      ],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-29-polymorphism-q04",
+      "type": "single",
+      "prompt": "What does the declaration `virtual void draw() = 0;` in class `Shape` mean?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "在 `Shape` 類別中宣告 `virtual void draw() = 0;` 代表甚麼？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "Shape 成為抽象類別，不能建立物件；衍生類別必須提供 draw 的實作才能成為具體類別"
+          },
+          "b": {
+            "zh-Hant": "編譯器會自動提供一個空的 draw 實作"
+          },
+          "c": {
+            "zh-Hant": "衍生類別可以自由選擇是否實作 draw"
+          },
+          "d": {
+            "zh-Hant": "Shape 會變成一個樣板"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "`= 0` 表示純虛擬函式，類別因此是抽象類別，無法直接實例化。除非衍生類別也保持抽象，否則必須覆寫所有純虛擬函式才能建立物件。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "Shape becomes abstract and cannot be instantiated; a derived class must implement draw to become concrete"
+        },
+        {
+          "id": "b",
+          "text": "The compiler supplies an empty body for draw"
+        },
+        {
+          "id": "c",
+          "text": "Derived classes may choose freely whether to implement draw"
+        },
+        {
+          "id": "d",
+          "text": "Shape becomes a template"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "`= 0` makes the function pure virtual, which makes Shape abstract and non-instantiable. A derived class must override every pure virtual function unless it is abstract itself.",
+      "tags": [
+        "Polymorphism",
+        "Pure virtual",
+        "Abstract class"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-29-polymorphism-q05",
+      "type": "multi",
+      "prompt": "Which statements about `override` and `final` are correct? Select all that apply.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "下列關於 `override` 與 `final` 的敘述，哪些正確？可多選。"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "`override` 讓編譯器檢查此函式是否真的覆寫了基底的 virtual 函式。"
+          },
+          "b": {
+            "zh-Hant": "在 virtual 函式後加 `final` 可阻止更衍生的類別再覆寫它。"
+          },
+          "c": {
+            "zh-Hant": "在類別後加 `final` 可阻止其他類別繼承它。"
+          },
+          "d": {
+            "zh-Hant": "`override` 會建立一個新的 virtual 函式，與基底無關。"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "`override` 是給編譯器的檢查標記：簽章不符時會直接報錯，它本身不新增函式。`final` 用在函式上禁止再覆寫，用在類別上禁止再繼承。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "`override` makes the compiler verify that the function really overrides a virtual base function."
+        },
+        {
+          "id": "b",
+          "text": "`final` on a virtual function prevents more-derived classes from overriding it again."
+        },
+        {
+          "id": "c",
+          "text": "`final` on a class prevents other classes from deriving from it."
+        },
+        {
+          "id": "d",
+          "text": "`override` creates a new virtual function unrelated to the base class."
+        }
+      ],
+      "answer": {
+        "kind": "multi",
+        "optionIds": [
+          "a",
+          "b",
+          "c"
+        ]
+      },
+      "explanation": "`override` is a check: a mismatched signature becomes a compile error, and it never introduces a new function. `final` on a function blocks further overriding; on a class it blocks further derivation.",
+      "tags": [
+        "Polymorphism",
+        "override",
+        "final"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-29-polymorphism-q06",
+      "type": "multi",
+      "prompt": "Which statements about `dynamic_cast` are correct? Select all that apply.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "下列關於 `dynamic_cast` 的敘述，哪些正確？可多選。"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "在做向下轉型或交叉轉型時，來源型別必須是多型型別（至少有一個 virtual 函式）。"
+          },
+          "b": {
+            "zh-Hant": "指標轉型失敗時會回傳 nullptr。"
+          },
+          "c": {
+            "zh-Hant": "參考轉型失敗時會擲出 std::bad_cast。"
+          },
+          "d": {
+            "zh-Hant": "它只做編譯期檢查，執行期沒有任何額外成本。"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "`dynamic_cast` 會在執行期檢查實際型別，因此向下轉型或交叉轉型要求來源是多型型別；指標失敗回傳 nullptr，參考失敗則擲出 `std::bad_cast`。也因為要查執行期資訊，它並不是零成本。`typeid` 對多型型別同樣能取得動態型別。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "For a downcast or crosscast, the source type must be polymorphic (it has at least one virtual function)."
+        },
+        {
+          "id": "b",
+          "text": "A failed pointer cast returns nullptr."
+        },
+        {
+          "id": "c",
+          "text": "A failed reference cast throws std::bad_cast."
+        },
+        {
+          "id": "d",
+          "text": "It is a compile-time-only check with no run-time cost."
+        }
+      ],
+      "answer": {
+        "kind": "multi",
+        "optionIds": [
+          "a",
+          "b",
+          "c"
+        ]
+      },
+      "explanation": "`dynamic_cast` checks the dynamic type at run time, so a downcast or crosscast requires a polymorphic source type. A failed pointer cast yields nullptr while a failed reference cast throws `std::bad_cast`, so the check is not free. `typeid` likewise reports the dynamic type for polymorphic classes.",
+      "tags": [
+        "Polymorphism",
+        "dynamic_cast",
+        "RTTI"
+      ],
+      "difficulty": 4
+    },
+    {
+      "id": "cpp-29-polymorphism-q07",
+      "type": "boolean",
+      "prompt": "A call through a base-class pointer to a virtual function is resolved at run time from the object's dynamic type.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "透過基底類別指標呼叫 virtual 函式時，會在執行期依物件的動態型別決定要呼叫哪個版本。"
+        },
+        "explanation": {
+          "zh-Hant": "編譯器看到的是基底指標的靜態型別，但 virtual 呼叫會經由物件的 vptr 找到實際型別的函式，因此執行的是衍生類別的覆寫版本。"
+        }
+      },
+      "answer": {
+        "kind": "boolean",
+        "value": true
+      },
+      "explanation": "The compiler only knows the pointer's static type, but a virtual call goes through the object's vptr to the override for its dynamic type, so the derived version runs.",
+      "tags": [
+        "Polymorphism",
+        "Virtual functions"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-29-polymorphism-q08",
+      "type": "boolean",
+      "prompt": "Marking a member function `virtual` guarantees run-time dispatch even when the object is passed to a function by value.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "把成員函式標為 `virtual`，即使物件以傳值方式傳入函式，也保證會執行期動態綁定。"
+        },
+        "explanation": {
+          "zh-Hant": "傳值會產生一個靜態型別的副本，衍生部分已被切片；複本本身就是基底物件，virtual 呼叫自然只會到基底版本。要動態綁定必須傳參考或指標。"
+        }
+      },
+      "answer": {
+        "kind": "boolean",
+        "value": false
+      },
+      "explanation": "Passing by value creates a copy of the static base type and slices away the derived part. The copy is a base object, so a virtual call can only reach the base version; references or pointers are required for dynamic dispatch.",
+      "tags": [
+        "Polymorphism",
+        "Object slicing"
+      ],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-29-polymorphism-q09",
+      "type": "fill",
+      "prompt": "The contextual keyword that asks the compiler to verify that a function overrides a virtual base function is ____.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "用來要求編譯器檢查某函式是否真的覆寫基底 virtual 函式的關鍵字是 ____。"
+        },
+        "explanation": {
+          "zh-Hant": "在成員函式宣告後加上 `override`，若簽章與基底不完全相符（例如漏了 const 或參數型別不同），編譯器會直接報錯，避免誤以為覆寫成功而實際只是隱藏。"
+        }
+      },
+      "answer": {
+        "kind": "fill",
+        "accept": [
+          "override",
+          "覆寫"
+        ],
+        "ignoreCase": true,
+        "ignoreSpaces": true
+      },
+      "explanation": "Placing `override` after a member function declaration turns a mismatched signature (a missing const, a different parameter type) into a compile error, catching accidental hiding.",
+      "tags": [
+        "Polymorphism",
+        "override"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-29-polymorphism-q10",
+      "type": "short",
+      "prompt": "Explain how the vtable and vptr make run-time polymorphism work in C++.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "說明 vtable 與 vptr 如何讓 C++ 實現執行期多型。"
+        },
+        "model": {
+          "zh-Hant": "每個含有 virtual 函式的類別，編譯器會產生一張虛擬函式表（vtable），表中依序存放各 virtual 函式的實際位址；衍生類別覆寫後，表中的項目就換成衍生版本。每個這種類別的物件會多帶一個隱藏的 vptr，指向自己所屬類別的 vtable。透過基底指標呼叫 virtual 函式時，程式先由物件的 vptr 找到 vtable，再依固定索引取出函式位址並呼叫，因此同一個呼叫會隨物件實際型別而執行不同版本。這是標準實作慣例，標準並未強制其實作方式。"
+        },
+        "explanation": {
+          "zh-Hant": "關鍵是「每個物件帶 vptr、每個類別有一張 vtable」，呼叫時透過 vptr 間接取得正確的函式位址。"
+        }
+      },
+      "answer": {
+        "kind": "short",
+        "model": "For each class with virtual functions the compiler builds a vtable holding the addresses of its virtual functions; a derived override replaces the corresponding entry. Every object of such a class carries a hidden vptr to its class's vtable. Calling a virtual function through a base pointer loads the vptr, indexes the vtable, and calls the function found there, so the same call runs different code depending on the object's dynamic type. This is the usual implementation strategy; the standard does not mandate it.",
+        "keywords": [
+          "vtable",
+          "vptr",
+          "virtual",
+          "dynamic type",
+          "dispatch"
+        ]
+      },
+      "explanation": "The essential idea is one vptr per object and one vtable per class, with the call going indirectly through the vptr to the right function address.",
+      "tags": [
+        "Polymorphism",
+        "vtable",
+        "Virtual functions"
+      ],
+      "difficulty": 4
+    }
+  ]
+}

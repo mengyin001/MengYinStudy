@@ -40,6 +40,30 @@ export interface FigureMedia {
 
 export type QuestionMedia = ImageMedia | FigureMedia;
 
+/**
+ * A string available in the app's two content languages. The English text is
+ * the canonical fallback; official bilingual decks supply the Chinese text as
+ * well, and the app shows whichever matches the interface language.
+ */
+export interface LocalizedText {
+  en?: string;
+  'zh-Hant'?: string;
+}
+
+/**
+ * Per-language overrides for one question. Only official content sets this;
+ * ordinary decks leave it out and keep their single authored language.
+ */
+export interface QuestionI18n {
+  prompt?: LocalizedText;
+  explanation?: LocalizedText;
+  hint?: LocalizedText;
+  /** Model answer for `short` questions. */
+  model?: LocalizedText;
+  /** Option text keyed by option id. */
+  options?: Record<string, LocalizedText>;
+}
+
 export interface Option {
   id: string;
   text: string;
@@ -72,6 +96,8 @@ export interface Question {
   media?: QuestionMedia[];
   /** Free-form data for plugin question types (e.g. a numeric tolerance). */
   meta?: Record<string, unknown>;
+  /** Bilingual text for official decks; absent on single-language decks. */
+  i18n?: QuestionI18n;
 }
 
 export interface Deck {
@@ -81,6 +107,9 @@ export interface Deck {
   pluginId: string;
   title: string;
   description?: string;
+  /** Bilingual deck title/description for official decks. */
+  titleI18n?: LocalizedText;
+  descriptionI18n?: LocalizedText;
   tags: string[];
   questions: Question[];
   /**
@@ -172,6 +201,10 @@ export interface Session {
   /** Drill mode: wrong answers are appended to the queue until answered correctly. */
   requeueMissed: boolean;
   finished: boolean;
+  /** Consecutive correct answers in this session. Exams keep this at zero. */
+  answerStreak: number;
+  /** Longest run of correct answers in this session. */
+  bestAnswerStreak: number;
 }
 
 export interface SessionSummary {
@@ -188,5 +221,7 @@ export interface SessionSummary {
   skipped: number;
   score: number;
   msSpent: number;
+  /** Longest answer streak in the session; zero for exams. */
+  bestAnswerStreak?: number;
   byTag: Record<string, { attempts: number; ratio: number }>;
 }

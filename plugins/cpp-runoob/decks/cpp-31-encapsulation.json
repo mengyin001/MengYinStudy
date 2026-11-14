@@ -1,0 +1,466 @@
+{
+  "id": "cpp-31-encapsulation",
+  "title": "C++ Data Encapsulation",
+  "titleI18n": {
+    "zh-Hant": "C++ 資料封裝"
+  },
+  "description": "Bundling data with the functions that operate on it, private and protected members, getters and setters that preserve class invariants, const member functions, friend declarations, and the benefits of access control.",
+  "descriptionI18n": {
+    "zh-Hant": "把資料與操作它的函式綁在一起、private 與 protected 成員、維持類別不變量的取值與設值函式、const 成員函式、friend 宣告，以及存取控制的效益。"
+  },
+  "tags": [
+    "C++",
+    "Encapsulation"
+  ],
+  "examMinutes": 14,
+  "questions": [
+    {
+      "id": "cpp-31-encapsulation-q01",
+      "type": "single",
+      "prompt": "Which statement best describes data encapsulation?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "下列哪一句最能描述「資料封裝」？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "把資料與操作這些資料的函式綁在一起，並控制對成員的存取"
+          },
+          "b": {
+            "zh-Hant": "讓一個類別繼承另一個類別"
+          },
+          "c": {
+            "zh-Hant": "在執行期決定要呼叫哪個多載版本"
+          },
+          "d": {
+            "zh-Hant": "把程式拆成多個原始碼檔案"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "封裝把狀態與行為放在同一個類別中，並用 private、protected、public 控制誰能存取。繼承、動態綁定與多檔案編譯都不是封裝的定義。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "Bundling data with the functions that operate on it and controlling access to the members"
+        },
+        {
+          "id": "b",
+          "text": "Deriving one class from another"
+        },
+        {
+          "id": "c",
+          "text": "Choosing which overload to call at run time"
+        },
+        {
+          "id": "d",
+          "text": "Splitting a program across several source files"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "Encapsulation keeps state and behaviour together in one class and uses private, protected and public to control access. Inheritance, dynamic dispatch and separate compilation are unrelated notions.",
+      "tags": [
+        "Encapsulation",
+        "Concepts"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-31-encapsulation-q02",
+      "type": "single",
+      "prompt": "What does marking a single-argument constructor `explicit` prevent?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "把單引數建構函式標記為 `explicit` 可以避免甚麼？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "由引數型別隱式轉換成類別型別"
+          },
+          "b": {
+            "zh-Hant": "物件的複製建構"
+          },
+          "c": {
+            "zh-Hant": "從此類別衍生"
+          },
+          "d": {
+            "zh-Hant": "宣告 const 物件"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "`explicit` 會阻止 `Widget w = 5;` 以及把 5 隱式傳給需要 Widget 的參數；直接初始化 `Widget w(5);` 仍然可用。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "Implicit conversions from the argument type to the class type"
+        },
+        {
+          "id": "b",
+          "text": "Copy construction of the object"
+        },
+        {
+          "id": "c",
+          "text": "Deriving from the class"
+        },
+        {
+          "id": "d",
+          "text": "Declaring const objects"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "`explicit` stops `Widget w = 5;` and passing 5 where a Widget is expected. Direct initialisation with `Widget w(5);` still works.",
+      "tags": [
+        "Encapsulation",
+        "Constructors"
+      ],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-31-encapsulation-q03",
+      "type": "single",
+      "prompt": "`Person` keeps `age` private and guarantees that 0 <= age <= 150. Which implementation of `setAge` best preserves that invariant?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "`Person` 把 `age` 設為 private，並保證 0 <= age <= 150。下列哪一個 `setAge` 實作最能維持這個不變量？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "先檢查範圍，只有合法值才寫入 `age`"
+          },
+          "b": {
+            "zh-Hant": "直接寫入 `age`，範圍檢查留給呼叫端負責"
+          },
+          "c": {
+            "zh-Hant": "把 `age` 改成 public，讓呼叫端自行維護規則"
+          },
+          "d": {
+            "zh-Hant": "把 `age` 移到全域變數，由使用者自行檢查"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "不變量必須由類別自己守住，不能依賴呼叫端自律：所有修改狀態的路徑都要先驗證。把資料公開或放到全域，等於放棄封裝與保證。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "Check the range first and assign only when the value is legal"
+        },
+        {
+          "id": "b",
+          "text": "Assign directly and leave range checking to the caller"
+        },
+        {
+          "id": "c",
+          "text": "Make `age` public so callers can enforce the rule themselves"
+        },
+        {
+          "id": "d",
+          "text": "Move `age` to a global variable and let users check it"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "The class itself must guard the invariant rather than trusting callers: every path that changes state has to validate first. Public data or a global abandons both encapsulation and the guarantee.",
+      "tags": [
+        "Encapsulation",
+        "Invariants",
+        "Validation"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-31-encapsulation-q04",
+      "type": "single",
+      "prompt": "What does declaring a member function `const` promise?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "把成員函式宣告為 `const` 代表甚麼承諾？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "它不會修改物件的非 mutable 資料成員"
+          },
+          "b": {
+            "zh-Hant": "它的回傳值一定是 const"
+          },
+          "c": {
+            "zh-Hant": "它只能被非 const 物件呼叫"
+          },
+          "d": {
+            "zh-Hant": "它會在編譯期求值"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "`const` 成員函式保證不改變物件的可見狀態（mutable 成員除外），因此 const 物件與 const 參考也能呼叫它。它與回傳型別、編譯期求值無關。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "It will not modify the object's non-mutable data members"
+        },
+        {
+          "id": "b",
+          "text": "Its return value is always const"
+        },
+        {
+          "id": "c",
+          "text": "It can only be called on non-const objects"
+        },
+        {
+          "id": "d",
+          "text": "It is evaluated at compile time"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "A const member function promises not to change the object's observable state (except `mutable` members), so it can be called on const objects and const references. It says nothing about the return type or compile-time evaluation.",
+      "tags": [
+        "Encapsulation",
+        "const"
+      ],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-31-encapsulation-q05",
+      "type": "multi",
+      "prompt": "Which statements about encapsulation are correct? Select all that apply.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "下列關於封裝的敘述，哪些正確？可多選。"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "設值函式可以在修改狀態前先驗證輸入。"
+          },
+          "b": {
+            "zh-Hant": "內部表示法可以改變，而不必修改使用該類別的程式碼。"
+          },
+          "c": {
+            "zh-Hant": "任何程式碼都可以直接讀寫物件的資料成員。"
+          },
+          "d": {
+            "zh-Hant": "private 與 protected 決定哪些程式碼可以存取成員。"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "封裝讓所有狀態變更都經過受控制的路徑，因此能驗證輸入並維持不變量；用戶端只依賴公開介面，內部表示法可替換。若任何程式碼都能直接讀寫成員，就沒有封裝可言。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "Setter functions can validate input before changing state."
+        },
+        {
+          "id": "b",
+          "text": "The internal representation can change without editing code that uses the class."
+        },
+        {
+          "id": "c",
+          "text": "Any code can read and write an object's data members directly."
+        },
+        {
+          "id": "d",
+          "text": "private and protected decide which code may access a member."
+        }
+      ],
+      "answer": {
+        "kind": "multi",
+        "optionIds": [
+          "a",
+          "b",
+          "d"
+        ]
+      },
+      "explanation": "Encapsulation routes every state change through controlled paths, so input can be validated and invariants kept; clients rely on the public interface, so the representation can change. If any code could touch the members directly, there would be no encapsulation.",
+      "tags": [
+        "Encapsulation",
+        "Access control"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-31-encapsulation-q06",
+      "type": "multi",
+      "prompt": "Which statements about `friend` declarations are correct? Select all that apply.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "下列關於 `friend` 宣告的敘述，哪些正確？可多選。"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "friend 函式可以存取該類別的 private 成員。"
+          },
+          "b": {
+            "zh-Hant": "friend 資格由類別主動授予，不能由外部自行取得。"
+          },
+          "c": {
+            "zh-Hant": "friend 資格會自動被衍生類別繼承。"
+          },
+          "d": {
+            "zh-Hant": "friend 資格不具遞移性。"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "friend 是類別對特定函式或類別開放的例外通道，可存取 private 與 protected 成員；它必須由類別自己宣告。friend 不會繼承給衍生類別，也不遞移：A 是 B 的 friend、B 是 C 的 friend，不代表 A 能存取 C。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "A friend function can access the class's private members."
+        },
+        {
+          "id": "b",
+          "text": "Friendship is granted by the class and cannot be taken from outside."
+        },
+        {
+          "id": "c",
+          "text": "Friendship is inherited automatically by derived classes."
+        },
+        {
+          "id": "d",
+          "text": "Friendship is not transitive."
+        }
+      ],
+      "answer": {
+        "kind": "multi",
+        "optionIds": [
+          "a",
+          "b",
+          "d"
+        ]
+      },
+      "explanation": "A friend is a deliberate exception that may read private and protected members, and only the class can grant it. Friendship is neither inherited by derived classes nor transitive: A befriending B and B befriending C does not let A touch C.",
+      "tags": [
+        "Encapsulation",
+        "friend"
+      ],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-31-encapsulation-q07",
+      "type": "boolean",
+      "prompt": "A const member function may modify data members that are declared `mutable`.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "const 成員函式可以修改被宣告為 `mutable` 的資料成員。"
+        },
+        "explanation": {
+          "zh-Hant": "`mutable` 正是為此存在：例如快取或延遲計算的結果，邏輯上不影響物件的可見狀態，因此允許在 const 成員函式中更新。其他非 mutable 成員仍不可修改。"
+        }
+      },
+      "answer": {
+        "kind": "boolean",
+        "value": true
+      },
+      "explanation": "`mutable` exists for exactly this case: caches or lazily computed values that do not change the observable state. Other, non-mutable members still cannot be modified in a const member function.",
+      "tags": [
+        "Encapsulation",
+        "const",
+        "mutable"
+      ],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-31-encapsulation-q08",
+      "type": "boolean",
+      "prompt": "Protected members can be accessed from any code in the same translation unit.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "protected 成員可以從同一個編譯單元中的任何程式碼存取。"
+        },
+        "explanation": {
+          "zh-Hant": "protected 只開放給該類別本身、其 friend 以及衍生類別的成員函式，與是否位在同一個檔案無關。同一個編譯單元中的自由函式並不能存取。"
+        }
+      },
+      "answer": {
+        "kind": "boolean",
+        "value": false
+      },
+      "explanation": "Protected access is limited to the class itself, its friends and members of derived classes; it has nothing to do with file boundaries. A free function in the same translation unit still cannot access it.",
+      "tags": [
+        "Encapsulation",
+        "Access control"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-31-encapsulation-q09",
+      "type": "fill",
+      "prompt": "The access specifier that allows access only to the class itself and its friends is ____.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "只允許類別本身及其 friend 存取的存取修飾詞是 ____。"
+        },
+        "explanation": {
+          "zh-Hant": "private 是最嚴格的存取層級，只有類別自己的成員函式與 friend 能存取；protected 額外開放給衍生類別，public 則對外完全公開。"
+        }
+      },
+      "answer": {
+        "kind": "fill",
+        "accept": [
+          "private",
+          "私有"
+        ],
+        "ignoreCase": true,
+        "ignoreSpaces": true
+      },
+      "explanation": "`private` is the strictest level: only the class's own member functions and its friends may access it. `protected` additionally opens access to derived classes, and `public` opens it to everyone.",
+      "tags": [
+        "Encapsulation",
+        "Access control"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-31-encapsulation-q10",
+      "type": "short",
+      "prompt": "Explain how getters and setters help a class maintain its invariants.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "說明取值函式（getter）與設值函式（setter）如何幫助類別維持不變量。"
+        },
+        "model": {
+          "zh-Hant": "把資料成員保持 private，所有讀寫都必須經過 getter 與 setter，類別就能在唯一的入口集中檢查規則：setter 先驗證參數（例如金額不得為負），再更新狀態，必要時同步更新相關欄位；getter 則可只回傳安全的檢視，甚至改用 const 參考避免複製。由於外部無法繞過這些函式直接改動資料，不變量不會被破壞，日後也能在不影響用戶端的情況下改變內部表示法。"
+        },
+        "explanation": {
+          "zh-Hant": "重點是「私有資料 + 受控制的存取入口」讓驗證與同步邏輯無法被繞過。"
+        }
+      },
+      "answer": {
+        "kind": "short",
+        "model": "By keeping data members private and routing every read and write through accessors, the class can enforce its rules at a single entry point: a setter validates its argument (for example, rejecting a negative balance) before updating state and can refresh related fields; a getter can return a safe view, or a const reference to avoid copying. Because outside code cannot bypass these functions, the invariant cannot be broken, and the internal representation can change later without affecting clients.",
+        "keywords": [
+          "private",
+          "getter",
+          "setter",
+          "validate",
+          "invariant"
+        ]
+      },
+      "explanation": "The key is private data plus controlled entry points, so validation and synchronisation logic cannot be bypassed.",
+      "tags": [
+        "Encapsulation",
+        "Invariants",
+        "Getters and setters"
+      ],
+      "difficulty": 3
+    }
+  ]
+}

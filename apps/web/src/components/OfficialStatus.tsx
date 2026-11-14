@@ -32,16 +32,14 @@ export function OfficialStatus({ detailed = false }: { detailed?: boolean }) {
   let label: string;
   if (status === 'disabled') {
     label =
-      state.packs.length > 0 && state.version
-        ? t('official.cache', { version: state.version })
-        : t('official.disabled');
+      state.packs.length > 0 ? t('official.cache') : t('official.disabled');
   } else if (status === 'syncing') label = t('official.syncing');
   else if (status === 'error') label = t('official.failed');
   else if (status === 'stale') label = t('official.stale');
   else if (status === 'loading' || status === 'idle') label = t('official.loading');
   else if (state.packs.length === 0) label = t('official.bundled');
-  else if (state.source === 'network') label = t('official.network', { version: state.version ?? '—' });
-  else if (state.source === 'cache') label = t('official.cache', { version: state.version ?? '—' });
+  else if (state.source === 'network') label = t('official.network');
+  else if (state.source === 'cache') label = t('official.cache');
   else label = t('official.bundled');
 
   const buttonLabel = status === 'error' || status === 'stale' ? t('common.retry') : t('official.check');

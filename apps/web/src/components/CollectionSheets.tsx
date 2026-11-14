@@ -9,6 +9,7 @@ export function CollectionEditorSheet({
   open,
   initial,
   busy,
+  readOnly = false,
   onClose,
   onSave,
   onDelete,
@@ -16,6 +17,8 @@ export function CollectionEditorSheet({
   open: boolean;
   initial: UserCollection | null;
   busy: boolean;
+  /** Official catalogue collections can only be deleted, never renamed. */
+  readOnly?: boolean;
   onClose: () => void;
   onSave: (input: { name: string; description: string | null }) => Promise<boolean>;
   onDelete?: () => Promise<void>;
@@ -56,7 +59,13 @@ export function CollectionEditorSheet({
   return (
     <Sheet
       open={open}
-      title={initial ? t('collections.editTitle') : t('collections.newTitle')}
+      title={
+        readOnly
+          ? t('collections.officialTitle')
+          : initial
+            ? t('collections.editTitle')
+            : t('collections.newTitle')
+      }
       onClose={onClose}
       footer={
         confirmDelete ? (
@@ -94,18 +103,20 @@ export function CollectionEditorSheet({
               <button type="button" className="btn btn--quiet btn--sm" onClick={onClose}>
                 {t('common.cancel')}
               </button>
-              <button
-                type="button"
-                className="btn btn--primary btn--sm"
-                disabled={!name.trim() || submitting || busy}
-                onClick={() => void save()}
-              >
-                {submitting || busy
-                  ? t('collections.saving')
-                  : initial
-                    ? t('collections.save')
-                    : t('collections.create')}
-              </button>
+              {readOnly ? null : (
+                <button
+                  type="button"
+                  className="btn btn--primary btn--sm"
+                  disabled={!name.trim() || submitting || busy}
+                  onClick={() => void save()}
+                >
+                  {submitting || busy
+                    ? t('collections.saving')
+                    : initial
+                      ? t('collections.save')
+                      : t('collections.create')}
+                </button>
+              )}
             </div>
           </>
         )
@@ -117,7 +128,8 @@ export function CollectionEditorSheet({
           <input
             value={name}
             maxLength={80}
-            autoFocus
+            autoFocus={!readOnly}
+            disabled={readOnly}
             placeholder={t('collections.namePlaceholder')}
             onChange={(event) => setName(event.target.value)}
             onFocus={(event) => event.currentTarget.select()}
@@ -135,10 +147,12 @@ export function CollectionEditorSheet({
             value={description}
             maxLength={2000}
             rows={3}
+            disabled={readOnly}
             placeholder={t('collections.descriptionPlaceholder')}
             onChange={(event) => setDescription(event.target.value)}
           />
         </label>
+        {readOnly ? <Note tone="warn">{t('collections.officialLocked')}</Note> : null}
         {confirmDelete && initial ? (
           <Note tone="warn">{t('collections.deleteBody', { name: initial.name })}</Note>
         ) : null}

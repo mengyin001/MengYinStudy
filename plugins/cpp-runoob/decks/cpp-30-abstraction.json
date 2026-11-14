@@ -1,0 +1,306 @@
+{
+  "id": "cpp-30-abstraction",
+  "title": "C++ Data Abstraction",
+  "titleI18n": { "zh-Hant": "C++ 資料抽象" },
+  "description": "Separating a type's interface from its implementation, private data behind public operations, abstract classes and abstract data types, and the benefits abstraction brings to client code.",
+  "descriptionI18n": {
+    "zh-Hant": "把型別的介面與實作分開、以公開操作封住私有資料、抽象類別與抽象資料型別，以及抽象為用戶端程式帶來的效益。"
+  },
+  "tags": ["C++", "Abstraction"],
+  "examMinutes": 14,
+  "questions": [
+    {
+      "id": "cpp-30-abstraction-q01",
+      "type": "single",
+      "prompt": "Which statement best describes data abstraction?",
+      "i18n": {
+        "prompt": { "zh-Hant": "下列哪一句最能描述「資料抽象」？" },
+        "options": {
+          "a": {
+            "zh-Hant": "對外只暴露型別的介面，隱藏其實作方式"
+          },
+          "b": {
+            "zh-Hant": "把資料與函式綁在一起，並限制對成員的存取"
+          },
+          "c": { "zh-Hant": "在執行期把一種型別轉換成另一種" },
+          "d": { "zh-Hant": "讓一個類別同時繼承多個基底類別" }
+        },
+        "explanation": {
+          "zh-Hant": "抽象的重點是「只露出必要的介面，讓使用者不必知道內部如何實作」；把資料與操作綁在一起並控制存取，是封裝。兩者相輔相成，但概念不同。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "Exposing only a type's interface and hiding how it is implemented"
+        },
+        {
+          "id": "b",
+          "text": "Bundling data with functions and restricting access to the members"
+        },
+        { "id": "c", "text": "Converting one type into another at run time" },
+        { "id": "d", "text": "Letting one class inherit from several base classes" }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "Abstraction is about showing only the essential interface and hiding the implementation. Bundling data with the operations on it and restricting access is encapsulation; the two support each other but are different ideas.",
+      "tags": ["Abstraction", "Concepts"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-30-abstraction-q02",
+      "type": "single",
+      "prompt": "Which class design expresses abstraction in C++?",
+      "i18n": {
+        "prompt": { "zh-Hant": "哪一種類別設計最能體現 C++ 的資料抽象？" },
+        "options": {
+          "a": {
+            "zh-Hant": "以 public 成員函式提供操作，資料成員保持 private"
+          },
+          "b": { "zh-Hant": "把所有資料成員宣告為 public，方便直接修改" },
+          "c": { "zh-Hant": "使用全域變數存放物件狀態" },
+          "d": {
+            "zh-Hant": "把每個成員函式都宣告成 friend"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "使用者只看得到 public 成員函式所構成的介面，實際的資料佈局與演算法藏在 private 區域，日後可以替換而不影響呼叫端。public 資料或全域變數會把實作細節暴露出去。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "Public member functions provide the operations while data members stay private"
+        },
+        { "id": "b", "text": "All data members are public so callers can modify them directly" },
+        { "id": "c", "text": "Object state is stored in global variables" },
+        { "id": "d", "text": "Every member function is declared a friend" }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "Callers see only the interface formed by the public member functions; layout and algorithms stay private and can be replaced later. Public data or globals leak the implementation to every client.",
+      "tags": ["Abstraction", "Interface"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-30-abstraction-q03",
+      "type": "single",
+      "prompt": "What is an abstract data type (ADT)?",
+      "i18n": {
+        "prompt": { "zh-Hant": "甚麼是抽象資料型別（ADT）？" },
+        "options": {
+          "a": {
+            "zh-Hant": "由其支援的操作來定義、與內部表示法無關的型別"
+          },
+          "b": {
+            "zh-Hant": "至少含有一個純虛擬函式的類別"
+          },
+          "c": {
+            "zh-Hant": "因為沒有建構函式而無法實例化的型別"
+          },
+          "d": { "zh-Hant": "所有成員都是 public 的 struct" }
+        },
+        "explanation": {
+          "zh-Hant": "ADT 是從「可以做甚麼操作」來定義型別，例如堆疊只承諾 push、pop、top 的行為，不規定用陣列還是鏈結串列實作。含純虛擬函式的抽象類別只是 C++ 實作 ADT 的其中一種手法。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "A type defined by the operations it supports, independent of its representation"
+        },
+        { "id": "b", "text": "A class with at least one pure virtual function" },
+        { "id": "c", "text": "A type that cannot be instantiated because it has no constructor" },
+        { "id": "d", "text": "A struct whose members are all public" }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "An ADT is specified by its operations, such as push, pop and top for a stack, with no commitment to an array or a linked list. An abstract class with pure virtual functions is only one C++ way to implement an ADT.",
+      "tags": ["Abstraction", "ADT"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-30-abstraction-q04",
+      "type": "single",
+      "prompt": "When designing a class header for an abstract interface, which items belong in the public section?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "設計一個提供抽象介面的類別標頭檔時，哪些內容該放在 public 區段？"
+        },
+        "options": {
+          "a": { "zh-Hant": "用戶端可以呼叫的操作" },
+          "b": { "zh-Hant": "私有資料成員的完整佈局" },
+          "c": { "zh-Hant": "用戶端必須自行呼叫的實作細節 helper" },
+          "d": { "zh-Hant": "各成員的記憶體位址" }
+        },
+        "explanation": {
+          "zh-Hant": "public 區段就是契約：用戶端只需要知道有哪些操作、參數與回傳值。資料佈局與 helper 屬於實作，應放在 private（或實作檔）中，才能自由修改。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "The operations that clients may call" },
+        { "id": "b", "text": "The exact layout of the private data members" },
+        { "id": "c", "text": "Implementation helper functions that clients must call" },
+        { "id": "d", "text": "The memory address of each member" }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "The public section is the contract: clients need only the operations, their parameters and their results. Data layout and helpers are implementation and belong in the private section or the source file.",
+      "tags": ["Abstraction", "Interface"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-30-abstraction-q05",
+      "type": "multi",
+      "prompt": "Which are benefits of data abstraction? Select all that apply.",
+      "i18n": {
+        "prompt": { "zh-Hant": "下列哪些是資料抽象帶來的效益？可多選。" },
+        "options": {
+          "a": {
+            "zh-Hant": "用戶端只依賴介面，實作改變時不必修改用戶端程式。"
+          },
+          "b": { "zh-Hant": "降低用戶端程式與內部細節的耦合。" },
+          "c": {
+            "zh-Hant": "讓用戶端可以直接修改內部狀態以提升效能。"
+          },
+          "d": {
+            "zh-Hant": "同一個介面可以有多種實作，在執行期選用。"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "抽象把「做甚麼」與「怎麼做」分開，因此實作可以替換、耦合降低，也能用同一介面搭配多個實作（例如不同的 Shape）。直接曝露內部狀態正好違反抽象。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "Clients depend on the interface, so the implementation can change without touching client code."
+        },
+        { "id": "b", "text": "It reduces coupling between client code and internal details." },
+        { "id": "c", "text": "It lets clients modify internal state directly for better performance." },
+        { "id": "d", "text": "One interface can have several implementations chosen at run time." }
+      ],
+      "answer": { "kind": "multi", "optionIds": ["a", "b", "d"] },
+      "explanation": "Abstraction separates what from how, so implementations can be swapped, coupling drops, and one interface can serve several implementations such as different Shape types. Exposing internal state openly defeats abstraction.",
+      "tags": ["Abstraction", "Design"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-30-abstraction-q06",
+      "type": "multi",
+      "prompt": "Which of these are examples of abstraction in the C++ standard library? Select all that apply.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "下列哪些是 C++ 標準程式庫中「抽象」的例子？可多選。"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "`std::vector` 以 `push_back`、`size` 等操作隱藏動態陣列的管理。"
+          },
+          "b": {
+            "zh-Hant": "`std::sort` 只要求迭代器介面，就能排序各種容器與型別。"
+          },
+          "c": {
+            "zh-Hant": "用指標強制讀取物件的 private 成員。"
+          },
+          "d": {
+            "zh-Hant": "`std::cout` 隱藏了實際輸出裝置的細節。"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "`std::vector` 隱藏記憶體配置與成長策略，`std::sort` 以迭代器介面抽象出容器差異，`std::cout` 抽象出輸出裝置。繞過存取控制去讀 private 成員是破壞抽象，不是抽象。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "`std::vector` hides dynamic array management behind `push_back` and `size`."
+        },
+        {
+          "id": "b",
+          "text": "`std::sort` needs only the iterator interface, so it sorts many containers and types."
+        },
+        { "id": "c", "text": "Casting a pointer to read an object's private members." },
+        { "id": "d", "text": "`std::cout` hides the details of the actual output device." }
+      ],
+      "answer": { "kind": "multi", "optionIds": ["a", "b", "d"] },
+      "explanation": "`std::vector` hides allocation and growth, `std::sort` abstracts over containers through iterators, and `std::cout` abstracts the output device. Bypassing access control to read private members breaks abstraction rather than demonstrating it.",
+      "tags": ["Abstraction", "STL"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-30-abstraction-q07",
+      "type": "boolean",
+      "prompt": "Data abstraction and data encapsulation are exactly the same concept.",
+      "i18n": {
+        "prompt": { "zh-Hant": "資料抽象與資料封裝是完全相同的概念。" },
+        "explanation": {
+          "zh-Hant": "抽象是設計觀點：只呈現必要的介面，讓使用者不必知道實作。封裝是實作手段：把資料與操作綁在一起並用存取控制保護。封裝常用來實現抽象，但兩者不能畫上等號。"
+        }
+      },
+      "answer": { "kind": "boolean", "value": false },
+      "explanation": "Abstraction is the design view of exposing only what matters and hiding the implementation. Encapsulation is the mechanism that bundles data with operations and guards access. Encapsulation is often used to achieve abstraction, but the concepts differ.",
+      "tags": ["Abstraction", "Encapsulation"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-30-abstraction-q08",
+      "type": "boolean",
+      "prompt": "An abstract class can publish a public interface through pure virtual functions while leaving the implementation to derived classes.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "抽象類別可以用純虛擬函式公布 public 介面，把實作留給衍生類別。"
+        },
+        "explanation": {
+          "zh-Hant": "這正是介面與實作分離的典型做法：基底只宣告「有這個操作」，各衍生類別提供自己的實作，用戶端則透過基底參考或指標使用。抽象類別仍可提供部分已實作的成員函式。"
+        }
+      },
+      "answer": { "kind": "boolean", "value": true },
+      "explanation": "This is the classic separation of interface and implementation: the base declares the operation, derived classes supply the behaviour, and clients use a base reference or pointer. An abstract class may still provide some fully implemented members.",
+      "tags": ["Abstraction", "Abstract class"],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-30-abstraction-q09",
+      "type": "fill",
+      "prompt": "A class that contains at least one pure virtual function is called an ____ class.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "含有至少一個純虛擬函式的類別，稱為 ____ 類別。"
+        },
+        "explanation": {
+          "zh-Hant": "純虛擬函式以 `= 0` 結尾，使類別成為抽象類別，不能直接建立物件，只能作為介面被繼承。"
+        }
+      },
+      "answer": {
+        "kind": "fill",
+        "accept": ["abstract", "抽象"],
+        "ignoreCase": true,
+        "ignoreSpaces": true
+      },
+      "explanation": "A pure virtual function ends in `= 0`, which makes the class abstract: it cannot be instantiated and serves only as an interface to be inherited.",
+      "tags": ["Abstraction", "Abstract class"],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-30-abstraction-q10",
+      "type": "short",
+      "prompt": "Using a class you know, explain the difference between abstraction and encapsulation in two or three sentences.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "以一個你熟悉的類別為例，用兩至三句說明「抽象」與「封裝」的分別。"
+        },
+        "model": {
+          "zh-Hant": "以 `std::vector` 為例，抽象是它只告訴你「可以 push_back、可以用 size 取得元素數量」這個介面，讓你不必知道它如何配置記憶體。封裝則是它把長度與緩衝區指標設為私有，只透過成員函式維護，外部無法直接改動。抽象決定「露出甚麼」，封裝負責「如何擋住其餘部分」。"
+        },
+        "explanation": {
+          "zh-Hant": "答題時要同時點出「介面／設計觀點」與「存取控制／實作手段」兩個層面，並用具體例子說明。"
+        }
+      },
+      "answer": {
+        "kind": "short",
+        "model": "For `std::vector`, abstraction is the interface it advertises: you can push_back and ask for size without knowing how memory is allocated. Encapsulation is the mechanism that keeps the length and buffer pointer private and maintains them only through member functions, so outside code cannot corrupt them. Abstraction decides what is exposed; encapsulation enforces that nothing else is reachable.",
+        "keywords": ["interface", "implementation", "private", "access control", "vector"]
+      },
+      "explanation": "A good answer names both the design view (interface) and the enforcement mechanism (access control), with a concrete example.",
+      "tags": ["Abstraction", "Encapsulation"],
+      "difficulty": 3
+    }
+  ]
+}

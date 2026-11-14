@@ -1,0 +1,458 @@
+{
+  "id": "cpp-42-stl",
+  "title": "C++ STL Tutorial",
+  "titleI18n": {
+    "zh-Hant": "C++ STL 教程"
+  },
+  "description": "The three pillars of the STL — containers, iterators and algorithms — and how they fit together. This chapter is the gateway to the standard library.",
+  "descriptionI18n": {
+    "zh-Hant": "STL 的三大支柱：容器、迭代器與演算法，以及它們如何配合。這一章是進入標準程式庫的入口。"
+  },
+  "tags": [
+    "C++",
+    "STL"
+  ],
+  "examMinutes": 15,
+  "questions": [
+    {
+      "id": "cpp-42-q01",
+      "type": "single",
+      "prompt": "Which of these is NOT one of the classic STL components?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "下列哪一項不是經典 STL 的組成部分？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "容器"
+          },
+          "b": {
+            "zh-Hant": "迭代器"
+          },
+          "c": {
+            "zh-Hant": "演算法"
+          },
+          "d": {
+            "zh-Hant": "編譯器"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "STL 由容器、迭代器、演算法、函式物件與配接器組成；編譯器是工具，不屬於 STL。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "Containers"
+        },
+        {
+          "id": "b",
+          "text": "Iterators"
+        },
+        {
+          "id": "c",
+          "text": "Algorithms"
+        },
+        {
+          "id": "d",
+          "text": "The compiler"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "d"
+      },
+      "explanation": "The STL is built from containers, iterators, algorithms, function objects and adaptors. The compiler is a tool, not part of the STL.",
+      "tags": [
+        "STL"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-42-q02",
+      "type": "single",
+      "prompt": "Which container stores unique keys in sorted order?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "哪一個容器會以排序順序儲存不重複的鍵？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "std::vector"
+          },
+          "b": {
+            "zh-Hant": "std::list"
+          },
+          "c": {
+            "zh-Hant": "std::set"
+          },
+          "d": {
+            "zh-Hant": "std::queue"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "std::set 是關聯容器，鍵自動排序且不可重複；vector 與 list 是序列容器，queue 是配接器。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "std::vector"
+        },
+        {
+          "id": "b",
+          "text": "std::list"
+        },
+        {
+          "id": "c",
+          "text": "std::set"
+        },
+        {
+          "id": "d",
+          "text": "std::queue"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "c"
+      },
+      "explanation": "std::set is an associative container: keys are unique and kept in sorted order. vector and list are sequence containers, and queue is an adaptor.",
+      "tags": [
+        "Containers"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-42-q03",
+      "type": "single",
+      "prompt": "Which header must be included to call std::sort?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "要呼叫 std::sort，必須包含哪一個標頭檔？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "<algorithm>"
+          },
+          "b": {
+            "zh-Hant": "<vector>"
+          },
+          "c": {
+            "zh-Hant": "<numeric>"
+          },
+          "d": {
+            "zh-Hant": "<iterator>"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "<algorithm> 提供 sort、find、transform 等演算法；<numeric> 提供 accumulate 等數值演算法。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "<algorithm>"
+        },
+        {
+          "id": "b",
+          "text": "<vector>"
+        },
+        {
+          "id": "c",
+          "text": "<numeric>"
+        },
+        {
+          "id": "d",
+          "text": "<iterator>"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "<algorithm> declares sort, find and transform. <numeric> holds numeric algorithms such as accumulate, and <iterator> holds iterator utilities.",
+      "tags": [
+        "Algorithms",
+        "Headers"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-42-q04",
+      "type": "single",
+      "prompt": "After `std::vector<int> v; v.push_back(3);`, what is `v.size()`?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "執行 `std::vector<int> v; v.push_back(3);` 之後，`v.size()` 是多少？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "0"
+          },
+          "b": {
+            "zh-Hant": "1"
+          },
+          "c": {
+            "zh-Hant": "3"
+          },
+          "d": {
+            "zh-Hant": "未定義"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "push_back 會把元素附加到結尾，size() 回傳元素數量，因此是 1；3 是元素的值，不是大小。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "0"
+        },
+        {
+          "id": "b",
+          "text": "1"
+        },
+        {
+          "id": "c",
+          "text": "3"
+        },
+        {
+          "id": "d",
+          "text": "Undefined"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "b"
+      },
+      "explanation": "push_back appends one element, so size() is 1. The value 3 is stored inside the vector; it is not the size.",
+      "tags": [
+        "Containers",
+        "vector"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-42-q05",
+      "type": "multi",
+      "prompt": "Which of these are sequence containers? Select all that apply.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "下列哪些是序列容器？可多選。"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "std::vector"
+          },
+          "b": {
+            "zh-Hant": "std::list"
+          },
+          "c": {
+            "zh-Hant": "std::deque"
+          },
+          "d": {
+            "zh-Hant": "std::map"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "vector、list、deque 都是序列容器，元素按位置排列；map 是關聯容器，以鍵排序。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "std::vector"
+        },
+        {
+          "id": "b",
+          "text": "std::list"
+        },
+        {
+          "id": "c",
+          "text": "std::deque"
+        },
+        {
+          "id": "d",
+          "text": "std::map"
+        }
+      ],
+      "answer": {
+        "kind": "multi",
+        "optionIds": [
+          "a",
+          "b",
+          "c"
+        ]
+      },
+      "explanation": "vector, list and deque are sequence containers ordered by position. map is an associative container ordered by key.",
+      "tags": [
+        "Containers"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-42-q06",
+      "type": "multi",
+      "prompt": "Which of these are ordered associative containers? Select all that apply.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "下列哪些是有序關聯容器？可多選。"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "std::set"
+          },
+          "b": {
+            "zh-Hant": "std::map"
+          },
+          "c": {
+            "zh-Hant": "std::multimap"
+          },
+          "d": {
+            "zh-Hant": "std::deque"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "set、map、multimap 都以比較器保持鍵的排序；deque 是序列容器，不按鍵排序。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "std::set"
+        },
+        {
+          "id": "b",
+          "text": "std::map"
+        },
+        {
+          "id": "c",
+          "text": "std::multimap"
+        },
+        {
+          "id": "d",
+          "text": "std::deque"
+        }
+      ],
+      "answer": {
+        "kind": "multi",
+        "optionIds": [
+          "a",
+          "b",
+          "c"
+        ]
+      },
+      "explanation": "set, map and multimap keep their keys ordered by a comparator. deque is a sequence container and has no key ordering.",
+      "tags": [
+        "Containers"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-42-q07",
+      "type": "boolean",
+      "prompt": "Iterators are the glue that lets one algorithm work with many container types.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "迭代器是讓同一個演算法適用於多種容器的黏合層。"
+        },
+        "explanation": {
+          "zh-Hant": "演算法透過迭代器讀寫元素，不依賴容器內部結構；只要迭代器類別符合要求即可。"
+        }
+      },
+      "answer": {
+        "kind": "boolean",
+        "value": true
+      },
+      "explanation": "Algorithms read and write through iterators rather than container internals, so one algorithm works with any container whose iterator category meets its requirements.",
+      "tags": [
+        "Iterators"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-42-q08",
+      "type": "boolean",
+      "prompt": "std::sort is the most efficient choice for sorting a std::list.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "對 std::list 排序時，std::sort 是最有效率的選擇。"
+        },
+        "explanation": {
+          "zh-Hant": "std::sort 需要隨機存取迭代器，list 只提供雙向迭代器；應使用 list 自己的 sort() 成員函式。"
+        }
+      },
+      "answer": {
+        "kind": "boolean",
+        "value": false
+      },
+      "explanation": "std::sort requires random-access iterators, but std::list only provides bidirectional iterators. Use the list's own sort() member instead.",
+      "tags": [
+        "Algorithms",
+        "Containers"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-42-q09",
+      "type": "fill",
+      "prompt": "The iterator category that std::sort requires is ____-access.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "std::sort 要求的迭代器類別是 ____ 存取。"
+        },
+        "explanation": {
+          "zh-Hant": "std::sort 需要隨機存取迭代器，std::vector 與 std::array 都提供；std::list 只有雙向迭代器，因此要用自己的 sort()。"
+        }
+      },
+      "answer": {
+        "kind": "fill",
+        "accept": [
+          "random",
+          "隨機",
+          "随机"
+        ],
+        "ignoreCase": true,
+        "ignoreSpaces": true
+      },
+      "explanation": "std::sort needs random-access iterators, which std::vector and std::array provide. std::list only offers bidirectional iterators, so it has its own sort() member.",
+      "tags": [
+        "Iterators",
+        "Algorithms"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-42-q10",
+      "type": "short",
+      "prompt": "Explain why STL algorithms take iterators instead of containers.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "說明 STL 演算法為何接收迭代器而不是容器。"
+        },
+        "model": {
+          "zh-Hant": "迭代器把「走訪元素」抽象出來，演算法只依賴迭代器介面，因此同一份演算法可套用到 vector、list、陣列甚至檔案串流，而不必為每種容器重寫。"
+        },
+        "explanation": {
+          "zh-Hant": "這是編譯期多型與關注點分離：容器管理儲存，演算法只負責操作元素序列。"
+        }
+      },
+      "answer": {
+        "kind": "short",
+        "model": "Iterators abstract away element traversal. An algorithm only depends on the iterator interface, so the same sort or find code can work with a vector, a list, a plain array or even a stream, without a separate implementation for each container.",
+        "keywords": [
+          "iterator",
+          "abstract",
+          "container",
+          "reuse"
+        ]
+      },
+      "explanation": "This is compile-time polymorphism and separation of concerns: containers manage storage, while algorithms operate on a sequence through iterators.",
+      "tags": [
+        "Iterators",
+        "Algorithms"
+      ],
+      "difficulty": 3
+    }
+  ]
+}

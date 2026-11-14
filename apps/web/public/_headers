@@ -20,11 +20,13 @@
   Cache-Control: public, max-age=0, must-revalidate
   X-Robots-Tag: index, follow
 
+# Search Console must never read a stale HTML response for these two files.
+# A one-hour cache kept an old SPA fallback alive after the sitemap shipped.
 /sitemap.xml
-  Cache-Control: public, max-age=3600
+  Cache-Control: public, max-age=0, must-revalidate
 
 /robots.txt
-  Cache-Control: public, max-age=3600
+  Cache-Control: public, max-age=0, must-revalidate
 
 /*
   X-Content-Type-Options: nosniff

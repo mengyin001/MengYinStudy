@@ -1,0 +1,242 @@
+{
+  "id": "cpp-15-functions",
+  "title": "C++ Functions",
+  "titleI18n": { "zh-Hant": "C++ 函式" },
+  "description": "Declaring, defining and calling functions: parameters, return values, default arguments, references, overloading and recursion.",
+  "descriptionI18n": {
+    "zh-Hant": "函式的宣告、定義與呼叫：參數、回傳值、預設引數、參考、重載與遞迴。"
+  },
+  "tags": ["C++", "Functions"],
+  "examMinutes": 15,
+  "questions": [
+    {
+      "id": "cpp-15-q01",
+      "type": "single",
+      "prompt": "What is the difference between a function declaration and a function definition?",
+      "i18n": {
+        "prompt": { "zh-Hant": "函式宣告與函式定義有甚麼分別？" },
+        "options": {
+          "a": { "zh-Hant": "宣告只描述簽名，定義提供本體" },
+          "b": { "zh-Hant": "宣告提供本體，定義只描述簽名" },
+          "c": { "zh-Hant": "兩者完全相同" },
+          "d": { "zh-Hant": "定義只能出現在標頭檔" }
+        },
+        "explanation": {
+          "zh-Hant": "宣告（原型）告訴編譯器名稱、參數與回傳型別；定義另外提供函式本體，且整個程式只能定義一次。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "A declaration describes the signature; a definition provides the body" },
+        { "id": "b", "text": "A declaration provides the body; a definition only describes the signature" },
+        { "id": "c", "text": "They are exactly the same thing" },
+        { "id": "d", "text": "A definition may only appear in a header" }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "A declaration (prototype) tells the compiler the name, parameters and return type. A definition also supplies the body, and there must be exactly one definition in the program.",
+      "tags": ["Declaration"],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-15-q02",
+      "type": "single",
+      "prompt": "Which declaration of default arguments is valid?",
+      "i18n": {
+        "prompt": { "zh-Hant": "哪一個預設引數的宣告是合法的？" },
+        "options": {
+          "a": { "zh-Hant": "`void f(int a = 1, int b = 2);`" },
+          "b": { "zh-Hant": "`void f(int a = 1, int b);`" },
+          "c": { "zh-Hant": "`void f(int a, int b = 2, int c);`" },
+          "d": { "zh-Hant": "`void f(int a = 1, int b = 2, int c = 3, int d);`" }
+        },
+        "explanation": {
+          "zh-Hant": "預設引數必須從右向左連續提供；一旦某個參數有預設值，它右邊的參數也必須有。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "`void f(int a = 1, int b = 2);`" },
+        { "id": "b", "text": "`void f(int a = 1, int b);`" },
+        { "id": "c", "text": "`void f(int a, int b = 2, int c);`" },
+        { "id": "d", "text": "`void f(int a = 1, int b = 2, int c = 3, int d);`" }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "Default arguments must be supplied from right to left: once a parameter has a default, every parameter to its right must also have one.",
+      "tags": ["Default arguments"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-15-q03",
+      "type": "single",
+      "prompt": "When a function takes an `int` by value and changes it, what does the caller see?",
+      "i18n": {
+        "prompt": { "zh-Hant": "函式以傳值方式接收 `int` 並修改它，呼叫端會看到甚麼？" },
+        "options": {
+          "a": { "zh-Hant": "呼叫端的原變數不變" },
+          "b": { "zh-Hant": "呼叫端的原變數被修改" },
+          "c": { "zh-Hant": "編譯錯誤" },
+          "d": { "zh-Hant": "未定義行為" }
+        },
+        "explanation": {
+          "zh-Hant": "傳值會複製一份引數，函式修改的是副本；要修改呼叫端必須傳參考或指標。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "The caller's original variable is unchanged" },
+        { "id": "b", "text": "The caller's original variable is modified" },
+        { "id": "c", "text": "It is a compile error" },
+        { "id": "d", "text": "Undefined behaviour" }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "Passing by value copies the argument, so the function changes the copy. To modify the caller's object, pass a reference or a pointer.",
+      "tags": ["Pass by value"],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-15-q04",
+      "type": "single",
+      "prompt": "What must every recursive function have to avoid infinite recursion?",
+      "i18n": {
+        "prompt": { "zh-Hant": "每個遞迴函式都必須具備甚麼，才能避免無限遞迴？" },
+        "options": {
+          "a": { "zh-Hant": "一個會在適當時候停止遞迴的基底情況" },
+          "b": { "zh-Hant": "至少兩個參數" },
+          "c": { "zh-Hant": "一個全域變數" },
+          "d": { "zh-Hant": "inline 修飾詞" }
+        },
+        "explanation": {
+          "zh-Hant": "遞迴必須逐步縮小問題並在基底情況直接回傳，否則會不斷呼叫自己直到堆疊耗盡。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "A base case that stops the recursion at the right point" },
+        { "id": "b", "text": "At least two parameters" },
+        { "id": "c", "text": "A global variable" },
+        { "id": "d", "text": "The `inline` specifier" }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "A recursion must shrink the problem and return directly at a base case. Without it the function calls itself until the stack is exhausted.",
+      "tags": ["Recursion"],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-15-q05",
+      "type": "multi",
+      "prompt": "Which statements about function overloading are correct? Select all that apply.",
+      "i18n": {
+        "prompt": { "zh-Hant": "關於函式重載，下列敘述何者正確？可多選。" },
+        "options": {
+          "a": { "zh-Hant": "參數型別或數量不同即可重載。" },
+          "b": { "zh-Hant": "只有回傳型別不同不足以構成重載。" },
+          "c": { "zh-Hant": "預設引數可能令多個重載版本難以分辨。" },
+          "d": { "zh-Hant": "同名同參數但回傳型別不同是合法的重載。" }
+        },
+        "explanation": {
+          "zh-Hant": "重載依簽名（名稱＋參數）區分；回傳型別不參與，所以只有回傳值不同不合法。預設引數會讓呼叫端可能同時匹配多個版本。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "Different parameter types or counts make an overload." },
+        { "id": "b", "text": "A different return type alone is not enough." },
+        { "id": "c", "text": "Default arguments can make overloads ambiguous." },
+        { "id": "d", "text": "Same name and parameters with a different return type is a valid overload." }
+      ],
+      "answer": { "kind": "multi", "optionIds": ["a", "b", "c"] },
+      "explanation": "Overloads differ by signature (name plus parameters); the return type is not part of it, so changing only the return type is invalid. Default arguments can make a call match more than one overload.",
+      "tags": ["Overloading"],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-15-q06",
+      "type": "multi",
+      "prompt": "Why pass a large object as `const std::string&` instead of by value? Select all that apply.",
+      "i18n": {
+        "prompt": { "zh-Hant": "為何大型物件應以 `const std::string&` 傳遞，而不是傳值？可多選。" },
+        "options": {
+          "a": { "zh-Hant": "避免複製整個物件" },
+          "b": { "zh-Hant": "const 保證函式不會修改它" },
+          "c": { "zh-Hant": "可以接受字串字面值等隱式轉換" },
+          "d": { "zh-Hant": "參考一定比傳值快，與型別無關" }
+        },
+        "explanation": {
+          "zh-Hant": "const 參考避免複製並保留唯讀保證，也能綁定暫存物件；但對小型內建型別，傳值往往同樣快。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "It avoids copying the whole object." },
+        { "id": "b", "text": "`const` promises the function will not modify it." },
+        { "id": "c", "text": "It still accepts implicit conversions such as a string literal." },
+        { "id": "d", "text": "A reference is always faster, regardless of the type." }
+      ],
+      "answer": { "kind": "multi", "optionIds": ["a", "b", "c"] },
+      "explanation": "A const reference avoids a copy and documents read-only intent, and it can bind to temporaries. For small built-in types, passing by value is often just as fast.",
+      "tags": ["Pass by reference"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-15-q07",
+      "type": "boolean",
+      "prompt": "A function declared with return type `void` can still return a value to its caller.",
+      "i18n": {
+        "prompt": { "zh-Hant": "回傳型別為 `void` 的函式仍然可以把值回傳給呼叫端。" },
+        "explanation": {
+          "zh-Hant": "void 表示不回傳值；只能寫 `return;` 提早結束。要回傳值必須使用非 void 型別。"
+        }
+      },
+      "answer": { "kind": "boolean", "value": false },
+      "explanation": "void means no value is returned; only a bare `return;` is allowed to exit early. Returning a value requires a non-void type.",
+      "tags": ["Return values"],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-15-q08",
+      "type": "boolean",
+      "prompt": "A function prototype must repeat the parameter names used in the definition.",
+      "i18n": {
+        "prompt": { "zh-Hant": "函式原型必須重複定義中所使用的參數名稱。" },
+        "explanation": {
+          "zh-Hant": "原型只需參數型別，名稱可省略；名稱只影響可讀性。"
+        }
+      },
+      "answer": { "kind": "boolean", "value": false },
+      "explanation": "A prototype only needs the parameter types. Names are optional and exist for readability.",
+      "tags": ["Declaration"],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-15-q09",
+      "type": "fill",
+      "prompt": "The specifier that suggests the compiler expand a small function at each call site is ____.",
+      "i18n": {
+        "prompt": { "zh-Hant": "建議編譯器在每個呼叫點展開小型函式的修飾詞是 ____。" },
+        "explanation": {
+          "zh-Hant": "inline 只是建議，編譯器可自行決定；它同時放寬了多個編譯單元定義同一函式的限制。"
+        }
+      },
+      "answer": { "kind": "fill", "accept": ["inline"], "ignoreCase": true, "ignoreSpaces": true },
+      "explanation": "inline is a hint the compiler may ignore. It also relaxes the one-definition rule so a function can be defined in a header.",
+      "tags": ["inline"],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-15-q10",
+      "type": "short",
+      "prompt": "Explain why a missing base case in a recursive function causes a crash.",
+      "i18n": {
+        "prompt": { "zh-Hant": "說明遞迴函式缺少基底情況為何會導致程式崩潰。" },
+        "model": {
+          "zh-Hant": "每次遞迴呼叫都會在堆疊上保留一個新的堆疊框架；若沒有基底情況停止，呼叫會無限增加，最終耗盡堆疊空間而崩潰（stack overflow）。"
+        },
+        "explanation": {
+          "zh-Hant": "關鍵是堆疊空間有限，而每層呼叫都佔用一部分。"
+        }
+      },
+      "answer": {
+        "kind": "short",
+        "model": "Every recursive call keeps a new stack frame alive. Without a base case the calls never stop, the stack grows until its limit is reached, and the program crashes with a stack overflow.",
+        "keywords": ["stack", "frame", "base case", "overflow"]
+      },
+      "explanation": "Stack space is finite and each pending call holds a frame, so unbounded recursion exhausts it.",
+      "tags": ["Recursion"],
+      "difficulty": 2
+    }
+  ]
+}

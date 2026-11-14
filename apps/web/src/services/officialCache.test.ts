@@ -42,7 +42,7 @@ const deck = adaptDeck('mengyin.official.math', {
 
 function cache(): OfficialCache {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     sourceUrl: 'https://example.supabase.co',
     version: '12',
     syncedAt: 1_700_000_000_000,
@@ -84,8 +84,9 @@ describe('official cache', () => {
     expect(loaded?.packs[0]?.manifest.content).toEqual([]);
   });
 
-  it('rejects a cache written by an incompatible schema version', () => {
-    expect(parseOfficialCache({ ...cache(), schemaVersion: 2 })).toBeNull();
+  it('rejects pre-bilingual caches so the catalogue is fetched again', () => {
+    expect(parseOfficialCache({ ...cache(), schemaVersion: 1 })).toBeNull();
+    expect(parseOfficialCache({ ...cache(), schemaVersion: 3 })).toBeNull();
   });
 
   it('rejects a cache with an invalid deck instead of returning partial data', () => {

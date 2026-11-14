@@ -1,0 +1,453 @@
+{
+  "id": "cpp-13-loops",
+  "title": "C++ Loops",
+  "titleI18n": {
+    "zh-Hant": "C++ 迴圈"
+  },
+  "description": "while, for, do-while and range-for, plus the break, continue and boundary rules that keep a loop correct.",
+  "descriptionI18n": {
+    "zh-Hant": "while、for、do-while 與 range-for，以及讓迴圈保持正確的 break、continue 與邊界規則。"
+  },
+  "tags": [
+    "C++",
+    "Loops"
+  ],
+  "examMinutes": 15,
+  "questions": [
+    {
+      "id": "cpp-13-q01",
+      "type": "single",
+      "prompt": "Which loop always executes its body at least once?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "哪一種迴圈至少一定會執行一次迴圈本體？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "do-while"
+          },
+          "b": {
+            "zh-Hant": "while"
+          },
+          "c": {
+            "zh-Hant": "for"
+          },
+          "d": {
+            "zh-Hant": "range-for"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "do-while 先執行本體再檢查條件；while 與 for 都在第一次執行前檢查條件，可能一次也不執行。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "do-while"
+        },
+        {
+          "id": "b",
+          "text": "while"
+        },
+        {
+          "id": "c",
+          "text": "for"
+        },
+        {
+          "id": "d",
+          "text": "range-for"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "do-while runs the body first and then tests the condition. while and for test before the first iteration, so their body may never run.",
+      "tags": [
+        "do-while"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-13-q02",
+      "type": "single",
+      "prompt": "How many times does the body of `for (int i = 0; i < 5; ++i)` execute?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "`for (int i = 0; i < 5; ++i)` 的本體會執行多少次？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "5 次"
+          },
+          "b": {
+            "zh-Hant": "4 次"
+          },
+          "c": {
+            "zh-Hant": "6 次"
+          },
+          "d": {
+            "zh-Hant": "無限次"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "i 依序為 0、1、2、3、4，共 5 次；當 i 變成 5 時條件 5 < 5 為假，迴圈結束。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "5 times"
+        },
+        {
+          "id": "b",
+          "text": "4 times"
+        },
+        {
+          "id": "c",
+          "text": "6 times"
+        },
+        {
+          "id": "d",
+          "text": "Forever"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "i takes the values 0, 1, 2, 3 and 4: five iterations. When i becomes 5 the condition 5 < 5 is false and the loop ends.",
+      "tags": [
+        "for"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-13-q03",
+      "type": "single",
+      "prompt": "Which loop visits every element of `std::vector<int> v` without copying each element and without reading out of bounds?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "哪一個迴圈走訪 `std::vector<int> v` 的每個元素、不複製元素，且不會越界讀取？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "`for (const auto& x : v)`"
+          },
+          "b": {
+            "zh-Hant": "`for (auto x : v)`"
+          },
+          "c": {
+            "zh-Hant": "`for (int i = 0; i <= v.size(); ++i)`"
+          },
+          "d": {
+            "zh-Hant": "`while (v)`"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "range-for 搭配 const auto& 會以參考走訪，避免複製；`auto x` 會逐個複製，`i <= size` 會越界，`while (v)` 根本不是合法條件。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "`for (const auto& x : v)`"
+        },
+        {
+          "id": "b",
+          "text": "`for (auto x : v)`"
+        },
+        {
+          "id": "c",
+          "text": "`for (int i = 0; i <= v.size(); ++i)`"
+        },
+        {
+          "id": "d",
+          "text": "`while (v)`"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "A range-for with `const auto&` binds a reference to each element and avoids copies. `auto x` copies, `i <= v.size()` reads one past the end, and `while (v)` is not a valid condition.",
+      "tags": [
+        "range-for"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-13-q04",
+      "type": "single",
+      "prompt": "What does `break` do inside a loop?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "`break` 在迴圈中的作用是甚麼？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "立即離開最接近的迴圈或 switch"
+          },
+          "b": {
+            "zh-Hant": "跳過本次迭代，繼續下一次"
+          },
+          "c": {
+            "zh-Hant": "結束整個程式"
+          },
+          "d": {
+            "zh-Hant": "重新開始迴圈"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "break 終止最內層的迴圈或 switch；跳過本次迭代是 continue，結束程式是 return 或 std::exit。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "Exit the nearest enclosing loop or switch immediately"
+        },
+        {
+          "id": "b",
+          "text": "Skip the rest of this iteration and continue with the next"
+        },
+        {
+          "id": "c",
+          "text": "Terminate the whole program"
+        },
+        {
+          "id": "d",
+          "text": "Restart the loop from the beginning"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "break leaves the innermost loop or switch. Skipping one iteration is continue; ending the program is return or std::exit.",
+      "tags": [
+        "break"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-13-q05",
+      "type": "multi",
+      "prompt": "Which of these are loop statements in C++? Select all that apply.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "下列哪些是 C++ 的迴圈敘述？可多選。"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "`for`"
+          },
+          "b": {
+            "zh-Hant": "`while`"
+          },
+          "c": {
+            "zh-Hant": "`do-while`"
+          },
+          "d": {
+            "zh-Hant": "`repeat-until`"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "C++ 提供 for、while、do-while（以及 range-for）；repeat-until 是其他語言的語法。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "`for`"
+        },
+        {
+          "id": "b",
+          "text": "`while`"
+        },
+        {
+          "id": "c",
+          "text": "`do-while`"
+        },
+        {
+          "id": "d",
+          "text": "`repeat-until`"
+        }
+      ],
+      "answer": {
+        "kind": "multi",
+        "optionIds": [
+          "a",
+          "b",
+          "c"
+        ]
+      },
+      "explanation": "C++ has for, while and do-while (plus range-for). repeat-until is not C++ syntax.",
+      "tags": [
+        "Loop forms"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-13-q06",
+      "type": "multi",
+      "prompt": "Which statements about `continue` are correct? Select all that apply.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "關於 `continue`，下列敘述何者正確？可多選。"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "它會跳過本體中剩餘的敘述。"
+          },
+          "b": {
+            "zh-Hant": "在 for 迴圈中，它之後仍會執行遞增敘述。"
+          },
+          "c": {
+            "zh-Hant": "它不會結束整個迴圈。"
+          },
+          "d": {
+            "zh-Hant": "它與 break 完全相同。"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "continue 只跳過本次迭代剩下的部分，然後進入下一次迭代；for 的遞增部分仍會執行，break 則直接離開迴圈。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "It skips the rest of the loop body."
+        },
+        {
+          "id": "b",
+          "text": "In a for loop, the increment still runs afterwards."
+        },
+        {
+          "id": "c",
+          "text": "It does not terminate the loop."
+        },
+        {
+          "id": "d",
+          "text": "It is identical to break."
+        }
+      ],
+      "answer": {
+        "kind": "multi",
+        "optionIds": [
+          "a",
+          "b",
+          "c"
+        ]
+      },
+      "explanation": "continue skips the rest of the current iteration and moves to the next one. In a for loop the increment expression still runs; break leaves the loop entirely.",
+      "tags": [
+        "continue"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-13-q07",
+      "type": "boolean",
+      "prompt": "`for (;;)` is an infinite loop unless the body breaks out or returns.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "除非本體中有 break 或 return，否則 `for (;;)` 是無限迴圈。"
+        },
+        "explanation": {
+          "zh-Hant": "for 的三個部分都可省略；條件省略代表永遠為真，因此若沒有 break 或 return 就會一直執行。"
+        }
+      },
+      "answer": {
+        "kind": "boolean",
+        "value": true
+      },
+      "explanation": "All three parts of a for header may be omitted. An omitted condition is always true, so the loop runs forever unless the body breaks or returns.",
+      "tags": [
+        "for"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-13-q08",
+      "type": "boolean",
+      "prompt": "A `break` inside a nested loop exits every enclosing loop at once.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "巢狀迴圈中的 `break` 會一次跳出所有外層迴圈。"
+        },
+        "explanation": {
+          "zh-Hant": "break 只離開最內層的迴圈；要離開多層迴圈需要旗標、goto 或重構。"
+        }
+      },
+      "answer": {
+        "kind": "boolean",
+        "value": false
+      },
+      "explanation": "break only leaves the innermost loop. Leaving several levels needs a flag, goto, or a refactor.",
+      "tags": [
+        "Nested loops"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-13-q09",
+      "type": "fill",
+      "prompt": "A for loop that visits each element of a range without an index is called a ____-based for loop.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "不需索引、逐一走訪範圍每個元素的 for 迴圈稱為 ____ 式 for 迴圈。"
+        },
+        "explanation": {
+          "zh-Hant": "range-for 會自動走訪整個範圍，例如 `for (const auto& x : v)`。"
+        }
+      },
+      "answer": {
+        "kind": "fill",
+        "accept": [
+          "range",
+          "範圍",
+          "范围"
+        ],
+        "ignoreCase": true,
+        "ignoreSpaces": true
+      },
+      "explanation": "A range-based for loop walks the whole range automatically, as in `for (const auto& x : v)`.",
+      "tags": [
+        "range-for"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-13-q10",
+      "type": "short",
+      "prompt": "Explain what an off-by-one error is in a loop and how to avoid it.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "說明迴圈中的「差一錯誤」（off-by-one）是甚麼，以及如何避免。"
+        },
+        "model": {
+          "zh-Hant": "差一錯誤是邊界判斷寫錯，例如把 `i < n` 寫成 `i <= n`，導致多執行一次或越界。避免方法是先確定區間是半開還是閉合、用 `< size()` 走訪容器，並用 range-for 取代手動索引。"
+        },
+        "explanation": {
+          "zh-Hant": "關鍵在於清楚定義「包含起點、不包含終點」的習慣，並讓容器自己提供大小。"
+        }
+      },
+      "answer": {
+        "kind": "short",
+        "model": "An off-by-one error is a boundary mistake such as writing `i <= n` when the valid indices are 0..n-1, which runs one extra iteration or reads out of bounds. Avoid it by deciding whether the range is half-open, using `i < v.size()` for containers, and preferring range-for when the index is not needed.",
+        "keywords": [
+          "boundary",
+          "iteration",
+          "size",
+          "range-for"
+        ]
+      },
+      "explanation": "The key is to define half-open ranges consistently and let the container supply its size.",
+      "tags": [
+        "Boundaries"
+      ],
+      "difficulty": 2
+    }
+  ]
+}

@@ -1,3 +1,4 @@
+import type { LocalizedText } from '@mengyin/core';
 import { BackendError, toBackendError } from '../errors';
 import type {
   OfficialCatalog,
@@ -10,6 +11,9 @@ import type { SupabaseClientLike } from './client';
 import { isMissingColumn } from './compat';
 
 const DECK_FIELDS =
+  'id,pack_id,title,title_i18n,description,description_i18n,tags,questions,media_base_url,exam_minutes,version,published,sort_order,updated_at';
+/** Pre-0.8.0 catalogue: exam length present, bilingual deck text unavailable. */
+const DECK_FIELDS_NO_I18N =
   'id,pack_id,title,description,tags,questions,media_base_url,exam_minutes,version,published,sort_order,updated_at';
 /** Pre-0.5.1 catalogue: decks load normally, with exam length estimated client-side. */
 const DECK_FIELDS_LEGACY =
@@ -21,7 +25,9 @@ interface DeckRow {
   id: string;
   pack_id: string;
   title: string;
+  title_i18n?: unknown;
   description: string | null;
+  description_i18n?: unknown;
   tags: string[] | null;
   questions: unknown;
   media_base_url: string | null;
@@ -49,6 +55,16 @@ function textOrNull(value: unknown): string | null {
   return typeof value === 'string' && value.trim() ? value : null;
 }
 
+/** Accepts only a `{ en?, "zh-Hant"? }` object; anything else is ignored. */
+function localizedTextOrUndefined(value: unknown): LocalizedText | undefined {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return undefined;
+  const record = value as Record<string, unknown>;
+  const en = textOrNull(record.en);
+  const zh = textOrNull(record['zh-Hant']);
+  if (!en && !zh) return undefined;
+  return { ...(en ? { en } : {}), ...(zh ? { 'zh-Hant': zh } : {}) };
+}
+
 function tagList(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   return [...new Set(value.filter((tag): tag is string => typeof tag === 'string' && tag.trim() !== ''))];
@@ -65,10 +81,14 @@ function mapDeck(row: DeckRow): OfficialDeckPayload {
   }
   const description = textOrNull(row.description);
   const examMinutes = examMinutesOrUndefined(row.exam_minutes);
+  const titleI18n = localizedTextOrUndefined(row.title_i18n);
+  const descriptionI18n = localizedTextOrUndefined(row.description_i18n);
   return {
     id: row.id,
     title: row.title,
+    ...(titleI18n ? { titleI18n } : {}),
     ...(description ? { description } : {}),
+    ...(descriptionI18n ? { descriptionI18n } : {}),
     tags: tagList(row.tags),
     questions: row.questions,
     mediaBaseUrl: textOrNull(row.media_base_url),
@@ -164,12 +184,25 @@ export function createSupabaseOfficialService(client: SupabaseClientLike): Offic
 
         let decksData: unknown = decksResult.data;
         if (decksResult.error) {
-          // A project still on the pre-0.5.1 migration should keep serving the
-          // catalogue; only the authored exam lengths are unavailable.
-          if (!isMissingColumn(decksResult.error, 'exam_minutes')) throw decksResult.error;
-          const legacy = await loadDecks(DECK_FIELDS_LEGACY);
-          if (legacy.error) throw legacy.error;
-          decksData = legacy.data;
+          // A project still on an older migration should keep serving the
+          // catalogue. Drop the newest optional columns one step at a time:
+          // bilingual deck text first, then the authored exam length.
+          const optional = ['title_i18n', 'description_i18n', 'exam_minutes'];
+          let error = decksResult.error;
+          if (!optional.some((column) => isMissingColumn(error, column))) throw error;
+
+          let recovered = false;
+          for (const fields of [DECK_FIELDS_NO_I18N, DECK_FIELDS_LEGACY]) {
+            const retry = await loadDecks(fields);
+            if (!retry.error) {
+              decksData = retry.data;
+              recovered = true;
+              break;
+            }
+            error = retry.error;
+            if (!optional.some((column) => isMissingColumn(error, column))) throw error;
+          }
+          if (!recovered) throw error;
         }
 
         const decksByPack = new Map<string, DeckRow[]>();

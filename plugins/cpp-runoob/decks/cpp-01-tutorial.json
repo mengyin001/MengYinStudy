@@ -1,0 +1,432 @@
+{
+  "id": "cpp-01-tutorial",
+  "title": "C++ Tutorial: From Source to Program",
+  "titleI18n": {
+    "zh-Hant": "C++ 教程：由原始碼到程式"
+  },
+  "description": "What C++ is, how a program is built, and the smallest complete C++ program. This is the orientation chapter of the course.",
+  "descriptionI18n": {
+    "zh-Hant": "C++ 是甚麼、程式如何建置，以及最小的完整 C++ 程式。這是課程的導覽章節。"
+  },
+  "tags": [
+    "C++",
+    "Basics"
+  ],
+  "examMinutes": 14,
+  "questions": [
+    {
+      "id": "cpp-01-q01",
+      "type": "single",
+      "prompt": "Which header must be included to use std::cout?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "要使用 std::cout，必須包含哪一個標頭檔？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "<iostream>"
+          },
+          "b": {
+            "zh-Hant": "<fstream>"
+          },
+          "c": {
+            "zh-Hant": "<string>"
+          },
+          "d": {
+            "zh-Hant": "<cstdio>"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "std::cout 定義在 <iostream>；<fstream> 處理檔案串流，<string> 是字串類別，<cstdio> 提供 C 風格的 printf。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "<iostream>"
+        },
+        {
+          "id": "b",
+          "text": "<fstream>"
+        },
+        {
+          "id": "c",
+          "text": "<string>"
+        },
+        {
+          "id": "d",
+          "text": "<cstdio>"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "std::cout is declared in <iostream>. <fstream> handles file streams, <string> defines std::string, and <cstdio> exposes the C-style printf family.",
+      "tags": [
+        "I/O",
+        "Headers"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-01-q02",
+      "type": "single",
+      "prompt": "Which function is the entry point of every C++ program?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "每一個 C++ 程式的進入點是哪一個函式？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "main"
+          },
+          "b": {
+            "zh-Hant": "start"
+          },
+          "c": {
+            "zh-Hant": "init"
+          },
+          "d": {
+            "zh-Hant": "run"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "程式由 main 開始執行；其他名稱只是普通函式，作業系統不會自動呼叫。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "main"
+        },
+        {
+          "id": "b",
+          "text": "start"
+        },
+        {
+          "id": "c",
+          "text": "init"
+        },
+        {
+          "id": "d",
+          "text": "run"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "Execution starts at main. Other names are ordinary functions and are never called by the runtime unless your code calls them.",
+      "tags": [
+        "Basics",
+        "main"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-01-q03",
+      "type": "boolean",
+      "prompt": "A C++ program is normally compiled into a native executable.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "C++ 程式通常會被編譯成原生執行檔。"
+        },
+        "explanation": {
+          "zh-Hant": "C++ 是編譯式語言：編譯器把原始碼轉成目的碼，連結器再產生平台的原生執行檔。"
+        }
+      },
+      "answer": {
+        "kind": "boolean",
+        "value": true
+      },
+      "explanation": "C++ is a compiled language: the compiler turns source into object code and the linker produces a native executable for the target platform.",
+      "tags": [
+        "Toolchain"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-01-q04",
+      "type": "boolean",
+      "prompt": "C++ source code is usually executed directly by the operating system without a compilation step.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "C++ 原始碼通常由作業系統直接執行，不需要編譯步驟。"
+        },
+        "explanation": {
+          "zh-Hant": "作業系統執行的是機器碼，不是 .cpp 文字檔；必須先編譯（及連結）。"
+        }
+      },
+      "answer": {
+        "kind": "boolean",
+        "value": false
+      },
+      "explanation": "The OS runs machine code, not a .cpp text file. The source must first be compiled and linked (or run through an interpreter such as Cling).",
+      "tags": [
+        "Toolchain"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-01-q05",
+      "type": "multi",
+      "prompt": "Which of these start a comment in C++? Select all that apply.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "下列哪些可以開始一段 C++ 註釋？可多選。"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "// 行註釋"
+          },
+          "b": {
+            "zh-Hant": "/* 區塊註釋 */"
+          },
+          "c": {
+            "zh-Hant": "# 前置處理指示"
+          },
+          "d": {
+            "zh-Hant": "<!-- HTML 註釋 -->"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "// 註釋到行尾，/* ... */ 註釋一個區塊；# 是前置處理器指示，<!-- --> 不是 C++ 語法。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "// line comment"
+        },
+        {
+          "id": "b",
+          "text": "/* block comment */"
+        },
+        {
+          "id": "c",
+          "text": "# preprocessor directive"
+        },
+        {
+          "id": "d",
+          "text": "<!-- HTML comment -->"
+        }
+      ],
+      "answer": {
+        "kind": "multi",
+        "optionIds": [
+          "a",
+          "b"
+        ]
+      },
+      "explanation": "// comments to the end of the line and /* ... */ comments a block. # starts a preprocessor directive, and <!-- --> is not C++ syntax.",
+      "tags": [
+        "Syntax",
+        "Comments"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-01-q06",
+      "type": "multi",
+      "prompt": "Which of these are standard C++ library headers? Select all that apply.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "下列哪些是 C++ 標準程式庫的標頭檔？可多選。"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "<iostream> 輸入輸出"
+          },
+          "b": {
+            "zh-Hant": "<vector> 動態陣列"
+          },
+          "c": {
+            "zh-Hant": "<string> 字串"
+          },
+          "d": {
+            "zh-Hant": "<python> Python 直譯器"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "<iostream>、<vector>、<string> 都是標準標頭；C++ 標準庫沒有 <python>。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "<iostream> for console I/O"
+        },
+        {
+          "id": "b",
+          "text": "<vector> for dynamic arrays"
+        },
+        {
+          "id": "c",
+          "text": "<string> for strings"
+        },
+        {
+          "id": "d",
+          "text": "<python> for the Python interpreter"
+        }
+      ],
+      "answer": {
+        "kind": "multi",
+        "optionIds": [
+          "a",
+          "b",
+          "c"
+        ]
+      },
+      "explanation": "<iostream>, <vector> and <string> are all standard headers. There is no <python> header in the C++ standard library.",
+      "tags": [
+        "Headers",
+        "STL"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-01-q07",
+      "type": "fill",
+      "prompt": "The operator used with std::cout to send data to the console is ____.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "配合 std::cout 把資料送到主控台的運算子是 ____。"
+        },
+        "explanation": {
+          "zh-Hant": "<< 是插入運算子；std::cout << value 會把 value 寫入輸出串流。"
+        }
+      },
+      "answer": {
+        "kind": "fill",
+        "accept": [
+          "<<",
+          "＜＜"
+        ],
+        "ignoreSpaces": true
+      },
+      "explanation": "<< is the stream insertion operator: std::cout << value writes value to the output stream.",
+      "tags": [
+        "I/O",
+        "Operators"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-01-q08",
+      "type": "fill",
+      "prompt": "Every C++ program begins execution at the function named ____.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "每一個 C++ 程式都從名為 ____ 的函式開始執行。"
+        },
+        "explanation": {
+          "zh-Hant": "標準規定程式從 main 開始；它可以有參數，但名稱必須是 main。"
+        }
+      },
+      "answer": {
+        "kind": "fill",
+        "accept": [
+          "main",
+          "main()"
+        ],
+        "ignoreCase": true,
+        "ignoreSpaces": true
+      },
+      "explanation": "The standard requires execution to begin at main. It may take parameters, but its name is fixed.",
+      "tags": [
+        "Basics",
+        "main"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-01-q09",
+      "type": "short",
+      "prompt": "In one or two sentences, explain the difference between compiling and interpreting a program.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "用一至兩句說明「編譯」與「解譯」執行程式的分別。"
+        },
+        "model": {
+          "zh-Hant": "編譯器先把整份原始碼翻譯成機器碼，產生可獨立執行的執行檔；解譯器則在執行時逐句翻譯並立即執行，通常較慢但不用事先建置。"
+        },
+        "explanation": {
+          "zh-Hant": "關鍵差異在於翻譯發生的時機：執行前（編譯）還是執行中（解譯）。"
+        }
+      },
+      "answer": {
+        "kind": "short",
+        "model": "A compiler translates the whole source into machine code before the program runs, producing a standalone executable; an interpreter translates and executes statements while the program runs, which is usually slower but needs no build step.",
+        "keywords": [
+          "compiler",
+          "machine code",
+          "before",
+          "interpreter",
+          "runtime"
+        ]
+      },
+      "explanation": "The key difference is when translation happens: ahead of execution (compiler) or during execution (interpreter).",
+      "tags": [
+        "Toolchain",
+        "Concepts"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-01-q10",
+      "type": "single",
+      "prompt": "What does returning 0 from main conventionally signal to the operating system?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "main 回傳 0 通常向作業系統表示甚麼？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "程式成功結束"
+          },
+          "b": {
+            "zh-Hant": "程式發生錯誤"
+          },
+          "c": {
+            "zh-Hant": "程式仍在前台執行"
+          },
+          "d": {
+            "zh-Hant": "程式沒有回傳型別"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "依慣例，0 代表成功，非零值代表某種錯誤；shell 可用 $? 讀取。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "Successful termination"
+        },
+        {
+          "id": "b",
+          "text": "An error occurred"
+        },
+        {
+          "id": "c",
+          "text": "The program is still running"
+        },
+        {
+          "id": "d",
+          "text": "The program has no return type"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "By convention 0 means success and a non-zero value reports an error; a shell can read it through $?.",
+      "tags": [
+        "Basics",
+        "Exit codes"
+      ],
+      "difficulty": 1
+    }
+  ]
+}

@@ -1,0 +1,242 @@
+{
+  "id": "cpp-24-vector",
+  "title": "C++ vector Container",
+  "titleI18n": { "zh-Hant": "C++ vector 容器" },
+  "description": "The std::vector dynamic array: declaration, push_back and emplace_back, size versus capacity, checked and unchecked access, iteration, insert and erase, resizing, nested vectors and iterator invalidation.",
+  "descriptionI18n": {
+    "zh-Hant": "std::vector 動態陣列：宣告方式、push_back 與 emplace_back、size 與 capacity、有檢查與無檢查的存取、迭代、insert 與 erase、調整大小、巢狀 vector 以及迭代器失效。"
+  },
+  "tags": ["C++", "STL"],
+  "examMinutes": 15,
+  "questions": [
+    {
+      "id": "cpp-24-q01",
+      "type": "single",
+      "prompt": "Which header declares std::vector?",
+      "i18n": {
+        "prompt": { "zh-Hant": "哪一個標頭檔宣告了 std::vector？" },
+        "options": {
+          "a": { "zh-Hant": "<vector>" },
+          "b": { "zh-Hant": "<array>" },
+          "c": { "zh-Hant": "<list>" },
+          "d": { "zh-Hant": "<memory>" }
+        },
+        "explanation": {
+          "zh-Hant": "std::vector 定義在 <vector>；<array> 提供固定大小的 std::array，<list> 是雙向鏈結串列，<memory> 是智慧指標等工具。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "<vector>" },
+        { "id": "b", "text": "<array>" },
+        { "id": "c", "text": "<list>" },
+        { "id": "d", "text": "<memory>" }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "std::vector is declared in <vector>. <array> provides the fixed-size std::array, <list> the doubly linked list, and <memory> the smart pointers and allocator helpers.",
+      "tags": ["vector", "Headers"],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-24-q02",
+      "type": "single",
+      "prompt": "For `std::vector<int> v{1, 2, 3};`, what is the difference between `v[5]` and `v.at(5)`?",
+      "i18n": {
+        "prompt": { "zh-Hant": "對 `std::vector<int> v{1, 2, 3};` 而言，`v[5]` 與 `v.at(5)` 有甚麼分別？" },
+        "options": {
+          "a": { "zh-Hant": "v[5] 是未定義行為；v.at(5) 會擲出 std::out_of_range" },
+          "b": { "zh-Hant": "兩者都會擲出例外" },
+          "c": { "zh-Hant": "v[5] 會擲出例外；v.at(5) 回傳 0" },
+          "d": { "zh-Hant": "v.at(5) 只能用於 const 的 vector" }
+        },
+        "explanation": {
+          "zh-Hant": "operator[] 不做範圍檢查，越界即未定義行為；at() 會檢查並在越界時擲出 std::out_of_range。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "v[5] is undefined behaviour; v.at(5) throws std::out_of_range." },
+        { "id": "b", "text": "Both throw an exception." },
+        { "id": "c", "text": "v[5] throws an exception; v.at(5) returns 0." },
+        { "id": "d", "text": "v.at(5) only works on a const vector." }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "operator[] performs no bounds check, so an out-of-range index is undefined behaviour. at() checks the index and throws std::out_of_range when it is invalid.",
+      "tags": ["vector", "Access"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-24-q03",
+      "type": "single",
+      "prompt": "For a non-empty vector, which call returns a reference to its last element?",
+      "i18n": {
+        "prompt": { "zh-Hant": "對一個非空的 vector，哪一個呼叫會回傳最後一個元素的參考？" },
+        "options": {
+          "a": { "zh-Hant": "v.back()" },
+          "b": { "zh-Hant": "v.end()" },
+          "c": { "zh-Hant": "v.last()" },
+          "d": { "zh-Hant": "v[v.capacity()]" }
+        },
+        "explanation": {
+          "zh-Hant": "back() 回傳最後一個元素；end() 是「尾後」迭代器，不能解參考；capacity() 是容量而非元素個數。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "v.back()" },
+        { "id": "b", "text": "v.end()" },
+        { "id": "c", "text": "v.last()" },
+        { "id": "d", "text": "v[v.capacity()]" }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "back() returns a reference to the last element, while front() returns the first. end() is the one-past-the-end iterator and must not be dereferenced, and capacity() is a storage count, not an index.",
+      "tags": ["vector", "Access"],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-24-q04",
+      "type": "single",
+      "prompt": "Which loop visits every element of `std::vector<std::string> words` without copying it and without allowing the loop to modify it?",
+      "i18n": {
+        "prompt": { "zh-Hant": "哪一個迴圈會走訪 `std::vector<std::string> words` 的每個元素，既不會複製元素，也不允許在迴圈中修改元素？" },
+        "options": {
+          "a": { "zh-Hant": "for (const auto& w : words)" },
+          "b": { "zh-Hant": "for (auto w : words)" },
+          "c": { "zh-Hant": "for (auto& w : words)" },
+          "d": { "zh-Hant": "for (int w : words)" }
+        },
+        "explanation": {
+          "zh-Hant": "const auto& 綁定參考而不複製，const 又禁止修改；auto 會複製，auto& 可修改，int 與 std::string 型別不符。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "for (const auto& w : words)" },
+        { "id": "b", "text": "for (auto w : words)" },
+        { "id": "c", "text": "for (auto& w : words)" },
+        { "id": "d", "text": "for (int w : words)" }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "`const auto&` binds a reference, so no string is copied, and const prevents modification through the loop variable. `auto` copies each string and `auto&` allows changes; an int cannot be initialised from a std::string.",
+      "tags": ["vector", "Iteration"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-24-q05",
+      "type": "multi",
+      "prompt": "Which statements about insert and erase on a std::vector are true? Select all that apply.",
+      "i18n": {
+        "prompt": { "zh-Hant": "下列關於 std::vector 的 insert 與 erase 的敘述，哪些是正確的？可多選。" },
+        "options": {
+          "a": { "zh-Hant": "v.insert(v.begin() + 1, 9) 會把位置 1 及其後面的元素向右移" },
+          "b": { "zh-Hant": "v.erase(v.begin()) 會把後面的元素全部向左移一格" },
+          "c": { "zh-Hant": "兩者都可能使指向修改位置或其後的迭代器失效" },
+          "d": { "zh-Hant": "erase 只能移除最後一個元素" }
+        },
+        "explanation": {
+          "zh-Hant": "vector 的元素必須連續存放，所以中間插入或刪除會搬移後續元素，也使相關迭代器、指標與參考失效；erase 可移除任何位置。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "v.insert(v.begin() + 1, 9) shifts position 1 and every later element to the right." },
+        { "id": "b", "text": "v.erase(v.begin()) shifts every later element one position to the left." },
+        { "id": "c", "text": "Both can invalidate iterators at or after the modified position." },
+        { "id": "d", "text": "erase can only remove the last element." }
+      ],
+      "answer": { "kind": "multi", "optionIds": ["a", "b", "c"] },
+      "explanation": "A vector keeps its elements contiguous, so inserting or erasing in the middle moves the later elements and invalidates iterators, pointers and references from that position on. erase accepts any valid position, not just the end.",
+      "tags": ["vector", "Modifiers"],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-24-q06",
+      "type": "multi",
+      "prompt": "Which statements about size, capacity, reserve and resize are true? Select all that apply.",
+      "i18n": {
+        "prompt": { "zh-Hant": "下列關於 size、capacity、reserve 與 resize 的敘述，哪些是正確的？可多選。" },
+        "options": {
+          "a": { "zh-Hant": "reserve(100) 會預留至少 100 個元素的空間，且不改變 size()" },
+          "b": { "zh-Hant": "對大小為 2 的 vector 呼叫 resize(5)，會新增三個以值初始化的元素" },
+          "c": { "zh-Hant": "capacity() 永遠等於 size()" },
+          "d": { "zh-Hant": "超過容量時的 push_back 可能重新配置並搬移既有元素" }
+        },
+        "explanation": {
+          "zh-Hant": "capacity 是已配置的儲存空間，size 是目前元素個數，因此 capacity >= size；reserve 只改容量，resize 才改元素個數。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "reserve(100) makes room for at least 100 elements and leaves size() unchanged." },
+        { "id": "b", "text": "resize(5) on a vector of size 2 adds three value-initialised elements." },
+        { "id": "c", "text": "capacity() is always equal to size()." },
+        { "id": "d", "text": "A push_back that exceeds the capacity may reallocate and move the existing elements." }
+      ],
+      "answer": { "kind": "multi", "optionIds": ["a", "b", "d"] },
+      "explanation": "capacity() is the storage already allocated, so it is greater than or equal to size(); reserve changes only the capacity, while resize changes the number of elements. Growing past the capacity forces a reallocation that moves the elements.",
+      "tags": ["vector", "Capacity"],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-24-q07",
+      "type": "boolean",
+      "prompt": "`std::vector<std::vector<int>> grid(3, std::vector<int>(4));` creates three rows, each holding four ints.",
+      "i18n": {
+        "prompt": { "zh-Hant": "`std::vector<std::vector<int>> grid(3, std::vector<int>(4));` 會建立三列，每列各有四個 int。" },
+        "explanation": {
+          "zh-Hant": "內層 vector 先建立 4 個元素，外層再複製 3 份，形成 3 x 4 的二維結構；走訪時外層與內層各用一層迴圈。"
+        }
+      },
+      "answer": { "kind": "boolean", "value": true },
+      "explanation": "The inner expression creates a vector of four ints, and the outer constructor copies it three times, giving a 3-by-4 structure. A vector of vectors is indexed as grid[row][column].",
+      "tags": ["vector", "Nested"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-24-q08",
+      "type": "boolean",
+      "prompt": "Calling clear() on a vector frees its capacity as well as destroying its elements.",
+      "i18n": {
+        "prompt": { "zh-Hant": "對 vector 呼叫 clear() 會同時釋放容量並銷毀元素。" },
+        "explanation": {
+          "zh-Hant": "clear() 只銷毀元素並把 size 設為 0，capacity 保持不變；要釋放容量可用 shrink_to_fit() 或與空 vector 交換。"
+        }
+      },
+      "answer": { "kind": "boolean", "value": false },
+      "explanation": "clear() destroys the elements and sets size() to 0, but capacity() stays the same. To release the storage, use shrink_to_fit() or swap with an empty vector.",
+      "tags": ["vector", "Capacity"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-24-q09",
+      "type": "fill",
+      "prompt": "The vector member function that constructs a new element in place at the end is ____.",
+      "i18n": {
+        "prompt": { "zh-Hant": "vector 中用來在尾端就地建構新元素的成員函式是 ____。" },
+        "explanation": {
+          "zh-Hant": "emplace_back 把參數直接傳給元素型別的建構函式，在 vector 的儲存空間中就地建構；push_back 則是複製或搬移一個既有物件。"
+        }
+      },
+      "answer": { "kind": "fill", "accept": ["emplace_back", "emplaceback", "emplace back"], "ignoreCase": true, "ignoreSpaces": true },
+      "explanation": "emplace_back forwards its arguments to the element type's constructor and builds the object directly in the vector's storage, whereas push_back copies or moves an existing object.",
+      "tags": ["vector", "push_back"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-24-q10",
+      "type": "short",
+      "prompt": "In two or three sentences, explain why repeated push_back calls take amortised constant time, and how reserve can reduce the number of reallocations.",
+      "i18n": {
+        "prompt": { "zh-Hant": "用兩至三句說明：為什麼重複呼叫 push_back 具有攤還常數時間複雜度，以及 reserve 如何減少重新配置的次數。" },
+        "model": {
+          "zh-Hant": "vector 容量不足時會配置更大的區塊（通常加倍），把舊元素搬過去，再把新元素放入。雖然單次擴充要搬移 O(n) 個元素，但因為容量每次大幅成長，搬移成本分攤到之後的 push_back 後平均是 O(1)。若事先用 reserve(n) 預留足夠容量，就不會在成長過程中反覆配置與搬移。"
+        },
+        "explanation": {
+          "zh-Hant": "關鍵是幾何成長：容量以倍數增加，使總搬移量與元素總數成正比，平均每次 push_back 為 O(1)。"
+        }
+      },
+      "answer": {
+        "kind": "short",
+        "model": "When the capacity is full, a vector allocates a larger block (usually doubling), moves the old elements across and then appends the new one. A single growth costs O(n), but because the capacity grows geometrically the total copying is proportional to the number of elements, so each push_back costs O(1) on average. Calling reserve(n) in advance allocates enough room once, so the vector never has to reallocate while it grows to n elements.",
+        "keywords": ["amortised", "reallocate", "double", "capacity", "reserve"]
+      },
+      "explanation": "The key is geometric growth: because the capacity grows by a constant factor, the total copying stays linear in the number of elements, which makes the average cost per push_back constant.",
+      "tags": ["vector", "Complexity"],
+      "difficulty": 3
+    }
+  ]
+}

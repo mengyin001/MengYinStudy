@@ -1,4 +1,5 @@
 import { deckFileSchema } from '@mengyin/plugin-sdk';
+import type { Deck } from '@mengyin/core';
 import {
   createContext,
   useCallback,
@@ -30,6 +31,7 @@ type Action =
   | { type: 'reset' }
   | { type: 'loading' }
   | { type: 'loaded'; decks: UserDeck[] }
+  | { type: 'saved'; deck: UserDeck }
   | { type: 'removed'; id: string }
   | { type: 'error'; error: BackendError }
   | { type: 'busy'; busy: boolean };
@@ -49,6 +51,17 @@ function reducer(state: UserDecksState, action: Action): UserDecksState {
       return { ...state, ready: false, error: null };
     case 'loaded':
       return { ready: true, decks: action.decks, busy: false, error: null };
+    case 'saved':
+      return {
+        ...state,
+        ready: true,
+        decks: state.decks.some((deck) => deck.clientKey === action.deck.clientKey)
+          ? state.decks.map((deck) =>
+              deck.clientKey === action.deck.clientKey ? action.deck : deck,
+            )
+          : [action.deck, ...state.decks],
+        error: null,
+      };
     case 'removed':
       return {
         ...state,
@@ -68,6 +81,8 @@ function reducer(state: UserDecksState, action: Action): UserDecksState {
 export interface UserDecksActions {
   refresh(): Promise<void>;
   upload(record: LocalPluginRecord): Promise<ServiceResult<number>>;
+  /** Replace a cloud deck's title/questions, keeping its stable key and module. */
+  update(deck: Deck): Promise<ServiceResult<UserDeck>>;
   /** `clientKey` lets the service retry a delete whose row id has gone stale. */
   remove(id: string, clientKey?: string): Promise<ServiceResult>;
 }
@@ -339,6 +354,55 @@ export function UserDecksProvider({ children }: { children: ReactNode }) {
     [refresh, userId],
   );
 
+  const update = useCallback(
+    async (deck: Deck): Promise<ServiceResult<UserDeck>> => {
+      if (!userId) {
+        return fail(new BackendError('unauthorized', 'Sign in to update a cloud deck.'));
+      }
+      dispatch({ type: 'busy', busy: true });
+      // A list reply that started before this write still carries the old
+      // title/questions; letting it land would undo the edit on screen.
+      guard.current.invalidate();
+      try {
+        const current = loadedDecks.current ?? state.decks;
+        const existing = current.find((row) => row.clientKey === deck.key);
+        const saved = await backend.userDecks.upsert({
+          clientKey: deck.key,
+          pluginId: deck.pluginId,
+          deckId: deck.id,
+          title: deck.title,
+          ...(deck.description ? { description: deck.description } : {}),
+          tags: deck.tags,
+          questions: deck.questions,
+          examMinutes: deck.examMinutes ?? null,
+          // The row's module belongs to every deck of the plugin. Editing one
+          // deck must not erase the plugin code another deck may rely on.
+          entrySource: existing?.entrySource ?? null,
+        });
+
+        // A list request that started while the write was in flight may still
+        // describe the pre-edit row. Drop it before painting the saved copy;
+        // the refresh below starts a new, authoritative read.
+        guard.current.invalidate();
+        const next = current.some((row) => row.clientKey === saved.clientKey)
+          ? current.map((row) => (row.clientKey === saved.clientKey ? saved : row))
+          : [saved, ...current];
+        loadedDecks.current = next;
+        const fingerprint = userDeckFingerprint(next);
+        loadedFingerprint.current = fingerprint;
+        dispatch({ type: 'saved', deck: saved });
+        await writeUserDecksCache(userId, next, fingerprint).catch(() => undefined);
+        await refresh(true);
+        return ok(saved);
+      } catch (error) {
+        return fail(toBackendError(error));
+      } finally {
+        dispatch({ type: 'busy', busy: false });
+      }
+    },
+    [refresh, state.decks, userId],
+  );
+
   const remove = useCallback(
     async (id: string, clientKey?: string): Promise<ServiceResult> => {
       if (!userId) {
@@ -399,9 +463,10 @@ export function UserDecksProvider({ children }: { children: ReactNode }) {
     () => ({
       refresh: () => refresh(),
       upload,
+      update,
       remove,
     }),
-    [refresh, upload, remove],
+    [refresh, upload, update, remove],
   );
 
   const value = useMemo<UserDecksContextValue>(

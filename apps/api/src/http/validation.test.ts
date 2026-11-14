@@ -13,6 +13,30 @@ describe('question request validation', () => {
     );
   });
 
+  it('accepts an own provider key and rejects a malformed one', () => {
+    expect(parseQuestionRequest({ topic: 'x', model }).apiKey).toBeUndefined();
+    expect(
+      parseQuestionRequest({ topic: 'x', model, apiKey: '  sk-abcdefgh12345678  ' }).apiKey,
+    ).toBe('sk-abcdefgh12345678');
+    expect(() =>
+      parseQuestionRequest({ topic: 'x', model, apiKey: 'not a key with spaces' }),
+    ).toThrow(/apiKey/i);
+    expect(() => parseQuestionRequest({ topic: 'x', model, apiKey: 42 })).toThrow(/apiKey/i);
+  });
+
+  it('accepts any public https provider URL and refuses anything else', () => {
+    const base = (apiBaseUrl: string) =>
+      parseQuestionRequest({ topic: 'x', model, apiKey: 'sk-abcdefgh12345678', apiBaseUrl })
+        .apiBaseUrl;
+    expect(base('https://api.openai.com/v1/')).toBe('https://api.openai.com/v1');
+    expect(base('https://openrouter.ai/api/v1')).toBe('https://openrouter.ai/api/v1');
+    expect(() => base('http://api.openai.com/v1')).toThrow(/https/i);
+    expect(() => base('https://localhost:8787/v1')).toThrow(/public/i);
+    expect(() => base('https://10.0.0.1/v1')).toThrow(/public/i);
+    expect(() => base('https://user:pass@api.openai.com/v1')).toThrow(/credentials/i);
+    expect(() => base('not a url')).toThrow(/valid URL/i);
+  });
+
   it('applies defaults and derives a topic from the description', () => {
     const parsed = parseQuestionRequest({
       model,

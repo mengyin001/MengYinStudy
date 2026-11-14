@@ -1,13 +1,23 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ImageMedia, QuestionMedia } from '@mengyin/core';
 import { backend } from '@/services';
 import { verifyStoredImage } from '@/services/mediaProof';
 import { isUserMediaSrc, userMediaPath } from '@/services/supabase/userMedia';
+import { useApp } from '@/state/AppContext';
 import { FigureView } from './FigureView';
 
 /** 1×1 transparent GIF, shown until a private object has a signed URL. */
 const PLACEHOLDER =
   'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+
+/**
+ * How long an illustration may take before the card admits that it is still
+ * loading. Cached images resolve well inside this window, so paging through a
+ * already-seen deck never flashes a spinner.
+ */
+const SPINNER_DELAY_MS = 160;
+
+type StageState = 'pending' | 'loading' | 'ready';
 
 interface QuestionImageProps {
   media: QuestionMedia;
@@ -41,9 +51,16 @@ function StoredImage({
   className?: string;
   loading: 'eager' | 'lazy';
 }) {
-  const [src, setSrc] = useState(() => (isUserMediaSrc(media.src) ? null : media.src));
+  const { t } = useApp();
+  const [src, setSrc] = useState<string | null>(() => (isUserMediaSrc(media.src) ? null : media.src));
   const [failed, setFailed] = useState(false);
+  // Tracked by source, so a new question's illustration is "not loaded" the
+  // instant its URL changes and a re-render never revives a stale spinner.
+  const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
+  const [slow, setSlow] = useState(false);
+  const imageRef = useRef<HTMLImageElement | null>(null);
   const attested = Boolean(media.digest && media.signature);
+  const loaded = src !== null && loadedSrc === src;
 
   useEffect(() => {
     let active = true;
@@ -102,6 +119,24 @@ function StoredImage({
     };
   }, [media.src, media.digest, media.signature, attested]);
 
+  // A question is often reopened with its illustration already in the browser
+  // cache, and the load event can land before React attaches its listener.
+  useEffect(() => {
+    const image = imageRef.current;
+    if (src && image && image.complete && image.naturalWidth > 0) setLoadedSrc(src);
+  }, [src]);
+
+  // Only admit to loading after a short grace period: a cached or inline image
+  // appears immediately, and a spinner that lives for one frame is noise.
+  useEffect(() => {
+    if (loaded || failed) {
+      setSlow(false);
+      return;
+    }
+    const timer = window.setTimeout(() => setSlow(true), SPINNER_DELAY_MS);
+    return () => window.clearTimeout(timer);
+  }, [loaded, failed, src]);
+
   if (failed) {
     // The object is missing, or its bytes no longer match the signature. An
     // illustration is never required to answer, so the question renders as if
@@ -109,14 +144,31 @@ function StoredImage({
     return null;
   }
 
+  const state: StageState = loaded ? 'ready' : slow ? 'loading' : 'pending';
+
   const image = (
-    <img
-      className={className}
-      src={src ?? PLACEHOLDER}
-      alt={media.alt ?? ''}
-      loading={loading}
-      onError={() => setFailed(true)}
-    />
+    <span className="media-stage" data-state={state} aria-busy={!loaded}>
+      {state === 'loading' ? (
+        <span className="media-loading" key="loading">
+          <span className="media-loading__ring" aria-hidden="true" />
+          <span className="media-loading__label" role="status">
+            {t('common.imageLoading')}
+          </span>
+        </span>
+      ) : null}
+      <img
+        key="media"
+        ref={imageRef}
+        className={className}
+        src={src ?? PLACEHOLDER}
+        alt={media.alt ?? ''}
+        loading={loading}
+        onLoad={() => {
+          if (src) setLoadedSrc(src);
+        }}
+        onError={() => setFailed(true)}
+      />
+    </span>
   );
   if (!media.credit) return image;
   const href = media.sourceUrl?.startsWith('https://') ? media.sourceUrl : null;

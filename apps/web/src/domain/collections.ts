@@ -9,6 +9,15 @@ import type { UserCollection } from '@/services/types';
 import type { DeckView } from './library';
 import { initialsFor, toneFor, type PlazaTone } from './plaza';
 
+/** Collections auto-created from an official catalogue pack use this prefix. */
+export const OFFICIAL_PACK_COLLECTION_PREFIX = 'official-pack:';
+
+export function isOfficialPackCollection(id: string): boolean {
+  // Current ids are `<user-id>:official-pack:<pack-id>`; the collection id is
+  // globally unique, so the user prefix is required.
+  return id.includes(OFFICIAL_PACK_COLLECTION_PREFIX);
+}
+
 export interface CollectionView {
   collection: UserCollection;
   /** Decks that are currently in the library, in the collection's order. */

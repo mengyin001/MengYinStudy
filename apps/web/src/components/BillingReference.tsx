@@ -52,7 +52,11 @@ export function BillingReference() {
                     ? t('pricing.monthlyQuestions', { n: plan.monthlyQuestions })
                     : t('pricing.monthlyPoints', { n: plan.monthlyPoints })}
                 </td>
-                <td>{plan.models.map(modelLabel).join(' · ')}</td>
+                <td>
+                  {plan.models.length > 0
+                    ? plan.models.map(modelLabel).join(' · ')
+                    : t('pricing.noAiModel')}
+                </td>
                 <td>
                   {plan.imagesPerMonth > 0
                     ? t('pricing.images', { n: plan.imagesPerMonth })
@@ -83,11 +87,9 @@ export function BillingReference() {
                 <td>{modelLabel(model)}</td>
                 <td className="table__num">{MODEL_POINT_COSTS[model] ?? 0}</td>
                 <td>
-                  {model === 'glm-4.7-flash'
-                    ? t('billingDocs.freeNote')
-                    : model === 'deepseek-flash'
-                      ? t('billingDocs.flashNote')
-                      : t('billingDocs.proNote')}
+                  {model === 'deepseek-flash'
+                    ? t('billingDocs.flashNote')
+                    : t('billingDocs.proNote')}
                 </td>
               </tr>
             ))}

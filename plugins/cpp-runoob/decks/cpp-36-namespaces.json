@@ -1,0 +1,462 @@
+{
+  "id": "cpp-36-namespaces",
+  "title": "C++ Namespaces",
+  "titleI18n": {
+    "zh-Hant": "C++ 命名空間"
+  },
+  "description": "Organising names into scopes: namespace definitions, qualified lookup, using-declarations versus directives, nested, inline and anonymous namespaces, and aliases.",
+  "descriptionI18n": {
+    "zh-Hant": "把名稱組織到作用域中：命名空間定義、限定查閱、using 宣告與 using 指示的差別、巢狀／行內／匿名命名空間，以及別名。"
+  },
+  "tags": [
+    "C++",
+    "Namespaces"
+  ],
+  "examMinutes": 14,
+  "questions": [
+    {
+      "id": "cpp-36-q01",
+      "type": "single",
+      "prompt": "Which operator qualifies a name with the namespace that contains it?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "哪一個運算子能以所屬命名空間限定名稱？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "`::`"
+          },
+          "b": {
+            "zh-Hant": "`.`"
+          },
+          "c": {
+            "zh-Hant": "`->`"
+          },
+          "d": {
+            "zh-Hant": "`#`"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "`std::vector` 使用的是作用域解析運算子 `::`；`.` 存取物件成員，`->` 透過指標存取成員，`#` 是前置處理指示的開頭。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "`::`"
+        },
+        {
+          "id": "b",
+          "text": "`.`"
+        },
+        {
+          "id": "c",
+          "text": "`->`"
+        },
+        {
+          "id": "d",
+          "text": "`#`"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "`std::vector` uses the scope resolution operator `::`. `.` accesses a member of an object, `->` a member through a pointer, and `#` starts a preprocessor directive.",
+      "tags": [
+        "Scope resolution",
+        "Syntax"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-36-q02",
+      "type": "single",
+      "prompt": "Why should a header avoid a global `using namespace std;`?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "為甚麼標頭檔應避免在全域寫 `using namespace std;`？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "每個包含此標頭的編譯單元都會被注入整個 std 命名空間，可能造成歧義"
+          },
+          "b": {
+            "zh-Hant": "它會讓標頭檔無法被多次包含"
+          },
+          "c": {
+            "zh-Hant": "它會讓編譯器忽略所有 `std::` 限定"
+          },
+          "d": {
+            "zh-Hant": "它會在連結時期造成未定義行為"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "標頭檔中的 using 指示會外洩到每個包含它的檔案，讓 `count`、`distance` 等普通名稱與標準演算法產生歧義。應改用明確的 `std::`，或把 using 宣告限制在函式作用域內。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "Every translation unit that includes the header gets the whole std namespace injected, which can create ambiguities."
+        },
+        {
+          "id": "b",
+          "text": "It stops the header from being included more than once."
+        },
+        {
+          "id": "c",
+          "text": "It makes the compiler ignore all `std::` qualifications."
+        },
+        {
+          "id": "d",
+          "text": "It causes undefined behaviour at link time."
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "A using-directive in a header leaks into every including file, so ordinary names such as `count` or `distance` may become ambiguous with std algorithms. Prefer explicit `std::` or a using-declaration limited to function scope.",
+      "tags": [
+        "std",
+        "Headers"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-36-q03",
+      "type": "boolean",
+      "prompt": "Members of an inline namespace can be used as if they were declared directly in the enclosing namespace.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "行內命名空間的成員可以當成直接宣告在外層命名空間中來使用。"
+        },
+        "explanation": {
+          "zh-Hant": "行內命名空間對限定查閱、非限定查閱與引數相依查閱都是透明的；`std::literals` 就是這樣把 `std::literals::string_literals` 的成員呈現出來。"
+        }
+      },
+      "answer": {
+        "kind": "boolean",
+        "value": true
+      },
+      "explanation": "An inline namespace is transparent to qualified lookup, unqualified lookup and argument-dependent lookup; that is how `std::literals` re-exports the members of `std::literals::string_literals`.",
+      "tags": [
+        "Inline namespace",
+        "Lookup"
+      ],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-36-q04",
+      "type": "boolean",
+      "prompt": "A using-declaration such as `using std::cout;` makes every name from std visible in the current scope.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "像 `using std::cout;` 這樣的 using 宣告，會讓 std 的所有名稱在目前作用域中可見。"
+        },
+        "explanation": {
+          "zh-Hant": "那是 using 指示（`using namespace std;`）。using 宣告只把單一名稱 `std::cout` 引入目前作用域。"
+        }
+      },
+      "answer": {
+        "kind": "boolean",
+        "value": false
+      },
+      "explanation": "That is a using-directive (`using namespace std;`). A using-declaration introduces exactly one name, `std::cout`, into the current scope.",
+      "tags": [
+        "using declaration",
+        "using directive"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-36-q05",
+      "type": "multi",
+      "prompt": "Which statements about using-directives and using-declarations are correct? Select all that apply.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "下列關於 using 指示與 using 宣告的敘述，哪些正確？可多選。"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "`using namespace math;` 會讓 math 的所有名稱在外層作用域可見"
+          },
+          "b": {
+            "zh-Hant": "`using math::sqrt;` 只引入 sqrt 一個名稱"
+          },
+          "c": {
+            "zh-Hant": "在類別中使用 using 宣告，可讓原本被隱藏的基底成員重新可見"
+          },
+          "d": {
+            "zh-Hant": "函式內的 using 指示會影響整個檔案中的所有函式"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "using 指示只影響所在作用域的名稱查閱（函式內的指示隨函式結束）；using 宣告只加入一個名稱，在類別中還可讓被隱藏的繼承成員重新可見。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "`using namespace math;` makes all names of math visible in the enclosing scope."
+        },
+        {
+          "id": "b",
+          "text": "`using math::sqrt;` introduces only sqrt."
+        },
+        {
+          "id": "c",
+          "text": "A using-declaration in a class can expose a base-class member that would otherwise be hidden."
+        },
+        {
+          "id": "d",
+          "text": "A using-directive inside a function affects every function in the file."
+        }
+      ],
+      "answer": {
+        "kind": "multi",
+        "optionIds": [
+          "a",
+          "b",
+          "c"
+        ]
+      },
+      "explanation": "A directive affects lookup in its own scope, and a function-scope directive ends with the function; a declaration adds one name and can also un-hide inherited members in a class.",
+      "tags": [
+        "using declaration",
+        "using directive"
+      ],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-36-q06",
+      "type": "multi",
+      "prompt": "Which statements about nested and inline namespaces are correct? Select all that apply.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "下列關於巢狀與行內命名空間的敘述，哪些正確？可多選。"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "`namespace A::B { }` 是 C++17 中定義巢狀命名空間 A 內含 B 的簡寫"
+          },
+          "b": {
+            "zh-Hant": "行內命名空間的成員可透過外層命名空間的名稱存取"
+          },
+          "c": {
+            "zh-Hant": "行內命名空間常用來為函式庫的 ABI 建立版本"
+          },
+          "d": {
+            "zh-Hant": "在 A 之內，即使 B 不是行內命名空間，B 的成員也無需 `B::` 限定即可見"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "C++17 允許 `A::B` 的定義語法；行內命名空間是透明的，讓函式庫作者把符號移入帶版本編號的命名空間而舊程式碼仍可編譯。一般巢狀命名空間仍需加上限定。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "`namespace A::B { }` is the C++17 shorthand for a nested namespace A containing B."
+        },
+        {
+          "id": "b",
+          "text": "An inline namespace keeps its members reachable through the enclosing namespace name."
+        },
+        {
+          "id": "c",
+          "text": "Inline namespaces are commonly used to version a library's ABI."
+        },
+        {
+          "id": "d",
+          "text": "Inside namespace A, a member of B is visible without the `B::` qualifier even when B is not inline."
+        }
+      ],
+      "answer": {
+        "kind": "multi",
+        "optionIds": [
+          "a",
+          "b",
+          "c"
+        ]
+      },
+      "explanation": "C++17 allows the `A::B` definition syntax; an inline namespace is transparent, which lets library authors move symbols into a versioned namespace while existing code still compiles. A plain nested namespace always needs qualification.",
+      "tags": [
+        "Nested namespace",
+        "Inline namespace"
+      ],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-36-q07",
+      "type": "fill",
+      "prompt": "The keyword that makes a nested namespace's members visible in the enclosing namespace is ____.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "讓巢狀命名空間的成員在父命名空間中直接可見的關鍵字是 ____。"
+        },
+        "explanation": {
+          "zh-Hant": "inline 命名空間（例如 `inline namespace v2 { ... }`）的成員可以透過父命名空間直接使用。"
+        }
+      },
+      "answer": {
+        "kind": "fill",
+        "accept": [
+          "inline"
+        ],
+        "ignoreCase": true,
+        "ignoreSpaces": true
+      },
+      "explanation": "An inline namespace, as in `inline namespace v2 { ... }`, keeps its members reachable through the enclosing namespace.",
+      "tags": [
+        "Namespaces",
+        "inline"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-36-q08",
+      "type": "short",
+      "prompt": "What is an anonymous namespace, and why is it preferred over `static` for helpers that should stay inside one source file?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "甚麼是匿名命名空間？對於只應留在單一原始檔內的輔助程式碼，為甚麼它比 `static` 更受推薦？"
+        },
+        "model": {
+          "zh-Hant": "匿名命名空間是沒有名稱的命名空間，其成員具有內部連結：每個定義它的編譯單元各自擁有獨立副本，因此連結時不會衝突。它比 `static` 更好用，因為除了變數與函式，還能套用於型別與樣板。"
+        },
+        "explanation": {
+          "zh-Hant": "兩者都提供內部連結，但只有匿名命名空間能包住類別定義與樣板。C++11 起，在命名空間作用域以 `static` 宣告變數已被列為 deprecated。"
+        }
+      },
+      "answer": {
+        "kind": "short",
+        "model": "An anonymous namespace is an unnamed namespace whose members have internal linkage: each translation unit that defines it gets its own distinct copy, so the names cannot clash at link time. It is preferred over `static` because it works for types, templates and functions alike, not just variables and functions.",
+        "keywords": [
+          "anonymous namespace",
+          "internal linkage",
+          "translation unit",
+          "static",
+          "types"
+        ]
+      },
+      "explanation": "Both give internal linkage, but only the anonymous namespace can enclose class definitions and templates. Since C++11, declaring variables with `static` at namespace scope is deprecated.",
+      "tags": [
+        "Anonymous namespace",
+        "Linkage"
+      ],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-36-q09",
+      "type": "single",
+      "prompt": "Which line creates an alias `fs` for the namespace `std::filesystem`?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "哪一行能為命名空間 `std::filesystem` 建立別名 `fs`？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "`namespace fs = std::filesystem;`"
+          },
+          "b": {
+            "zh-Hant": "`using fs = std::filesystem;`"
+          },
+          "c": {
+            "zh-Hant": "`namespace fs : std::filesystem { }`"
+          },
+          "d": {
+            "zh-Hant": "`typedef namespace std::filesystem fs;`"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "命名空間別名以 `namespace alias = qualified-name;` 宣告，並不是複製，只是同一個命名空間的另一個名稱；別名不可宣告在類別內。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "`namespace fs = std::filesystem;`"
+        },
+        {
+          "id": "b",
+          "text": "`using fs = std::filesystem;`"
+        },
+        {
+          "id": "c",
+          "text": "`namespace fs : std::filesystem { }`"
+        },
+        {
+          "id": "d",
+          "text": "`typedef namespace std::filesystem fs;`"
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "A namespace alias is declared with `namespace alias = qualified-name;`. It is not a copy, just another name for the same namespace, and it cannot appear inside a class.",
+      "tags": [
+        "Namespace alias",
+        "Syntax"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-36-q10",
+      "type": "single",
+      "prompt": "What happens when the same namespace is declared twice in one translation unit?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "在同一個編譯單元中兩次宣告同一個命名空間，會怎樣？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "第二次宣告會重新開啟該命名空間，把名稱加入同一個作用域"
+          },
+          "b": {
+            "zh-Hant": "編譯器回報重複定義錯誤"
+          },
+          "c": {
+            "zh-Hant": "第二次宣告會隱藏第一次的名稱"
+          },
+          "d": {
+            "zh-Hant": "它會在第一次的命名空間內建立巢狀命名空間"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "命名空間是開放的：`namespace math { int add(...); }` 與後來的 `namespace math { int mul(...); }` 都屬於同一個 `math`。函式庫就是這樣把同一個命名空間分散到多個標頭檔。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "The second declaration reopens the namespace and adds its names to the same scope."
+        },
+        {
+          "id": "b",
+          "text": "The compiler reports a redefinition error."
+        },
+        {
+          "id": "c",
+          "text": "The second declaration hides the names from the first."
+        },
+        {
+          "id": "d",
+          "text": "It creates a nested namespace inside the first one."
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "Namespaces are open: `namespace math { int add(...); }` and a later `namespace math { int mul(...); }` both contribute to `math`. This is how a library spreads one namespace over many headers.",
+      "tags": [
+        "Namespace definition",
+        "Reopening"
+      ],
+      "difficulty": 2
+    }
+  ]
+}

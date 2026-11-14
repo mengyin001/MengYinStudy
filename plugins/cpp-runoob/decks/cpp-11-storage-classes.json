@@ -1,0 +1,260 @@
+{
+  "id": "cpp-11-storage-classes",
+  "title": "C++ Storage Classes",
+  "titleI18n": { "zh-Hant": "C++ 儲存類別" },
+  "description": "Storage-class specifiers and storage duration in C++: the old and new meaning of auto, the removal of register, static and extern, thread_local, mutable, linkage, static class members and extern \"C\".",
+  "descriptionI18n": {
+    "zh-Hant": "C++ 的儲存類別修飾符與儲存期：auto 的舊義與新義、register 的移除、static 與 extern、thread_local、mutable、連結性、靜態類別成員，以及 extern \"C\"。"
+  },
+  "tags": ["C++", "Storage"],
+  "examMinutes": 15,
+  "questions": [
+    {
+      "id": "cpp-11-q01",
+      "type": "single",
+      "prompt": "What did the `auto` keyword mean before C++11, and what does it mean now?",
+      "i18n": {
+        "prompt": { "zh-Hant": "C++11 之前 `auto` 的意義是甚麼？現在又是甚麼？" },
+        "options": {
+          "a": { "zh-Hant": "以前是表示自動儲存期的儲存類別修飾符；C++11 起改為從初始值推導型別。" },
+          "b": { "zh-Hant": "一直都代表從初始值推導變數型別。" },
+          "c": { "zh-Hant": "以前等於 `register`，現在等於 `static`。" },
+          "d": { "zh-Hant": "C++11 才新增，之前沒有任何意義。" }
+        },
+        "explanation": {
+          "zh-Hant": "C++98 的 `auto` 用來標示自動儲存期，幾乎總是多餘的。C++11 重新使用這個關鍵字來做型別推導，舊的意義已被移除。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "It was a storage-class specifier for automatic storage duration; since C++11 it deduces the type from the initialiser."
+        },
+        { "id": "b", "text": "It has always deduced the variable's type from its initialiser." },
+        { "id": "c", "text": "It used to mean `register`, and now it means `static`." },
+        { "id": "d", "text": "It was introduced in C++11 and had no earlier meaning." }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "In C++98 `auto` marked automatic storage duration and was almost always redundant. C++11 reused the keyword for type deduction, and the old meaning was removed.",
+      "tags": ["auto", "History"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-11-q02",
+      "type": "single",
+      "prompt": "What is the status of the `register` storage-class specifier in C++17?",
+      "i18n": {
+        "prompt": { "zh-Hant": "`register` 儲存類別修飾符在 C++17 的狀態是甚麼？" },
+        "options": {
+          "a": { "zh-Hant": "已被移除；`register` 是保留字，`register int x;` 不符語法。" },
+          "b": { "zh-Hant": "仍然要求編譯器把變數放進 CPU 暫存器。" },
+          "c": { "zh-Hant": "現在會給變數執行緒儲存期。" },
+          "d": { "zh-Hant": "迴圈中使用的變數必須加它。" }
+        },
+        "explanation": {
+          "zh-Hant": "`register` 在 C++11 被標為棄用，C++17 正式移除，因為編譯器配置暫存器的能力遠勝人為提示。C++17 之後這個關鍵字仍保留，但已沒有意義。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "It was removed; `register` is a reserved word and `register int x;` is ill-formed."
+        },
+        { "id": "b", "text": "It still asks the compiler to place the variable in a CPU register." },
+        { "id": "c", "text": "It now gives the variable thread storage duration." },
+        { "id": "d", "text": "It is required for variables used inside loops." }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "`register` was deprecated in C++11 and removed in C++17, because compilers allocate registers far better than programmers can hint. In C++17 the keyword remains reserved but has no meaning.",
+      "tags": ["register", "Deprecation"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-11-q03",
+      "type": "single",
+      "prompt": "Which declaration gives a namespace-scope function internal linkage?",
+      "i18n": {
+        "prompt": { "zh-Hant": "下列哪一個宣告會讓命名空間範圍的函式具有內部連結？" },
+        "options": {
+          "a": { "zh-Hant": "`static void helper();`" },
+          "b": { "zh-Hant": "`extern void helper();`" },
+          "c": { "zh-Hant": "`void helper();`" },
+          "d": { "zh-Hant": "`inline void helper();`" }
+        },
+        "explanation": {
+          "zh-Hant": "在命名空間範圍加上 `static` 會給函式（或變數）內部連結，每個編譯單元各自擁有自己的版本。`extern` 與不加修飾的宣告是外部連結；`inline` 影響的是單一定義規則（ODR），不是連結性。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "`static void helper();`" },
+        { "id": "b", "text": "`extern void helper();`" },
+        { "id": "c", "text": "`void helper();`" },
+        { "id": "d", "text": "`inline void helper();`" }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "`static` at namespace scope gives a function (or variable) internal linkage, so each translation unit gets its own copy. `extern` and a plain declaration give external linkage; `inline` affects the ODR, not linkage.",
+      "tags": ["static", "Linkage"],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-11-q04",
+      "type": "single",
+      "prompt": "Which statement about a `static` data member of a class is correct?",
+      "i18n": {
+        "prompt": { "zh-Hant": "關於類別的 `static` 資料成員，下列敘述何者正確？" },
+        "options": {
+          "a": { "zh-Hant": "所有物件共用同一份，且需要在類別外定義（C++17 起可用 `inline` 在類別內定義）。" },
+          "b": { "zh-Hant": "每個物件各自儲存一份。" },
+          "c": { "zh-Hant": "它具有執行緒儲存期，每個執行緒一份。" },
+          "d": { "zh-Hant": "它不能是 `const`，也不能在類別本體內初始化。" }
+        },
+        "explanation": {
+          "zh-Hant": "靜態資料成員屬於類別而非物件，所有物件看到同一份儲存空間。C++17 之前必須在類別外定義，C++17 起可以用 `inline static` 直接在類別內定義。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "There is one instance shared by all objects, and it needs a definition outside the class (or an `inline` definition since C++17)."
+        },
+        { "id": "b", "text": "Each object stores its own copy of the member." },
+        { "id": "c", "text": "It has thread storage duration and one copy per thread." },
+        { "id": "d", "text": "It cannot be `const` or initialised in the class body." }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "A static data member belongs to the class, not to an object, so all objects see the same storage. Before C++17 it needed an out-of-class definition; C++17 allows `inline static` members defined in the class.",
+      "tags": ["static members", "Classes"],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-11-q05",
+      "type": "multi",
+      "prompt": "Which of these are storage durations defined by the C++ standard? Select all that apply.",
+      "i18n": {
+        "prompt": { "zh-Hant": "下列哪些是 C++ 標準定義的儲存期？可多選。" },
+        "options": {
+          "a": { "zh-Hant": "自動（automatic）" },
+          "b": { "zh-Hant": "靜態（static）" },
+          "c": { "zh-Hant": "執行緒（thread）" },
+          "d": { "zh-Hant": "register" }
+        },
+        "explanation": {
+          "zh-Hant": "標準的四種儲存期是自動、靜態、執行緒與動態（dynamic）。`register` 不是儲存期，它曾是儲存類別修飾符，已在 C++17 移除。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "automatic" },
+        { "id": "b", "text": "static" },
+        { "id": "c", "text": "thread" },
+        { "id": "d", "text": "register" }
+      ],
+      "answer": { "kind": "multi", "optionIds": ["a", "b", "c"] },
+      "explanation": "The four standard storage durations are automatic, static, thread and dynamic. `register` is not a storage duration; it used to be a storage-class specifier and was removed in C++17.",
+      "tags": ["Storage duration"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-11-q06",
+      "type": "multi",
+      "prompt": "Which statements about `static` are true? Select all that apply.",
+      "i18n": {
+        "prompt": { "zh-Hant": "關於 `static`，下列敘述何者正確？可多選。" },
+        "options": {
+          "a": { "zh-Hant": "檔案範圍的 `static` 變數具有內部連結，其他編譯單元看不到。" },
+          "b": { "zh-Hant": "函式內的 `static` 變數會保留數值，且只初始化一次。" },
+          "c": { "zh-Hant": "`static` 成員函式沒有 `this` 指標，可以不經物件直接呼叫。" },
+          "d": { "zh-Hant": "函式內的 `static` 變數會在函式返回時銷毀。" }
+        },
+        "explanation": {
+          "zh-Hant": "在命名空間範圍，`static` 表示內部連結；在函式內，它表示只有一份且存活到程式結束的實例。靜態成員函式屬於類別而非物件，因此沒有 `this`。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "A file-scope `static` variable has internal linkage and is not visible to other translation units."
+        },
+        {
+          "id": "b",
+          "text": "A function-local `static` keeps its value between calls and is initialised only once."
+        },
+        {
+          "id": "c",
+          "text": "A `static` member function has no `this` pointer and can be called without an object."
+        },
+        { "id": "d", "text": "A function-local `static` is destroyed when its function returns." }
+      ],
+      "answer": { "kind": "multi", "optionIds": ["a", "b", "c"] },
+      "explanation": "`static` means internal linkage at namespace scope, and one persistent instance for a local. Static member functions belong to the class, not to an object, so they have no `this`. A local static lives until program exit.",
+      "tags": ["static", "Linkage"],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-11-q07",
+      "type": "boolean",
+      "prompt": "A `thread_local` variable is initialised once per thread and destroyed when that thread exits.",
+      "i18n": {
+        "prompt": { "zh-Hant": "`thread_local` 變數在每個執行緒各初始化一次，並在該執行緒結束時銷毀。" },
+        "explanation": {
+          "zh-Hant": "`thread_local` 讓物件具有執行緒儲存期：每個使用它的執行緒各有自己的實例，由該執行緒首次使用時初始化，並在執行緒結束時銷毀。"
+        }
+      },
+      "answer": { "kind": "boolean", "value": true },
+      "explanation": "`thread_local` gives an object thread storage duration: each thread that uses it gets its own instance, initialised on first use by that thread and destroyed when the thread ends.",
+      "tags": ["thread_local", "Threads"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-11-q08",
+      "type": "boolean",
+      "prompt": "The `mutable` specifier can be applied to a local variable so that it stays modifiable inside a `const` member function.",
+      "i18n": {
+        "prompt": { "zh-Hant": "`mutable` 修飾符可以套用在區域變數上，讓它在 `const` 成員函式中仍可修改。" },
+        "explanation": {
+          "zh-Hant": "`mutable` 只能套用在非靜態資料成員（以及 lambda 擷取）。區域變數與 const 成員函式無關，這樣宣告不符語法。"
+        }
+      },
+      "answer": { "kind": "boolean", "value": false },
+      "explanation": "`mutable` applies only to non-static data members (and lambda captures). A local variable has no `const` member function to be exempted from, so that declaration is ill-formed.",
+      "tags": ["mutable", "const"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-11-q09",
+      "type": "fill",
+      "prompt": "Since C++11, the keyword ____ asks the compiler to deduce a variable's type from its initialiser.",
+      "i18n": {
+        "prompt": { "zh-Hant": "自 C++11 起，關鍵字 ____ 會請編譯器從初始值推導變數的型別。" },
+        "explanation": {
+          "zh-Hant": "`auto x = 1.5;` 會讓 `x` 成為 `double`。變數仍有固定的靜態型別，推導只在編譯期發生一次。"
+        }
+      },
+      "answer": { "kind": "fill", "accept": ["auto"], "ignoreCase": true },
+      "explanation": "`auto x = 1.5;` makes `x` a `double`. The variable still has a fixed static type; deduction happens once, at compile time.",
+      "tags": ["auto", "Type deduction"],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-11-q10",
+      "type": "short",
+      "prompt": "Explain what `extern \"C\"` does and why it is needed when C++ calls a C library.",
+      "i18n": {
+        "prompt": { "zh-Hant": "說明 `extern \"C\"` 的作用，以及 C++ 呼叫 C 程式庫時為何需要它。" },
+        "model": {
+          "zh-Hant": "`extern \"C\"` 讓函式或變數具有 C 語言連結。C++ 通常會對名稱做修飾（name mangling），把參數型別編進符號名稱以支援多載；C 編譯器則輸出未修飾的名稱。加上 C 語言連結後，C++ 編譯器會採用 C 的符號名稱，連結器才找得到 C 程式庫中的函式。它不改變 C++ 型別或執行期行為，但會讓區塊內的函式失去多載。"
+        },
+        "explanation": {
+          "zh-Hant": "關鍵在符號名稱：C++ 的名稱修飾與 C 不同，`extern \"C\"` 讓兩邊的符號對得上。"
+        }
+      },
+      "answer": {
+        "kind": "short",
+        "model": "`extern \"C\"` gives a function or variable C language linkage. C++ normally mangles names to encode parameter types so overloading works, while C compilers emit the plain name; C language linkage makes the C++ compiler use the C symbol name, so the linker can find the C library's function. It does not change the C++ types or the runtime behaviour, and it disables overloading within the block.",
+        "keywords": ["language linkage", "name mangling", "C", "linker", "overloading"]
+      },
+      "explanation": "The point is the symbol name: C++ mangles names and C does not, and `extern \"C\"` makes both sides agree.",
+      "tags": ["extern C", "Linkage"],
+      "difficulty": 3
+    }
+  ]
+}

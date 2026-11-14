@@ -1,0 +1,4 @@
+- insert:
+    - id: mengyin-official-content
+      name: '@local/mengyin-official-content'
+      config: {}

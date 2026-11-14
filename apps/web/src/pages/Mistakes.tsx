@@ -127,7 +127,7 @@ export function MistakesPage() {
                       </div>
                       <div className="pairs__row">
                         <span className="pairs__key">{t('verdict.correctAnswer')}</span>
-                        <span className="pairs__val pairs__val--ok">{describeAnswer(entry.question)}</span>
+                        <span className="pairs__val pairs__val--ok">{describeAnswer(entry.question, t)}</span>
                       </div>
                     </div>
 

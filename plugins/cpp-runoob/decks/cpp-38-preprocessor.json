@@ -1,0 +1,466 @@
+{
+  "id": "cpp-38-preprocessor",
+  "title": "C++ Preprocessor",
+  "titleI18n": {
+    "zh-Hant": "C++ 前置處理器"
+  },
+  "description": "The C preprocessor: file inclusion, object-like and function-like macros, conditional compilation, include guards, and the traps of textual substitution.",
+  "descriptionI18n": {
+    "zh-Hant": "C 前置處理器：檔案引入、物件式與函式式巨集、條件編譯、include guard，以及文字替換的陷阱。"
+  },
+  "tags": [
+    "C++",
+    "Preprocessor"
+  ],
+  "examMinutes": 15,
+  "questions": [
+    {
+      "id": "cpp-38-q01",
+      "type": "single",
+      "prompt": "What does #include <vector> actually do?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "#include <vector> 實際上做了甚麼？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "前置處理器把該標頭檔的內容以文字方式插入，之後編譯器才開始剖析。"
+          },
+          "b": {
+            "zh-Hant": "連結器把 vector 程式庫複製到執行檔中。"
+          },
+          "c": {
+            "zh-Hant": "編譯器在執行期匯入一個二進位模組。"
+          },
+          "d": {
+            "zh-Hant": "它在 main 開始前執行標頭檔中的程式碼。"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "#include 是文字插入：前置處理器把標頭檔內容貼到指示所在的位置，完全是編譯前的動作，與連結器無關。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "The preprocessor inserts the contents of the header textually before the compiler parses the file."
+        },
+        {
+          "id": "b",
+          "text": "The linker copies the vector library into the executable."
+        },
+        {
+          "id": "c",
+          "text": "The compiler imports a binary module while the program runs."
+        },
+        {
+          "id": "d",
+          "text": "It executes the header's code before main starts."
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "#include is textual insertion: the preprocessor pastes the header's contents at the point of the directive, before compilation begins. Linking happens later and only resolves symbols the compiled code refers to.",
+      "tags": [
+        "Preprocessor",
+        "include"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-38-q02",
+      "type": "single",
+      "prompt": "Inside a macro definition, what does the # operator do to a parameter?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "在巨集定義中，# 運算子對參數做了甚麼？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "把該引數的符號轉成字串字面值。"
+          },
+          "b": {
+            "zh-Hant": "把兩個符號黏成一個。"
+          },
+          "c": {
+            "zh-Hant": "把該引數註解掉。"
+          },
+          "d": {
+            "zh-Hant": "把該參數標記為 const。"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "# 是字串化（stringize）運算子：STR(abc) 會展開成字串 abc；黏合符號用的是 ##。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "It turns the argument's tokens into a string literal."
+        },
+        {
+          "id": "b",
+          "text": "It pastes two tokens into a single token."
+        },
+        {
+          "id": "c",
+          "text": "It comments out the argument."
+        },
+        {
+          "id": "d",
+          "text": "It marks the parameter as const."
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "# is the stringize operator: #define STR(x) #x makes STR(abc) expand to the string literal abc. Token pasting is the separate ## operator.",
+      "tags": [
+        "Preprocessor",
+        "Macros",
+        "Stringize"
+      ],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-38-q03",
+      "type": "single",
+      "prompt": "Which statement about #pragma once is correct?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "關於 #pragma once，下列哪一個敘述正確？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "它不是 C++ 標準的一部分，但幾乎所有編譯器都支援，可讓同一檔案只被引入一次。"
+          },
+          "b": {
+            "zh-Hant": "它是 C++11 起的標準指示，用來取代 include guard。"
+          },
+          "c": {
+            "zh-Hant": "它會讓標頭檔中的宣告變成 inline。"
+          },
+          "d": {
+            "zh-Hant": "它只對角括號形式的 include 有效。"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "#pragma once 是廣泛支援但非標準的擴充，效果相當於 include guard；可攜性要求高時仍會用 #ifndef 形式的 guard。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "It is not part of the C++ standard, but almost every compiler supports it to include a file only once."
+        },
+        {
+          "id": "b",
+          "text": "It is a standard directive since C++11 that replaced include guards."
+        },
+        {
+          "id": "c",
+          "text": "It makes every declaration in the header inline."
+        },
+        {
+          "id": "d",
+          "text": "It works only with angle-bracket includes."
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "#pragma once is a widely supported extension rather than a standard directive, and it achieves the same effect as an include guard. Portable code often keeps a classic #ifndef guard as well.",
+      "tags": [
+        "Preprocessor",
+        "Headers",
+        "pragma"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-38-q04",
+      "type": "single",
+      "prompt": "What does the predefined macro __LINE__ expand to?",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "預定義巨集 __LINE__ 會展開成甚麼？"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "目前原始碼檔案中的行號，型別為整數。"
+          },
+          "b": {
+            "zh-Hant": "所有被引入標頭檔的總行數。"
+          },
+          "c": {
+            "zh-Hant": "以字串字面值表示的檔名。"
+          },
+          "d": {
+            "zh-Hant": "定義該巨集的那一行行號。"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "__LINE__ 展開成目前這一行在原始檔中的行號；檔名是 __FILE__，兩者常用於記錄與斷言訊息。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "The line number in the current source file, as an integer."
+        },
+        {
+          "id": "b",
+          "text": "The total number of lines in all included headers."
+        },
+        {
+          "id": "c",
+          "text": "The file name as a string literal."
+        },
+        {
+          "id": "d",
+          "text": "The line where the macro itself was defined."
+        }
+      ],
+      "answer": {
+        "kind": "single",
+        "optionId": "a"
+      },
+      "explanation": "__LINE__ expands to the current line number as an integer, and __FILE__ expands to the file name as a string literal. They are usually combined in logging and assertion messages.",
+      "tags": [
+        "Preprocessor",
+        "Predefined macros"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-38-q05",
+      "type": "multi",
+      "prompt": "Which of these are preprocessor directives? Select all that apply.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "下列哪些是前置處理器指示？可多選。"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "#ifdef 條件編譯"
+          },
+          "b": {
+            "zh-Hant": "#undef 取消巨集定義"
+          },
+          "c": {
+            "zh-Hant": "#elif 條件分支"
+          },
+          "d": {
+            "zh-Hant": "#foreach 逐項走訪"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "#ifdef、#undef、#elif 都是標準指示；C++ 前置處理器沒有 #foreach。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "#ifdef for conditional compilation"
+        },
+        {
+          "id": "b",
+          "text": "#undef to remove a macro definition"
+        },
+        {
+          "id": "c",
+          "text": "#elif for an else-if branch"
+        },
+        {
+          "id": "d",
+          "text": "#foreach to iterate over a list"
+        }
+      ],
+      "answer": {
+        "kind": "multi",
+        "optionIds": [
+          "a",
+          "b",
+          "c"
+        ]
+      },
+      "explanation": "#ifdef, #undef and #elif are all standard directives. The C++ preprocessor has no #foreach; repetition is done with templates or ordinary loops.",
+      "tags": [
+        "Preprocessor",
+        "Directives"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-38-q06",
+      "type": "multi",
+      "prompt": "Which are real pitfalls of function-like macros? Select all that apply.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "下列哪些是函式式巨集的真正陷阱？可多選。"
+        },
+        "options": {
+          "a": {
+            "zh-Hant": "引數以文字替換，若引數有副作用可能被求值多次。"
+          },
+          "b": {
+            "zh-Hant": "若沒有為每個參數加括號，運算子優先順序可能改變語意。"
+          },
+          "c": {
+            "zh-Hant": "編譯器會嚴格檢查其型別，因此多數用法都會被拒絕。"
+          },
+          "d": {
+            "zh-Hant": "替換發生在編譯之前，所以巨集不理會作用域與命名空間。"
+          }
+        },
+        "explanation": {
+          "zh-Hant": "巨集是文字替換：可能重複求值引數、優先順序出錯，也不受作用域限制；它完全不做型別檢查。"
+        }
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "Arguments are substituted textually, so an argument with side effects can be evaluated more than once."
+        },
+        {
+          "id": "b",
+          "text": "Operator precedence can change the meaning unless every parameter is parenthesised."
+        },
+        {
+          "id": "c",
+          "text": "The compiler type-checks their arguments strictly, so most uses are rejected."
+        },
+        {
+          "id": "d",
+          "text": "Substitution happens before compilation, so macros ignore scope and namespaces."
+        }
+      ],
+      "answer": {
+        "kind": "multi",
+        "optionIds": [
+          "a",
+          "b",
+          "d"
+        ]
+      },
+      "explanation": "A macro is expanded textually: arguments may be evaluated twice, precedence can silently change the result, and the name is not scoped like a function. The preprocessor performs no type checking at all, which is the opposite of option c.",
+      "tags": [
+        "Preprocessor",
+        "Macros",
+        "Pitfalls"
+      ],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-38-q07",
+      "type": "boolean",
+      "prompt": "The preprocessor runs before compilation, replaces tokens textually, and performs no type checking.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "前置處理器在編譯之前執行，以文字方式替換符號，並不做型別檢查。"
+        },
+        "explanation": {
+          "zh-Hant": "前置處理器只處理符號與指示，產生的文字才交給編譯器；它不知道型別、作用域或多載。"
+        }
+      },
+      "answer": {
+        "kind": "boolean",
+        "value": true
+      },
+      "explanation": "The preprocessor works on tokens and directives before the compiler sees the file; it knows nothing about types, scope or overload resolution. All type checking happens later, on the expanded text.",
+      "tags": [
+        "Preprocessor",
+        "Phases"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-38-q08",
+      "type": "boolean",
+      "prompt": "#define MAX 100 defines a typed integer constant that the compiler checks like a const int.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "#define MAX 100 定義了一個有型別的整數常數，編譯器會像檢查 const int 一樣檢查它。"
+        },
+        "explanation": {
+          "zh-Hant": "#define 只是把 MAX 這個符號換成 100 這串文字，沒有型別；需要具型別常數時應使用 constexpr 或 const。"
+        }
+      },
+      "answer": {
+        "kind": "boolean",
+        "value": false
+      },
+      "explanation": "#define only records a textual replacement: every MAX becomes 100 before compilation, with no type attached. Use constexpr int MAX = 100; when you want a real typed constant.",
+      "tags": [
+        "Preprocessor",
+        "Macros"
+      ],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-38-q09",
+      "type": "fill",
+      "prompt": "The operator that pastes two tokens together inside a macro is ____.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "在巨集中把兩個符號黏合在一起的運算子是 ____。"
+        },
+        "explanation": {
+          "zh-Hant": "## 是符號黏合（token paste）運算子，例如 #define CAT(a, b) a##b 會把 CAT(foo, bar) 變成 foobar。"
+        }
+      },
+      "answer": {
+        "kind": "fill",
+        "accept": [
+          "##"
+        ],
+        "ignoreSpaces": true
+      },
+      "explanation": "## is the token-paste operator: #define CAT(a, b) a##b turns CAT(foo, bar) into the single identifier foobar.",
+      "tags": [
+        "Preprocessor",
+        "Macros",
+        "Token paste"
+      ],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-38-q10",
+      "type": "short",
+      "prompt": "Give one reason to prefer an inline function or a constexpr variable over a function-like macro.",
+      "i18n": {
+        "prompt": {
+          "zh-Hant": "舉出一個理由，說明為何要用 inline 函式或 constexpr 變數取代函式式巨集。"
+        },
+        "model": {
+          "zh-Hant": "巨集在編譯前以文字展開，沒有型別檢查、沒有多載解析、除錯時看不到，而且引數可能被重複求值。inline 函式或 constexpr 變數遵循型別與作用域規則，能給出真正的編譯器診斷。"
+        },
+        "explanation": {
+          "zh-Hant": "核心差異是巨集只做文字替換，而函式與變數是語言層級的實體，受型別系統保護。"
+        }
+      },
+      "answer": {
+        "kind": "short",
+        "model": "A macro is expanded textually before compilation, so it has no type checking, no overload resolution, no debugger visibility, and it can evaluate its arguments more than once. An inline function or constexpr variable obeys scope and type rules and produces real compiler diagnostics.",
+        "keywords": [
+          "type",
+          "scope",
+          "evaluated",
+          "inline",
+          "debugger"
+        ]
+      },
+      "explanation": "The core difference is that a macro is only text substitution, while an inline function or constexpr variable is a language-level entity protected by the type system.",
+      "tags": [
+        "Preprocessor",
+        "Macros",
+        "Best practice"
+      ],
+      "difficulty": 3
+    }
+  ]
+}

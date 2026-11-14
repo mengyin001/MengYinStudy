@@ -23,18 +23,19 @@ export interface Env {
   AI_QUOTA?: KvNamespaceLike;
 
   // -- Text providers -------------------------------------------------------
-  GLM_API_KEY?: string;
-  GLM_MODEL?: string;
-  GLM_MODELS?: string;
-  GLM_BASE_URL?: string;
-  GLM_THINKING?: string;
-
   DEEPSEEK_API_KEY?: string;
   DEEPSEEK_MODEL?: string;
   DEEPSEEK_MODELS?: string;
   DEEPSEEK_BASE_URL?: string;
   DEEPSEEK_THINKING?: string;
   DEEPSEEK_REASONING_EFFORT?: string;
+
+  /**
+   * `off` switches AI question generation off server-side without deleting a
+   * provider key: the catalogue is empty and every generation call fails before
+   * a provider is contacted. Unset (or any other value) keeps it on.
+   */
+  AI_GENERATION?: string;
 
   AI_DEFAULT_PROVIDER?: string;
   AI_DEFAULT_MODEL?: string;
@@ -70,7 +71,6 @@ export interface Env {
   IMAGE_VERIFY_KEY?: string;
 
   /** Optional vision model per provider, used to check a generated photo. */
-  GLM_VISION_MODEL?: string;
   DEEPSEEK_VISION_MODEL?: string;
   /** `off` disables the multimodal check even when a vision model is set. */
   AI_VERIFY_IMAGES?: string;

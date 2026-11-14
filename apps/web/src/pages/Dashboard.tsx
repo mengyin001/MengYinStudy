@@ -33,14 +33,19 @@ export function DashboardPage() {
     }
     const ratio =
       attempts.length === 0 ? 0 : attempts.reduce((sum, attempt) => sum + attempt.ratio, 0) / attempts.length;
+    const dailyTarget = Math.max(1, progress.settings.dailyTarget);
     return {
       streak: computeStreak(attempts, now),
       todayCount: todayAttempts.length,
+      // A daily target counts answers, matching the figure the Plaza shows.
+      dailyTarget,
+      goalRatio: Math.min(1, todayAttempts.length / dailyTarget),
+      goalMet: todayAttempts.length >= dailyTarget,
       mastered,
       ratio,
       total: attempts.length,
     };
-  }, [entries, now, progress.attempts]);
+  }, [entries, now, progress.attempts, progress.settings.dailyTarget]);
 
   const due = useMemo(() => dueEntries(entries, progress.cards, now), [entries, progress.cards, now]);
   const mistakes = useMemo(() => missedEntries(entries, progress.attempts), [entries, progress.attempts]);
@@ -123,6 +128,28 @@ export function DashboardPage() {
           </>
         }
       />
+
+      <section
+        className={`goal ${summary.goalMet ? 'is-met' : ''}`}
+        aria-label={t('dash.goal')}
+      >
+        <div className="goal__head">
+          <span className="eyebrow">{t('dash.goal')}</span>
+          <span className="goal__value">
+            <strong>{summary.todayCount}</strong>
+            <span className="goal__of"> / {summary.dailyTarget}</span>
+          </span>
+        </div>
+        <Meter value={summary.goalRatio} accent />
+        <div className="goal__foot">
+          <span>
+            {summary.goalMet
+              ? t('dash.goalDone')
+              : t('dash.goalLeft', { n: summary.dailyTarget - summary.todayCount })}
+          </span>
+          <span className="goal__pct">{pct(summary.goalRatio)}</span>
+        </div>
+      </section>
 
       <section className="metrics">
         <div className="metric">

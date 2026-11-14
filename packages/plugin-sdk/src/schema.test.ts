@@ -137,6 +137,51 @@ describe('deck exam length', () => {
   });
 });
 
+describe('bilingual official decks', () => {
+  it('keeps the i18n overrides through parsing and adaptation', () => {
+    const parsed = parseDeckFile(
+      rawDeck({
+        title: 'Pointers',
+        titleI18n: { 'zh-Hant': '指標' },
+        description: 'Pointer basics.',
+        descriptionI18n: { 'zh-Hant': '指標入門。' },
+        questions: [
+          {
+            id: 'q1',
+            type: 'single',
+            prompt: 'What does * do?',
+            i18n: {
+              prompt: { 'zh-Hant': '＊ 的作用是甚麼？' },
+              options: { a: { 'zh-Hant': '解引用' }, b: { 'zh-Hant': '取址' } },
+              explanation: { 'zh-Hant': '它會解引用指標。' },
+            },
+            options: [
+              { id: 'a', text: 'Dereference' },
+              { id: 'b', text: 'Take the address' },
+            ],
+            answer: { kind: 'single', optionId: 'a' },
+            explanation: 'It dereferences the pointer.',
+          },
+        ],
+      }),
+    );
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+
+    const deck = adaptDeck('cpp.runoob', parsed.value);
+    expect(deck.titleI18n).toEqual({ 'zh-Hant': '指標' });
+    expect(deck.descriptionI18n).toEqual({ 'zh-Hant': '指標入門。' });
+    expect(deck.questions[0]?.i18n?.prompt).toEqual({ 'zh-Hant': '＊ 的作用是甚麼？' });
+    expect(deck.questions[0]?.i18n?.options?.a).toEqual({ 'zh-Hant': '解引用' });
+  });
+
+  it('rejects empty translations instead of storing blanks', () => {
+    expect(
+      parseDeckFile(rawDeck({ titleI18n: { 'zh-Hant': '' } })).ok,
+    ).toBe(false);
+  });
+});
+
 describe('figure media', () => {
   const figure = {
     v: 1,

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { PlanId } from '@mengyin/core';
+import { estimatePoints, planFor, type PlanId } from '@mengyin/core';
 import type { BillingSnapshot } from './store';
 
 vi.mock('./store', () => ({
@@ -20,6 +20,7 @@ import {
   refundStandaloneImage,
   resolveGenerationPolicy,
   settleGeneration,
+  type GenerationPolicy,
 } from './policy';
 
 const env = { SUPABASE_URL: 'https://example.test', SUPABASE_PUBLISHABLE_KEY: 'public' };
@@ -48,6 +49,29 @@ function snapshot(plan: PlanId, points = 0): BillingSnapshot {
   };
 }
 
+/**
+ * A free-plan policy with its question allowance already reserved.
+ *
+ * The free plan has no AI model at the moment, so this cannot be produced by
+ * `resolveGenerationPolicy`; the free-question wallet is still part of the
+ * settlement code and comes back with a free tier.
+ */
+function freeQuestionPolicy(requestId: string, reservedQuestions: number): GenerationPolicy {
+  return {
+    enforced: true,
+    plan: planFor('free'),
+    snapshot: null,
+    imageMode: 'off',
+    imagesBlocked: false,
+    photosAllowed: false,
+    estimate: estimatePoints({ model: 'deepseek-flash', count: reservedQuestions }),
+    requestId,
+    reserved: 0,
+    reservedQuestions,
+    questionLimit: 200,
+  };
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(store.billingEnforced).mockReturnValue(true);
@@ -55,41 +79,71 @@ beforeEach(() => {
 });
 
 describe('resolveGenerationPolicy', () => {
-  it('keeps the free plan on the free model and blocks AI photos, not rendered figures', async () => {
+  it('charges nothing when the learner brings their own provider key', async () => {
+    vi.mocked(store.readSnapshot).mockResolvedValue(snapshot('light', 500));
+
+    const policy = await resolveGenerationPolicy(
+      env,
+      auth,
+      { model: 'deepseek-flash', count: 10, materialChars: 0, imageMode: 'auto', byoKey: true },
+      'req-byo',
+    );
+
+    expect(policy.enforced).toBe(false);
+    expect(policy.reserved).toBe(0);
+    expect(policy.reservedQuestions).toBe(0);
+    expect(policy.questionLimit).toBe(0);
+    expect(policy.plan.id).toBe('light');
+    expect(policy.photosAllowed).toBe(true);
+    expect(store.spendPoints).not.toHaveBeenCalled();
+    expect(store.takeQuestions).not.toHaveBeenCalled();
+  });
+
+  it('still refuses AI photos on the free plan when the key is the learner’s own', async () => {
     vi.mocked(store.readSnapshot).mockResolvedValue(snapshot('free'));
 
     const policy = await resolveGenerationPolicy(
       env,
       auth,
-      { model: 'glm-4.7-flash', count: 10, materialChars: 0, imageMode: 'auto' },
-      'req-1',
+      { model: 'deepseek-flash', count: 2, materialChars: 0, imageMode: 'on', byoKey: true },
+      'req-byo-free',
     );
 
-    expect(policy.enforced).toBe(true);
-    expect(policy.plan.id).toBe('free');
-    // The mode stays "auto": diagrams are free, so the planner still runs.
-    expect(policy.imageMode).toBe('auto');
-    expect(policy.imagesBlocked).toBe(true);
+    expect(policy.enforced).toBe(false);
     expect(policy.photosAllowed).toBe(false);
-    expect(policy.estimate.total).toBe(0);
-    expect(policy.reservedQuestions).toBe(10);
-    expect(store.takeQuestions).toHaveBeenCalledWith(env, auth, 10, 200, 'gen:req-1');
+    expect(policy.imagesBlocked).toBe(true);
+  });
+
+  it('refuses generation on the free plan, which offers no AI model', async () => {
+    // GLM-4.7-Flash is withdrawn (its provider restricts non-paid models to
+    // non-commercial use) and the free plan has no model, so the only way in is
+    // an upgrade. Practice, review and the Plaza stay free.
+    vi.mocked(store.readSnapshot).mockResolvedValue(snapshot('free'));
+
+    await expect(
+      resolveGenerationPolicy(
+        env,
+        auth,
+        { model: 'deepseek-flash', count: 10, materialChars: 0, imageMode: 'auto' },
+        'req-1',
+      ),
+    ).rejects.toMatchObject({ status: 402 });
+
+    expect(store.takeQuestions).not.toHaveBeenCalled();
     expect(store.spendPoints).not.toHaveBeenCalled();
   });
 
-  it('still lets the free plan ask for rendered figures in "on" mode', async () => {
-    vi.mocked(store.readSnapshot).mockResolvedValue(snapshot('free'));
+  it('refuses a model that is no longer in the catalogue', async () => {
+    vi.mocked(store.readSnapshot).mockResolvedValue(snapshot('light', 500));
 
-    const policy = await resolveGenerationPolicy(
-      env,
-      auth,
-      { model: 'glm-4.7-flash', count: 10, materialChars: 0, imageMode: 'on' },
-      'req-figures',
-    );
-
-    expect(policy.imageMode).toBe('on');
-    expect(policy.imagesBlocked).toBe(true);
-    expect(policy.photosAllowed).toBe(false);
+    await expect(
+      resolveGenerationPolicy(
+        env,
+        auth,
+        { model: 'glm-4.7-flash', count: 10, materialChars: 0, imageMode: 'auto' },
+        'req-2',
+      ),
+    ).rejects.toMatchObject({ status: 402 });
   });
 
   it('does not reserve image quota before deck images exist', async () => {
@@ -266,14 +320,10 @@ describe('settlement', () => {
   });
 
   it('returns unused free questions after a shortfall', async () => {
-    vi.mocked(store.readSnapshot).mockResolvedValue(snapshot('free'));
-
-    const policy = await resolveGenerationPolicy(
-      env,
-      auth,
-      { model: 'glm-4.7-flash', count: 10, materialChars: 0, imageMode: 'off' },
-      'req-10',
-    );
+    // The free plan has no AI model at present, so the free-question wallet is
+    // exercised with a policy object directly; the branch stays for the free
+    // tier coming back.
+    const policy = freeQuestionPolicy('req-10', 10);
 
     await settleGeneration(env, auth, policy, 7);
 
@@ -282,14 +332,7 @@ describe('settlement', () => {
   });
 
   it('returns the whole free reservation when a run fails', async () => {
-    vi.mocked(store.readSnapshot).mockResolvedValue(snapshot('free'));
-
-    const policy = await resolveGenerationPolicy(
-      env,
-      auth,
-      { model: 'glm-4.7-flash', count: 10, materialChars: 0, imageMode: 'off' },
-      'req-11',
-    );
+    const policy = freeQuestionPolicy('req-11', 10);
 
     await cancelGeneration(env, auth, policy, 'provider-error');
 

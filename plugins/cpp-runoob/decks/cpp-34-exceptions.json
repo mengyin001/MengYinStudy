@@ -1,0 +1,242 @@
+{
+  "id": "cpp-34-exceptions",
+  "title": "C++ Exception Handling",
+  "titleI18n": { "zh-Hant": "C++ 例外處理" },
+  "description": "Throwing, catching and unwinding: handler matching, standard and custom exception types, noexcept, and RAII-based cleanup.",
+  "descriptionI18n": {
+    "zh-Hant": "拋出、捕捉與堆疊展開：處理器的配對、標準與自訂例外型別、noexcept，以及以 RAII 為基礎的資源清理。"
+  },
+  "tags": ["C++", "Exceptions"],
+  "examMinutes": 15,
+  "questions": [
+    {
+      "id": "cpp-34-q01",
+      "type": "single",
+      "prompt": "Inside a catch block, what does a bare `throw;` do?",
+      "i18n": {
+        "prompt": { "zh-Hant": "在 catch 區塊內，單獨一個 `throw;` 會怎樣？" },
+        "options": {
+          "a": { "zh-Hant": "重新拋出目前處理中的例外，保留其動態型別" },
+          "b": { "zh-Hant": "拋出一個新的 std::exception 物件" },
+          "c": { "zh-Hant": "甚麼都不做，繼續執行 catch 之後的程式" },
+          "d": { "zh-Hant": "立即呼叫 std::terminate" }
+        },
+        "explanation": {
+          "zh-Hant": "不帶運算元的 `throw;` 會重新拋出目前處理中的例外物件，外層處理器看到的型別與狀態不變；適合在部分處理或記錄後使用。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "It rethrows the exception currently being handled, preserving its dynamic type." },
+        { "id": "b", "text": "It throws a new std::exception object." },
+        { "id": "c", "text": "It does nothing and continues after the catch block." },
+        { "id": "d", "text": "It calls std::terminate immediately." }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "`throw;` with no operand rethrows the active exception object, so an outer handler sees the same type and state. Use it after partial handling or logging.",
+      "tags": ["throw", "Rethrow"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-34-q02",
+      "type": "single",
+      "prompt": "Which header defines std::runtime_error and std::out_of_range?",
+      "i18n": {
+        "prompt": { "zh-Hant": "哪一個標頭檔定義了 std::runtime_error 與 std::out_of_range？" },
+        "options": {
+          "a": { "zh-Hant": "<stdexcept>" },
+          "b": { "zh-Hant": "<exception>" },
+          "c": { "zh-Hant": "<cstdlib>" },
+          "d": { "zh-Hant": "<system_error>" }
+        },
+        "explanation": {
+          "zh-Hant": "<stdexcept> 定義 logic_error 與 runtime_error 兩個繼承體系；<exception> 只宣告 std::exception 與 std::terminate，<system_error> 提供 error_code 機制。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "<stdexcept>" },
+        { "id": "b", "text": "<exception>" },
+        { "id": "c", "text": "<cstdlib>" },
+        { "id": "d", "text": "<system_error>" }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "<stdexcept> defines the logic_error and runtime_error hierarchies. <exception> only declares std::exception and std::terminate, and <system_error> provides the error_code machinery.",
+      "tags": ["stdexcept", "Headers"],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-34-q03",
+      "type": "boolean",
+      "prompt": "When an exception propagates, destructors of fully constructed local objects run, which is what makes RAII cleanup safe.",
+      "i18n": {
+        "prompt": { "zh-Hant": "例外向外傳播時，已完整建構的區域物件會執行解構函式，這正是 RAII 清理得以安全的原因。" },
+        "explanation": {
+          "zh-Hant": "堆疊展開會銷毀所有離開作用域的自動物件，因此智慧指標或 lock_guard 在函式因例外而結束時仍會釋放資源。"
+        }
+      },
+      "answer": { "kind": "boolean", "value": true },
+      "explanation": "Stack unwinding destroys every automatic object whose scope is exited, so a smart pointer or a lock_guard still releases its resource when a function exits by exception.",
+      "tags": ["Stack unwinding", "RAII"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-34-q04",
+      "type": "boolean",
+      "prompt": "Marking a function `noexcept` makes the compiler reject any `throw` statement in its body.",
+      "i18n": {
+        "prompt": { "zh-Hant": "把函式標記為 `noexcept` 後，編譯器會拒絕函式體內任何 `throw` 敘述。" },
+        "explanation": {
+          "zh-Hant": "`noexcept` 函式體內的 `throw` 仍可編譯，但例外真的向外傳播時會呼叫 `std::terminate`；只有在常數求值情境才會是編譯錯誤。"
+        }
+      },
+      "answer": { "kind": "boolean", "value": false },
+      "explanation": "A `throw` inside a noexcept function still compiles, but if an exception actually escapes, `std::terminate` is called. Only constant evaluation makes it ill-formed.",
+      "tags": ["noexcept", "std::terminate"],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-34-q05",
+      "type": "multi",
+      "prompt": "Which of these exception classes are defined in <stdexcept>? Select all that apply.",
+      "i18n": {
+        "prompt": { "zh-Hant": "下列哪些例外類別定義在 <stdexcept>？可多選。" },
+        "options": {
+          "a": { "zh-Hant": "std::invalid_argument" },
+          "b": { "zh-Hant": "std::out_of_range" },
+          "c": { "zh-Hant": "std::overflow_error" },
+          "d": { "zh-Hant": "std::bad_alloc" }
+        },
+        "explanation": {
+          "zh-Hant": "`std::bad_alloc` 定義在 `<new>`，不在 `<stdexcept>`。`invalid_argument` 與 `out_of_range` 衍生自 `logic_error`，`overflow_error` 衍生自 `runtime_error`。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "std::invalid_argument" },
+        { "id": "b", "text": "std::out_of_range" },
+        { "id": "c", "text": "std::overflow_error" },
+        { "id": "d", "text": "std::bad_alloc" }
+      ],
+      "answer": { "kind": "multi", "optionIds": ["a", "b", "c"] },
+      "explanation": "std::bad_alloc is declared in <new>, not <stdexcept>. invalid_argument and out_of_range derive from logic_error, while overflow_error derives from runtime_error.",
+      "tags": ["Standard exceptions", "stdexcept"],
+      "difficulty": 2
+    },
+    {
+      "id": "cpp-34-q06",
+      "type": "multi",
+      "prompt": "Which statements about matching exceptions to handlers are correct? Select all that apply.",
+      "i18n": {
+        "prompt": { "zh-Hant": "下列關於例外與處理器配對的敘述，哪些正確？可多選。" },
+        "options": {
+          "a": { "zh-Hant": "處理器依序比對，第一個相符的會被執行" },
+          "b": { "zh-Hant": "`catch (...)` 必須放在最後，否則它之後的處理器永遠到不了" },
+          "c": { "zh-Hant": "`catch (const std::exception&)` 也能捕捉 std::runtime_error" },
+          "d": { "zh-Hant": "不論順序，基底類別的處理器一定優先於衍生類別的處理器" }
+        },
+        "explanation": {
+          "zh-Hant": "比對依序由上而下，因此最具體的型別要放最前，`catch (...)` 放最後；`std::runtime_error` 衍生自 `std::exception`，以 const 參考捕捉可避免物件切割。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "Handlers are tried in order, and the first matching one runs." },
+        { "id": "b", "text": "`catch (...)` must come last, otherwise the handlers after it can never be reached." },
+        { "id": "c", "text": "`catch (const std::exception&)` also catches a std::runtime_error." },
+        { "id": "d", "text": "A base-class handler always wins over a derived-class handler, regardless of order." }
+      ],
+      "answer": { "kind": "multi", "optionIds": ["a", "b", "c"] },
+      "explanation": "Matching is top-down, so list the most-derived type first and the catch-all last; `catch (...)` matches any exception, including types not derived from std::exception. A runtime_error is a std::exception, so a const-reference handler catches it without slicing.",
+      "tags": ["catch", "Handler order"],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-34-q07",
+      "type": "fill",
+      "prompt": "An exception is raised with the ____ keyword and handled by a catch block.",
+      "i18n": {
+        "prompt": { "zh-Hant": "例外是用 ____ 關鍵字拋出，並由 catch 區塊處理。" },
+        "explanation": {
+          "zh-Hant": "`throw expr;` 會建立例外物件並開始傳播，沿著呼叫堆疊尋找相符的 catch 處理器。"
+        }
+      },
+      "answer": { "kind": "fill", "accept": ["throw"], "ignoreCase": true, "ignoreSpaces": true },
+      "explanation": "`throw expr;` creates an exception object and begins propagation; catch clauses along the call stack are searched for a matching handler.",
+      "tags": ["throw", "try/catch"],
+      "difficulty": 1
+    },
+    {
+      "id": "cpp-34-q08",
+      "type": "short",
+      "prompt": "Why should handlers take exceptions by const reference, and what goes wrong with `catch (std::exception e)`?",
+      "i18n": {
+        "prompt": { "zh-Hant": "為甚麼處理器應以 const 參考捕捉例外？而 `catch (std::exception e)` 又會出甚麼問題？" },
+        "model": {
+          "zh-Hant": "以 `const&` 捕捉可避免複製並保留動態型別。`catch (std::exception e)` 會複製並切割例外物件：拋出的 `std::runtime_error` 會變成單純的 `std::exception` 值，衍生型別與其資料遺失，`what()` 可能只回報基底訊息。"
+        },
+        "explanation": {
+          "zh-Hant": "關鍵風險是物件切割：以值捕捉只複製靜態型別的部分；以（通常 const）參考捕捉則保留原始例外物件。"
+        }
+      },
+      "answer": {
+        "kind": "short",
+        "model": "Catching by `const&` avoids a copy and preserves the dynamic type. `catch (std::exception e)` copies and slices the exception: a thrown `std::runtime_error` becomes a plain `std::exception` value, so the derived type and its data are lost and `what()` may report only the base message.",
+        "keywords": ["const reference", "slicing", "copy", "dynamic type", "what()"]
+      },
+      "explanation": "Slicing is the key risk: a by-value handler copies only the part belonging to the static type. A (usually const) reference keeps the original exception object intact.",
+      "tags": ["catch", "Object slicing"],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-34-q09",
+      "type": "single",
+      "prompt": "Which declaration lets you throw AppError, catch it as std::exception, and construct it from a message?",
+      "i18n": {
+        "prompt": { "zh-Hant": "哪一個宣告能讓你拋出 AppError、以 std::exception 捕捉，並用訊息建構？" },
+        "options": {
+          "a": { "zh-Hant": "`class AppError : public std::runtime_error { public: using std::runtime_error::runtime_error; };`" },
+          "b": { "zh-Hant": "`class AppError : private std::runtime_error { public: using std::runtime_error::runtime_error; };`" },
+          "c": { "zh-Hant": "`class AppError { public: std::string message; };`" },
+          "d": { "zh-Hant": "`class AppError : public std::runtime_error { AppError() = default; };`" }
+        },
+        "explanation": {
+          "zh-Hant": "公有繼承 `std::runtime_error` 才能被 `std::exception` 的處理器捕捉，繼承建構函式則提供 `(const std::string&)` 形式。私有繼承或未衍生的類別不會被 `std::exception` 處理器捕捉。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "`class AppError : public std::runtime_error { public: using std::runtime_error::runtime_error; };`" },
+        { "id": "b", "text": "`class AppError : private std::runtime_error { public: using std::runtime_error::runtime_error; };`" },
+        { "id": "c", "text": "`class AppError { public: std::string message; };`" },
+        { "id": "d", "text": "`class AppError : public std::runtime_error { AppError() = default; };`" }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "Public inheritance from std::runtime_error makes the type catchable as std::exception, and inheriting constructors provides the `(const std::string&)` form. Private inheritance and non-derived classes are not caught by a std::exception handler, and the implicitly private constructor in option d makes AppError unusable.",
+      "tags": ["Custom exceptions", "Inheritance"],
+      "difficulty": 3
+    },
+    {
+      "id": "cpp-34-q10",
+      "type": "single",
+      "prompt": "When is a return value or std::optional clearly better than throwing an exception?",
+      "i18n": {
+        "prompt": { "zh-Hant": "在甚麼情況下，回傳值或 std::optional 明顯比拋出例外更合適？" },
+        "options": {
+          "a": { "zh-Hant": "當失敗是熱路徑上預期會發生的普通結果" },
+          "b": { "zh-Hant": "當錯誤必須跨越好幾層函式邊界" },
+          "c": { "zh-Hant": "當失敗無論如何都不能被忽略" },
+          "d": { "zh-Hant": "當函式是必須回報失敗的建構函式" }
+        },
+        "explanation": {
+          "zh-Hant": "例外適合罕見且不應被忽略的失敗。對於查詢未命中等預期結果，回傳狀態或 `std::optional` 成本更低且控制流更清楚；建構函式無法回傳值，正是例外發揮作用的地方。"
+        }
+      },
+      "options": [
+        { "id": "a", "text": "When the failure is an ordinary, expected outcome on a hot path." },
+        { "id": "b", "text": "When the error must cross several function boundaries." },
+        { "id": "c", "text": "When the failure must not be ignored under any circumstances." },
+        { "id": "d", "text": "When the function is a constructor that must report failure." }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "Exceptions suit rare failures that must not be silently ignored. For expected outcomes such as a lookup miss, a status or optional result is cheaper and keeps control flow visible; constructors are exactly where exceptions excel, because they cannot return a value.",
+      "tags": ["Best practices", "std::optional"],
+      "difficulty": 3
+    }
+  ]
+}

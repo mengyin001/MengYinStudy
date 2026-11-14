@@ -1,5 +1,9 @@
 # MengYin Study — revision & practice
 
+**Live site:** <https://study.mengyin.online/> ·
+**Guide:** <https://study.mengyin.online/guide/> ·
+**Official question banks:** <https://study.mengyin.online/banks/>
+
 A plugin-driven revision app for multiple-choice study. English-first interface with a full
 Traditional Chinese version, built with React + TypeScript, shipping as a website and a desktop shell.
 
@@ -252,6 +256,11 @@ still works. While signed out, generated decks are hidden; the bundled guest sta
 available. Material text is deleted from the device as soon as generation finishes and is never
 stored on the server.
 
+A saved generated deck stays editable: in **Decks**, use the pencil on its row (or **Edit deck** in
+the preview) to rename it and remove questions you no longer want. Kept questions keep their ids, so
+their practice history stays attached; the edit is written to the cloud copy and the local cache
+together.
+
 The authoring prompt lives in `apps/api/src/generation/skill.ts`. It is bundled only into the Worker,
 never into the web app, and provider keys are Worker secrets. The app never trusts the model — invalid
 questions are dropped and reported.
@@ -451,6 +460,42 @@ npm run plugins:sync
 
 Reload the page (or press **Rescan plugins**) and the deck appears. You can also drop a plugin
 folder on the Plugins page — it is stored in IndexedDB, no rebuild needed.
+
+### Bilingual official decks
+
+Official decks may carry both languages. English stays in the ordinary fields; Traditional Chinese
+goes in `i18n`, and the app shows whichever matches the interface language. The same fields work on
+deck titles, descriptions, prompts, options, explanations and short-answer models:
+
+```json
+{
+  "title": "Pointers",
+  "titleI18n": { "zh-Hant": "指標" },
+  "questions": [
+    {
+      "id": "ptr-1",
+      "type": "single",
+      "prompt": "What does * do?",
+      "i18n": {
+        "prompt": { "zh-Hant": "＊ 的作用是甚麼？" },
+        "options": { "a": { "zh-Hant": "解引用" }, "b": { "zh-Hant": "取址" } },
+        "explanation": { "zh-Hant": "它會解引用指標。" }
+      },
+      "options": [
+        { "id": "a", "text": "Dereference" },
+        { "id": "b", "text": "Take the address" }
+      ],
+      "answer": { "kind": "single", "optionId": "a" },
+      "explanation": "It dereferences the pointer."
+    }
+  ]
+}
+```
+
+`fill` questions should list both spellings in `accept`, and `short` questions add
+`i18n.model["zh-Hant"]` next to the English `answer.model`. Switching language re-localises the
+catalogue and any open practice question, so a partially translated deck falls back to English
+rather than showing a blank. See the C++ pack under `plugins/` for a full 44-deck example.
 
 ## Starter decks and the Plaza
 
