@@ -1,6 +1,6 @@
 {
   "name": "@mengyin/ai-contract",
-  "version": "0.8.7",
+  "version": "0.8.8",
   "private": true,
   "type": "module",
   "description": "Wire contract shared by the web client and the MengYin AI question API",

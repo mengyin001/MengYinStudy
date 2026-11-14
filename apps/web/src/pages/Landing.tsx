@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { BrandMark } from '@/components/BrandMark';
 import { browserLegalContext } from '@/legal/config';
-import { LANDING, type Bi } from '@/landing/copy';
+import { LANDING, OFFICIAL_COLLECTION_HREF, type Bi } from '@/landing/copy';
 import { docsUrl } from '@/lib/docs';
 import { navigate } from '@/lib/router';
 import { useApp } from '@/state/AppContext';
@@ -51,7 +51,7 @@ export function LandingPage() {
         </a>
 
         <nav className="landing__nav" aria-label="Homepage sections">
-          <a href="./banks/">{text(LANDING.nav.banks, locale)}</a>
+          <a href={OFFICIAL_COLLECTION_HREF}>{text(LANDING.nav.banks, locale)}</a>
           <a href="./guide/">{text(LANDING.nav.guide, locale)}</a>
           <button type="button" onClick={() => scrollTo('features')}>
             {text(LANDING.features.eyebrow, locale)}
@@ -192,7 +192,7 @@ export function LandingPage() {
             <p className="landing__section-body">{text(LANDING.official.body, locale)}</p>
           </header>
           <div className="landing__cta">
-            <a className="btn btn--primary landing__cta-main" href="./banks/">
+            <a className="btn btn--primary landing__cta-main" href={OFFICIAL_COLLECTION_HREF}>
               {text(LANDING.official.ctaBanks, locale)}
             </a>
             <a className="btn landing__cta-side" href="./guide/">
@@ -302,7 +302,7 @@ export function LandingPage() {
           <a href={docsUrl('/docs')} target="_blank" rel="noopener noreferrer">
             {text(LANDING.footer.docs, locale)}
           </a>
-          <a href="./banks/">{text(LANDING.footer.banks, locale)}</a>
+          <a href={OFFICIAL_COLLECTION_HREF}>{text(LANDING.footer.banks, locale)}</a>
           <a href="./guide/">{text(LANDING.footer.guide, locale)}</a>
           <a href="./privacy/">{text(LANDING.footer.privacy, locale)}</a>
           <a href="./terms/">{text(LANDING.footer.terms, locale)}</a>

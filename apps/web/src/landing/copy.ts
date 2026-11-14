@@ -14,6 +14,9 @@ export interface Bi {
 
 export const APP_DISPLAY_NAME = 'MengYin Study';
 
+/** The one public official collection. Keep this in step with the SEO pages. */
+export const OFFICIAL_COLLECTION_HREF = '/collections/cpp-runoob/';
+
 export interface Feature {
   number: string;
   title: Bi;
@@ -47,7 +50,7 @@ export const LANDING = {
   ctaCreate: { en: 'Create a free account', zh: '建立免費帳號' } satisfies Bi,
   nav: {
     pricing: { en: 'Pricing', zh: '方案與價格' },
-    banks: { en: 'Question banks', zh: '題庫' },
+    banks: { en: 'Official collection', zh: '官方合集' },
     guide: { en: 'Study guide', zh: '學習指南' },
   } satisfies Record<string, Bi>,
 
@@ -143,7 +146,7 @@ export const LANDING = {
   },
 
   official: {
-    eyebrow: { en: 'Official question banks', zh: '官方題庫' },
+    eyebrow: { en: 'Official collection', zh: '官方合集' },
     title: {
       en: 'A complete C++ course, already written as questions.',
       zh: '一整門 C++ 課程，已經寫成題目。',
@@ -152,7 +155,7 @@ export const LANDING = {
       en: '44 bilingual banks take you from the first program to classes, templates, concurrency and the standard library. Every question has an answer and an explanation; every bank works in practice, exam and mistake mode.',
       zh: '44 個雙語題庫，由第一個程式一路走到類別、樣板、併發與標準程式庫。每題都有答案與解釋，每個題庫都能用練習、測驗與錯題模式。',
     },
-    ctaBanks: { en: 'Browse the official banks', zh: '瀏覽官方題庫' },
+    ctaBanks: { en: 'Browse the collection', zh: '瀏覽官方合集' },
     ctaGuide: { en: 'Read the study guide', zh: '閱讀學習指南' },
   } satisfies Record<string, Bi>,
 
@@ -288,7 +291,7 @@ export const LANDING = {
       zh: 'Google 與 Google 登入是 Google LLC 的商標。',
     },
     docs: { en: 'Help & policies', zh: '說明與政策' },
-    banks: { en: 'Question banks', zh: '題庫' },
+    banks: { en: 'Official collection', zh: '官方合集' },
     guide: { en: 'Study guide', zh: '學習指南' },
     privacy: { en: 'Privacy Policy', zh: '隱私權政策' },
     terms: { en: 'Terms of Service', zh: '服務條款' },

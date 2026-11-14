@@ -40,20 +40,24 @@ describe('SEO files', () => {
     );
   });
 
-  it('appends official collection and bank routes without duplicates', () => {
+  it('appends the official collection without duplicating static routes', () => {
     const routes = sitemapRoutes([
-      { path: '/banks/', lastmod: '2026-11-08' },
-      { path: '/banks/cpp-runoob/', lastmod: '2026-11-08' },
-      { path: '/banks/cpp-runoob/cpp-01-tutorial/', lastmod: '2026-11-08' },
+      { path: '/collections/cpp-runoob/', lastmod: '2026-11-08' },
       { path: '/guide/', lastmod: '2026-11-15' },
     ]);
     const xml = renderSitemap(FALLBACK_SITE_ORIGIN, routes);
 
     expect(routes.filter((route) => route.path === '/guide/')).toHaveLength(1);
-    expect(xml).toContain('https://study.mengyin.online/banks/');
-    expect(xml).toContain('https://study.mengyin.online/banks/cpp-runoob/');
-    expect(xml).toContain('https://study.mengyin.online/banks/cpp-runoob/cpp-01-tutorial/');
-    expect(xml.match(/<url>/g)).toHaveLength(routes.length);
+    expect(routes.map((route) => route.path)).toEqual([
+      '/',
+      '/privacy/',
+      '/terms/',
+      '/guide/',
+      '/collections/cpp-runoob/',
+    ]);
+    expect(xml).toContain('https://study.mengyin.online/collections/cpp-runoob/');
+    expect(xml).not.toContain('/banks/');
+    expect(xml.match(/<url>/g)).toHaveLength(5);
   });
 
   it('points robots.txt at the sitemap without blocking the app shell', () => {

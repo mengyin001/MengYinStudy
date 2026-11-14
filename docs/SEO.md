@@ -14,21 +14,21 @@ Only these URLs are real documents:
 | --- | --- | --- |
 | `https://study.mengyin.online/` | Public landing page, readable without JavaScript | `LANDING_UPDATED` in `src/seo/site.ts` |
 | `https://study.mengyin.online/guide/` | Static study guide: practice, exam, mistakes, AI and code modes | `GUIDE_UPDATED` in `src/seo/site.ts` |
-| `https://study.mengyin.online/banks/` | Official catalogue index | `OFFICIAL_UPDATED` in `src/seo/official.ts` |
-| `https://study.mengyin.online/banks/cpp-runoob/` | Official collection: 44 bilingual C++ banks | `OFFICIAL_UPDATED` |
-| `https://study.mengyin.online/banks/cpp-runoob/<deck-id>/` | One page per official question bank, with every question prompt and a link to practise | `OFFICIAL_UPDATED` |
+| `https://study.mengyin.online/collections/cpp-runoob/` | The official collection: 44 bilingual C++ banks on one page, with a sample question per bank | `OFFICIAL_UPDATED` in `src/seo/official.ts` |
 | `https://study.mengyin.online/privacy/` | Standalone privacy policy HTML | `LEGAL_UPDATED` in `src/legal/config.ts` |
 | `https://study.mengyin.online/terms/` | Standalone terms of service HTML | `LEGAL_UPDATED` in `src/legal/config.ts` |
 
-`/privacy` and `/terms` redirect to the trailing-slash URL with a 301
-(`public/_redirects`); `/banks` and `/guide` do the same. Do not put the
-redirecting form in the sitemap.
+`/privacy`, `/terms`, `/collections` and `/guide` redirect to their
+trailing-slash URL with a 301 (`public/_redirects`). The old `/banks` paths
+redirect to the single collection. Do not put the redirecting forms in the
+sitemap.
 
-The official pages are generated from the same plugin JSON files the app
-syncs (`plugins/<pack>/decks/*.json`). A bank page is real static HTML: title,
-description, licence, every question prompt and a link to the app. Answers and
-explanations are deliberately left to the app. The bundled `starter.study`
-demo is not part of the published catalogue and is excluded.
+The collection page is generated from the same plugin JSON files the app syncs
+(`plugins/<pack>/decks/*.json`). It is one page for the collection: title,
+description, licence, every bank's title/description and **one sample question
+per bank**. Answers, explanations and all remaining questions stay in the app.
+There is deliberately no page (and no sitemap entry) per bank. The bundled
+`starter.study` demo is not part of the published catalogue and is excluded.
 
 ## Generated files
 
@@ -38,15 +38,14 @@ demo is not part of the published catalogue and is excluded.
   `changefreq` or `priority`: Google ignores both, and stale values are noise.
 - `/robots.txt` — allows the site, blocks the large versioned `/runtimes/`
   files, and advertises the sitemap.
-- `/guide/index.html`, `/banks/index.html`, one collection page and one page per
-  official question bank.
+- `/guide/index.html` and one `/collections/<pack>/index.html` page.
 
 `VITE_PUBLIC_ORIGIN` sets the origin. If it is unset, the production domain is
 used, so a build without `.env` still produces absolute URLs. The Vite dev
 server serves the same files from memory.
 
-Do not create `public/sitemap.xml`, `public/robots.txt` or static bank pages:
-the build emits them, and a second copy would be overwritten or drift.
+Do not create `public/sitemap.xml`, `public/robots.txt` or a static collection
+page: the build emits them, and a second copy would be overwritten or drift.
 
 The landing page has a pre-JavaScript shell in `index.html` with the name,
 purpose, legal links and AI NCII statement. This is what a crawler sees before
@@ -88,7 +87,7 @@ sitemap endpoint: check the URL row above the error. It must end in
 Fix it by deleting the errored entry and adding
 `https://study.mengyin.online/sitemap.xml` (not `sitemap.xml/`, not
 `robots.txt`, not the domain). The status should become **Success** with every
-page discovered (currently 50 URLs). To verify what Google will see:
+page discovered (currently 5 URLs). To verify what Google will see:
 
 ```bash
 curl -sS -D - https://study.mengyin.online/sitemap.xml | head
@@ -113,9 +112,9 @@ doing even if Google is the main target.
 
 ## Ranking, not just indexing
 
-A sitemap does not create rankings. The site has a landing page, a study guide,
-the official catalogue and one page per bank, but the official pages are question
-prompts rather than long-form articles. To get search traffic:
+A sitemap does not create rankings. The site has a landing page, a study guide
+and the official collection, but the collection is a syllabus of question banks
+rather than long-form articles. To get search traffic:
 
 - Add public pages with real content, for example a guide to building a
   question deck or a page explaining the AI endpoint setup. Each one needs its
@@ -135,7 +134,7 @@ prompts rather than long-form articles. To get search traffic:
   materially.
 - Change `GUIDE_UPDATED` when the study guide copy changes.
 - Change `OFFICIAL_UPDATED` in `src/seo/official.ts` when the plugin decks are
-  reseeded; the bank pages and their sitemap entries follow the JSON files.
+  reseeded; the collection page and its sitemap entry follow the JSON files.
 - Change `LEGAL_UPDATED` and `LEGAL_VERSION` together when either legal
   document changes; the sitemap follows automatically.
 - After a deploy, fetch `/sitemap.xml` and confirm the dates and the URL count.

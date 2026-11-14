@@ -118,7 +118,6 @@ h2 {
   font-weight: 500;
   letter-spacing: -0.02em;
 }
-h3 { margin: 0 0 6px; font-size: 18px; }
 .lede {
   margin: 20px 0 0;
   max-width: 62ch;
@@ -135,19 +134,6 @@ h3 { margin: 0 0 6px; font-size: 18px; }
   font-size: 12px;
   color: #4a463c;
 }
-.grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); margin-top: 28px; }
-.card {
-  display: block;
-  background: #fffdf7;
-  border: 1px solid #ddd6c7;
-  border-radius: 12px;
-  padding: 18px;
-  color: inherit;
-  text-decoration: none;
-}
-.card--link:hover { border-color: #2f5d4e; }
-.card p { margin: 0 0 12px; color: #4a463c; font-size: 14px; }
-.card__meta { color: #7d7667; font-size: 12px; }
 .note {
   margin: 24px 0 0;
   padding-left: 14px;
@@ -165,10 +151,32 @@ h3 { margin: 0 0 6px; font-size: 18px; }
   text-decoration: none;
 }
 .cta--quiet { background: transparent; color: #2f5d4e; border: 1px solid #2f5d4e; }
-.questions { list-style: none; margin: 0; padding: 0; }
-.q { border-top: 1px solid #e4ddcf; padding: 18px 0; }
-.q__num { font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; font-size: 12px; color: #7d7667; }
-.q__prompt { margin: 6px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.bank { border-top: 1px solid #e4ddcf; padding: 26px 0; }
+.bank h3 {
+  margin: 0 0 4px;
+  font-family: 'Charter', 'Iowan Old Style', Palatino, Georgia, serif;
+  font-size: 24px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+.bank p { margin: 8px 0 0; }
+.q__label {
+  margin-top: 14px;
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #7d7667;
+}
+.q__prompt {
+  margin: 4px 0 0;
+  padding: 12px 14px;
+  background: #fffdf7;
+  border: 1px solid #e4ddcf;
+  border-radius: 8px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
 .foot {
   margin-top: 56px;
   padding-top: 18px;
@@ -184,9 +192,7 @@ h3 { margin: 0 0 6px; font-size: 18px; }
 
 const typeLabel = (type: string): string => TYPE_LABELS[type] ?? type;
 
-const packPath = (pack: OfficialPack): string => `/banks/${pack.dir}/`;
-const deckPath = (pack: OfficialPack, deck: OfficialDeck): string =>
-  `/banks/${pack.dir}/${deck.id}/`;
+const collectionPath = (pack: OfficialPack): string => `/collections/${pack.dir}/`;
 
 function tags(values: readonly string[]): string {
   return values
@@ -233,7 +239,6 @@ function page(input: {
     <header class="top">
       <a class="brand" href="/">MengYin Study</a>
       <nav class="nav" aria-label="Site">
-        <a href="/banks/">Question banks</a>
         <a href="/guide/">Study guide</a>
         <a href="/#/plaza">Plaza</a>
         <a href="/privacy/">Privacy</a>
@@ -243,8 +248,8 @@ function page(input: {
     <main>${input.body}</main>
     <footer class="foot">
       <p>MengYin Study · revision and practice. Official question banks are published under their
-      stated licence; see each collection for attribution.</p>
-      <p><a href="/">Home</a> · <a href="/banks/">Question banks</a> · <a href="/guide/">Study guide</a>
+      stated licence; see the collection for attribution.</p>
+      <p><a href="/">Home</a> · <a href="/guide/">Study guide</a>
       · <a href="/privacy/">Privacy</a> · <a href="/terms/">Terms</a></p>
     </footer>
   </body>
@@ -252,78 +257,18 @@ function page(input: {
 `;
 }
 
-function packCards(packs: readonly OfficialPack[]): string {
-  return packs
-    .map((pack) => {
-      const questionCount = pack.decks.reduce((sum, deck) => sum + deck.questions.length, 0);
-      return `<a class="card card--link" href="${packPath(pack)}">
-        <h3>${escapeHtml(pack.name)}</h3>
-        ${pack.description ? `<p>${escapeHtml(pack.description)}</p>` : ''}
-        <p class="card__meta">${pack.decks.length} banks · ${questionCount} questions${
-          pack.license ? ` · ${escapeHtml(pack.license)}` : ''
-        }</p>
-        <p>${tags(pack.tags)}</p>
-      </a>`;
-    })
-    .join('\n');
+function deckSample(deck: OfficialDeck): string {
+  const first = deck.questions[0];
+  if (!first) return '';
+  return `<p class="q__label">Sample question · ${escapeHtml(typeLabel(first.type))}</p>
+    <p class="q__prompt">${escapeHtml(first.prompt)}</p>`;
 }
 
-export function renderBanksPage(packs: readonly OfficialPack[], origin: string): string {
-  const questionCount = packs.reduce(
-    (sum, pack) => sum + pack.decks.reduce((deckSum, deck) => deckSum + deck.questions.length, 0),
-    0,
-  );
-  const body = `<p class="eyebrow">Official catalogue</p>
-    <h1>Official question banks</h1>
-    <p class="lede">Free, bilingual practice banks published by MengYin Study. Add a bank in the
-    app, then practise it, sit an exam, or drill only the questions you missed.</p>
-    ${
-      packs.length === 0
-        ? '<p class="note">The official catalogue is not available in this build.</p>'
-        : `<p class="note">${packs.length} collection${packs.length === 1 ? '' : 's'} ·
-          ${questionCount} questions. Every bank is also available inside the app.</p>
-          <div class="grid">${packCards(packs)}</div>`
-    }
-    <h2>How to use a bank</h2>
-    <p>Open the Plaza in the app, add the bank to your library, and choose Practice, Exam or
-    Mistakes. Progress and scheduling stay with your account, and the same decks work offline once
-    they have been added.</p>
-    <p><a class="cta" href="/#/plaza">Open the Plaza</a>
-    <a class="cta cta--quiet" href="/guide/">Read the study guide</a></p>`;
-
-  return page({
-    origin,
-    title: 'Official question banks',
-    description:
-      'Bilingual practice question banks from MengYin Study, covering C++ from first program to classes, templates, concurrency and the standard library.',
-    canonicalPath: '/banks/',
-    body,
-    jsonLd: {
-      '@context': 'https://schema.org',
-      '@type': 'CollectionPage',
-      name: 'Official question banks',
-      url: `${origin.replace(/\/+$/, '')}/banks/`,
-      isPartOf: { '@type': 'WebSite', name: 'MengYin Study', url: origin.replace(/\/+$/, '') + '/' },
-      mainEntity: {
-        '@type': 'ItemList',
-        numberOfItems: packs.length,
-        itemListElement: packs.map((pack, index) => ({
-          '@type': 'ListItem',
-          position: index + 1,
-          url: `${origin.replace(/\/+$/, '')}${packPath(pack)}`,
-          name: pack.name,
-        })),
-      },
-    },
-  });
-}
-
-export function renderPackPage(pack: OfficialPack, origin: string): string {
-  const questionCount = pack.decks.reduce((sum, deck) => sum + deck.questions.length, 0);
+export function renderCollectionPage(pack: OfficialPack, origin: string): string {
   const base = origin.replace(/\/+$/, '');
-  const body = `<p class="breadcrumb"><a href="/">Home</a> / <a href="/banks/">Question banks</a> / ${escapeHtml(
-    pack.name,
-  )}</p>
+  const questionCount = pack.decks.reduce((sum, deck) => sum + deck.questions.length, 0);
+  const body = `<p class="breadcrumb"><a href="/">Home</a> / <a href="/guide/">Study guide</a> /
+    ${escapeHtml(pack.name)}</p>
     <p class="eyebrow">Official collection</p>
     <h1>${escapeHtml(pack.name)}</h1>
     ${pack.description ? `<p class="lede">${escapeHtml(pack.description)}</p>` : ''}
@@ -334,27 +279,29 @@ export function renderPackPage(pack: OfficialPack, origin: string): string {
       ${pack.author ? `<span class="tag">${escapeHtml(pack.author)}</span>` : ''}
       ${tags(pack.tags)}
     </div>
-    <p class="note">Each bank is a complete chapter: ten questions with answers, explanations and
-    bilingual prompts. Add the collection in the Plaza to keep it in your library.</p>
+    <p class="note">This is one collection, not a separate page per bank. Every bank below is
+    practised inside the app, where the answers, explanations and review schedule live. The sample
+    question shows the style and level of the chapter.</p>
     <h2>Banks in this collection</h2>
-    <div class="grid">
-      ${pack.decks
-        .map(
-          (deck) => `<a class="card card--link" href="${deckPath(pack, deck)}">
-            <h3>${escapeHtml(deck.title)}</h3>
-            ${deck.titleZh ? `<p class="zh" lang="zh-Hant">${escapeHtml(deck.titleZh)}</p>` : ''}
-            ${deck.description ? `<p>${escapeHtml(deck.description)}</p>` : ''}
-            <p class="card__meta">${deck.questions.length} questions${
-              deck.examMinutes ? ` · ${deck.examMinutes} min exam` : ''
-            }</p>
-            <p>${tags(deck.tags)}</p>
-          </a>`,
-        )
-        .join('\n')}
-    </div>
+    ${pack.decks
+      .map(
+        (deck) => `<section class="bank" id="${escapeHtml(deck.id)}">
+          <h3>${escapeHtml(deck.title)}</h3>
+          ${deck.titleZh ? `<p class="zh" lang="zh-Hant">${escapeHtml(deck.titleZh)}</p>` : ''}
+          ${deck.description ? `<p>${escapeHtml(deck.description)}</p>` : ''}
+          ${deck.descriptionZh ? `<p class="zh" lang="zh-Hant">${escapeHtml(deck.descriptionZh)}</p>` : ''}
+          <div class="meta">
+            <span class="tag">${deck.questions.length} questions</span>
+            ${deck.examMinutes ? `<span class="tag">${deck.examMinutes} min exam</span>` : ''}
+            ${tags(deck.tags)}
+          </div>
+          ${deckSample(deck)}
+        </section>`,
+      )
+      .join('\n')}
     <h2>Practise this collection</h2>
-    <p>Open the Plaza, add the collection, and the app schedules practice around what you miss.
-    You can also sit the paper in exam mode or review only the questions you got wrong.</p>
+    <p>Add the collection in the Plaza and the app keeps the banks in your library. Use Practice
+    for spaced review, Exam for a timed paper, and Mistakes to redo only what you missed.</p>
     <p><a class="cta" href="/#/plaza">Open the Plaza</a>
     <a class="cta cta--quiet" href="/guide/">How to study</a></p>
     ${
@@ -369,96 +316,24 @@ export function renderPackPage(pack: OfficialPack, origin: string): string {
     title: pack.name,
     description:
       pack.description ??
-      `Official question banks from MengYin Study: ${pack.decks.length} bilingual banks and ${questionCount} practice questions.`,
-    canonicalPath: packPath(pack),
+      `Official question bank collection from MengYin Study: ${pack.decks.length} banks and ${questionCount} practice questions.`,
+    canonicalPath: collectionPath(pack),
     body,
     jsonLd: {
       '@context': 'https://schema.org',
       '@type': 'CollectionPage',
       name: pack.name,
       description: pack.description,
-      url: `${base}${packPath(pack)}`,
+      url: `${base}${collectionPath(pack)}`,
       isPartOf: { '@type': 'WebSite', name: 'MengYin Study', url: `${base}/` },
-      mainEntity: {
-        '@type': 'ItemList',
-        numberOfItems: pack.decks.length,
-        itemListElement: pack.decks.map((deck, index) => ({
-          '@type': 'ListItem',
-          position: index + 1,
-          url: `${base}${deckPath(pack, deck)}`,
-          name: deck.title,
-        })),
-      },
-    },
-  });
-}
-
-export function renderDeckPage(pack: OfficialPack, deck: OfficialDeck, origin: string): string {
-  const base = origin.replace(/\/+$/, '');
-  const body = `<p class="breadcrumb"><a href="/">Home</a> / <a href="/banks/">Question banks</a> /
-    <a href="${packPath(pack)}">${escapeHtml(pack.name)}</a> / ${escapeHtml(deck.title)}</p>
-    <p class="eyebrow">Official question bank</p>
-    <h1>${escapeHtml(deck.title)}</h1>
-    ${deck.titleZh ? `<p class="lede zh" lang="zh-Hant">${escapeHtml(deck.titleZh)}</p>` : ''}
-    ${deck.description ? `<p class="lede">${escapeHtml(deck.description)}</p>` : ''}
-    ${deck.descriptionZh ? `<p class="zh" lang="zh-Hant">${escapeHtml(deck.descriptionZh)}</p>` : ''}
-    <div class="meta">
-      <span class="tag">${deck.questions.length} questions</span>
-      ${deck.examMinutes ? `<span class="tag">${deck.examMinutes} min exam</span>` : ''}
-      ${tags(deck.tags)}
-      ${pack.license ? `<span class="tag">${escapeHtml(pack.license)}</span>` : ''}
-    </div>
-    <p class="note">Practice, exam and mistake drills are in the app. Answers, explanations and
-    scheduling are not shown here so the questions stay useful for revision.</p>
-    <h2>Questions in this bank</h2>
-    <ol class="questions">
-      ${deck.questions
-        .map(
-          (question, index) => `<li class="q">
-            <span class="q__num">${String(index + 1).padStart(2, '0')} · ${escapeHtml(
-              typeLabel(question.type),
-            )}${question.difficulty ? ` · level ${question.difficulty}` : ''}</span>
-            <p class="q__prompt">${escapeHtml(question.prompt)}</p>
-          </li>`,
-        )
-        .join('\n')}
-    </ol>
-    <h2>Practise this bank</h2>
-    <p>Add the collection in the Plaza and this bank appears in your library. Use Practice for
-    spaced review, Exam for a timed paper, and Mistakes to redo only what you missed.</p>
-    <p><a class="cta" href="/#/plaza">Open the Plaza</a>
-    <a class="cta cta--quiet" href="${packPath(pack)}">All banks in this collection</a></p>
-    ${
-      pack.license
-        ? `<p class="note">From <a href="${packPath(pack)}">${escapeHtml(pack.name)}</a>, published
-          under ${escapeHtml(pack.license)}. ${pack.author ? `Author: ${escapeHtml(pack.author)}.` : ''}</p>`
-        : ''
-    }`;
-
-  return page({
-    origin,
-    title: deck.title,
-    description:
-      deck.description ??
-      `${deck.questions.length} practice questions on ${deck.title}, from the official MengYin Study catalogue.`,
-    canonicalPath: deckPath(pack, deck),
-    body,
-    jsonLd: {
-      '@context': 'https://schema.org',
-      '@type': 'LearningResource',
-      name: deck.title,
-      description: deck.description,
-      url: `${base}${deckPath(pack, deck)}`,
-      inLanguage: ['en', 'zh-Hant'],
-      learningResourceType: 'Quiz',
-      educationalLevel: 'Beginner',
-      isPartOf: {
-        '@type': 'CollectionPage',
-        name: pack.name,
-        url: `${base}${packPath(pack)}`,
-      },
-      provider: { '@type': 'Organization', name: 'MengYin Study', url: `${base}/` },
-      keywords: deck.tags.join(', '),
+      hasPart: pack.decks.map((deck) => ({
+        '@type': 'LearningResource',
+        name: deck.title,
+        description: deck.description,
+        learningResourceType: 'Quiz',
+        educationalLevel: 'Beginner',
+        inLanguage: ['en', 'zh-Hant'],
+      })),
     },
   });
 }
@@ -466,19 +341,19 @@ export function renderDeckPage(pack: OfficialPack, deck: OfficialDeck, origin: s
 export function renderGuidePage(packs: readonly OfficialPack[], origin: string): string {
   const base = origin.replace(/\/+$/, '');
   const bankLinks = packs
-    .map((pack) => `<li><a href="${packPath(pack)}">${escapeHtml(pack.name)}</a></li>`)
+    .map((pack) => `<li><a href="${collectionPath(pack)}">${escapeHtml(pack.name)}</a></li>`)
     .join('');
   const body = `<p class="eyebrow">Study guide</p>
     <h1>How to study with MengYin Study</h1>
     <p class="lede">A practical loop for turning a question bank into remembered answers: try the
     question, review what went wrong, and come back at the right time.</p>
 
-    <h2>1. Start with an official bank</h2>
-    <p>The official catalogue groups questions into short, focused banks. Each bank is a chapter:
+    <h2>1. Start with the official collection</h2>
+    <p>The official catalogue is one collection of short, focused banks. Each bank is a chapter:
     ten questions, a bilingual prompt for every question, and an explanation for the answer. The
     C++ collection starts at the first program and continues through classes, templates,
     concurrency and the standard library.</p>
-    ${bankLinks ? `<ul>${bankLinks}</ul>` : '<p><a href="/banks/">Browse the official banks</a>.</p>'}
+    ${bankLinks ? `<ul>${bankLinks}</ul>` : '<p>The official collection is not available in this build.</p>'}
     <p>Open the Plaza, add the collection to your library, and the app keeps the decks available
     offline after the first sync.</p>
     <p><a class="cta" href="/#/plaza">Open the Plaza</a></p>
@@ -492,10 +367,10 @@ export function renderGuidePage(packs: readonly OfficialPack[], origin: string):
     easy this week. Review the mistake queue before adding another bank.</p>
 
     <h2>3. Generate questions from your own material</h2>
-    <p>If the official banks do not cover your course, import your notes and generate a deck with
-    the built-in AI service. The free plan includes 200 questions a month; paid plans add points
-    and stronger models. Generated questions are labelled, and you should check facts, citations
-    and code against an independent source before relying on them.</p>
+    <p>If the official collection does not cover your course, import your notes and generate a deck
+    with the built-in AI service. The free plan includes 200 questions a month; paid plans add
+    points and stronger models. Generated questions are labelled, and you should check facts,
+    citations and code against an independent source before relying on them.</p>
 
     <h2>4. Run code questions locally</h2>
     <p>Code questions execute in an isolated sandbox in the browser: JavaScript and TypeScript on
@@ -519,8 +394,9 @@ export function renderGuidePage(packs: readonly OfficialPack[], origin: string):
     <p>The official collection states its licence on the collection page. Keep the attribution and
     share alike when a licence requires it.</p>
 
-    <p class="note">Ready to try it? <a href="/banks/">Browse the official question banks</a>, or
-    <a href="/#/plaza">open the Plaza</a> and pick a chapter.</p>`;
+    <p class="note">Ready to try it? <a href="/#/plaza">Open the Plaza</a> and pick a chapter${
+      packs[0] ? `, or browse the <a href="${collectionPath(packs[0])}">official collection</a>` : ''
+    }.</p>`;
 
   return page({
     origin,
@@ -545,29 +421,16 @@ export function renderGuidePage(packs: readonly OfficialPack[], origin: string):
 }
 
 export function officialRoutes(packs: readonly OfficialPack[]): SitemapRoute[] {
-  const routes: SitemapRoute[] = [{ path: '/banks/', lastmod: OFFICIAL_UPDATED }];
-  for (const pack of packs) {
-    routes.push({ path: packPath(pack), lastmod: OFFICIAL_UPDATED });
-    for (const deck of pack.decks) {
-      routes.push({ path: deckPath(pack, deck), lastmod: OFFICIAL_UPDATED });
-    }
-  }
-  return routes;
+  return packs.map((pack) => ({ path: collectionPath(pack), lastmod: OFFICIAL_UPDATED }));
 }
 
 export function renderOfficialPages(
   packs: readonly OfficialPack[],
   origin: string,
 ): OfficialPage[] {
-  const pages: OfficialPage[] = [
-    { path: '/guide/', html: renderGuidePage(packs, origin) },
-    { path: '/banks/', html: renderBanksPage(packs, origin) },
-  ];
+  const pages: OfficialPage[] = [{ path: '/guide/', html: renderGuidePage(packs, origin) }];
   for (const pack of packs) {
-    pages.push({ path: packPath(pack), html: renderPackPage(pack, origin) });
-    for (const deck of pack.decks) {
-      pages.push({ path: deckPath(pack, deck), html: renderDeckPage(pack, deck, origin) });
-    }
+    pages.push({ path: collectionPath(pack), html: renderCollectionPage(pack, origin) });
   }
   return pages;
 }

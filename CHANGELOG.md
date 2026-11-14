@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.8.8 — 2026-11-15
+
+### Changed
+
+- **The official catalogue is one collection page, not a page per question bank.** 0.8.7 briefly
+  emitted `/banks/` plus 44 bank pages. The public site now has a single
+  `/collections/cpp-runoob/` page that lists all 44 banks, each with its title, description, tags
+  and one sample question. Answers, explanations and the remaining questions stay in the app.
+  This keeps the sitemap to **5 URLs** and avoids creating 44 near-duplicate pages.
+- Old `/banks/`, `/banks/<collection>/` and `/banks/<collection>/<bank>/` URLs now redirect (301)
+  to the collection page, so links and any already-crawled URLs still land.
+
+### Verified
+
+- Updated SEO tests assert one collection page, no per-bank paths, a five-URL sitemap and no
+  `/banks/` entry. **684 tests / 80 files**, typecheck clean, production build OK.
+- Production `mengyinstudy` deployed as `ad8a3c44-6f4b-42eb-ae72-d7fb5755bdfd` on 0.8.8;
+  `/api/ai/health` reports `0.8.8`. Live `/sitemap.xml` has 5 URLs; the collection page returns
+  200 with 44 banks and 44 sample questions; `/banks/`, `/banks/cpp-runoob/` and the old
+  per-bank URLs 301 to the collection.
+
 ## 0.8.7 — 2026-11-15
 
 ### Added

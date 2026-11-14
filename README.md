@@ -2,7 +2,7 @@
 
 **Live site:** <https://study.mengyin.online/> ·
 **Guide:** <https://study.mengyin.online/guide/> ·
-**Official question banks:** <https://study.mengyin.online/banks/>
+**Official collection:** <https://study.mengyin.online/collections/cpp-runoob/>
 
 A plugin-driven revision app for multiple-choice study. English-first interface with a full
 Traditional Chinese version, built with React + TypeScript, shipping as a website and a desktop shell.

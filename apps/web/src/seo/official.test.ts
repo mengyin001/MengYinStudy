@@ -1,9 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   officialRoutes,
-  renderDeckPage,
+  renderCollectionPage,
   renderOfficialPages,
-  renderPackPage,
   type OfficialPack,
 } from './official';
 import { FALLBACK_SITE_ORIGIN } from './site';
@@ -41,49 +40,56 @@ const pack: OfficialPack = {
         },
       ],
     },
+    {
+      id: 'cpp-02-intro',
+      title: 'C++ Introduction',
+      description: 'What C++ is and where it came from.',
+      tags: ['C++'],
+      questions: [
+        {
+          id: 'cpp-02-q01',
+          type: 'boolean',
+          prompt: 'C++ is a compiled language.',
+          tags: ['Basics'],
+        },
+      ],
+    },
   ],
 };
 
-describe('official SEO pages', () => {
-  it('emits a collection page and every question bank', () => {
+describe('official collection page', () => {
+  it('emits one guide page and one page per collection, never per bank', () => {
     const pages = renderOfficialPages([pack], FALLBACK_SITE_ORIGIN);
     const paths = pages.map((page) => page.path);
 
-    expect(paths).toEqual([
-      '/guide/',
-      '/banks/',
-      '/banks/cpp-runoob/',
-      '/banks/cpp-runoob/cpp-01-tutorial/',
-    ]);
+    expect(paths).toEqual(['/guide/', '/collections/cpp-runoob/']);
     for (const page of pages) {
       expect(page.html.startsWith('<!doctype html>')).toBe(true);
       expect(page.html).toContain('MengYin Study');
-      expect(page.html).not.toContain('<html lang="zh"');
+      expect(page.html).not.toContain('/banks/');
     }
   });
 
-  it('renders the bank title, questions and canonical URL, but keeps answers out', () => {
-    const html = renderDeckPage(pack, pack.decks[0]!, FALLBACK_SITE_ORIGIN);
+  it('lists every bank on the collection page with one sample question', () => {
+    const html = renderCollectionPage(pack, FALLBACK_SITE_ORIGIN);
 
-    expect(html).toContain('<title>C++ Tutorial: From Source to Program · MengYin Study</title>');
-    expect(html).toContain('C++ 教程：由原始碼到程式');
-    expect(html).toContain('Which header must be included to use std::cout?');
+    expect(html).toContain('<title>C++ Programming · 程式設計入門 · MengYin Study</title>');
     expect(html).toContain(
-      '<link rel="canonical" href="https://study.mengyin.online/banks/cpp-runoob/cpp-01-tutorial/" />',
+      '<link rel="canonical" href="https://study.mengyin.online/collections/cpp-runoob/" />',
     );
-    expect(html).toContain('LearningResource');
+    expect(html).toContain('C++ Tutorial: From Source to Program');
+    expect(html).toContain('C++ Introduction');
+    expect(html).toContain('Which header must be included to use std::cout?');
+    expect(html).toContain('C++ is a compiled language.');
+    expect(html).toContain('CollectionPage');
+    expect(html).toContain('CC BY-SA 4.0');
     expect(html).not.toContain('optionId');
+    expect(html).not.toContain('/collections/cpp-runoob/cpp-01-tutorial/');
   });
 
-  it('lists banks on the collection page and adds sitemap routes', () => {
-    const html = renderPackPage(pack, FALLBACK_SITE_ORIGIN);
-    expect(html).toContain('C++ Tutorial: From Source to Program');
-    expect(html).toContain('/banks/cpp-runoob/cpp-01-tutorial/');
-
+  it('adds exactly one sitemap route per collection', () => {
     expect(officialRoutes([pack])).toEqual([
-      { path: '/banks/', lastmod: '2026-11-08' },
-      { path: '/banks/cpp-runoob/', lastmod: '2026-11-08' },
-      { path: '/banks/cpp-runoob/cpp-01-tutorial/', lastmod: '2026-11-08' },
+      { path: '/collections/cpp-runoob/', lastmod: '2026-11-08' },
     ]);
   });
 });

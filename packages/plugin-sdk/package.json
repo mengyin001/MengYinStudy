@@ -1,6 +1,6 @@
 {
   "name": "@mengyin/plugin-sdk",
-  "version": "0.8.7",
+  "version": "0.8.8",
   "private": true,
   "type": "module",
   "description": "Plugin contract, JSON schemas and loader for MengYin Study question packs",
